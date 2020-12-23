@@ -9,20 +9,20 @@ namespace kgl
    * @return The parameters bitwise OR'd together.
    */
   template<typename T>
-  static T combine( T first, T second )
+  static T combine( T first )
   {
-    return first | second ;
+    return first ;
   }
 
   /** Template function to combine parameters.
    * @return The parameters bitwise OR'd together.
    */
   template<typename T, typename... TYPES>
-  static T combine( T first, T second, TYPES... types )
+  static T combine( T first, TYPES... types )
   {
-    return first | second | combine( types... ) ;
+    return( first | combine( types... ) ) ;
   }
-    
+  
   /** Class to manage memory on the GPU & CPU.
    */
   template<typename IMPL>
@@ -44,8 +44,8 @@ namespace kgl
        * @param mem_flags The implementation-specific memory flags. OR'd together to get the flags to use.
        * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
        */
-      template<typename TYPE, typename ... BUFFER_FLAGS, typename ... MEMORY_FLAGS>
-      void initialize( unsigned sz, typename IMPL::Device& gpu, MEMORY_FLAGS... mem_flags, bool host_alloc = true ) ;
+      template<typename TYPE, typename ... MEMORY_FLAGS>
+      void initialize( unsigned sz, typename IMPL::Device& gpu, bool host_alloc, MEMORY_FLAGS... mem_flags ) ;
 
       /** Method to initialize this memory object with the input parameters.
        * @param sz The number of elements to store in this memory object.
@@ -142,7 +142,7 @@ namespace kgl
       Size                  offset     ;
       IMPL                  impl       ;
       typename IMPL::Device gpu        ;
-      typename IMPL::Memory *memory_ptr;
+      typename IMPL::Memory memory_ptr ;
   };
   
   /** Class to manage memory on the GPU & CPU.
@@ -173,14 +173,14 @@ namespace kgl
   }
 
   template<typename IMPL>
-  template<typename TYPE, typename ... BUFFER_FLAGS, typename ... MEMORY_FLAGS>
-  void Memory<IMPL>::initialize( unsigned sz, typename IMPL::Device& gpu, MEMORY_FLAGS... mem_flags, bool host_alloc ) 
+  template<typename TYPE, typename ... MEMORY_FLAGS>
+  void Memory<IMPL>::initialize( unsigned sz, typename IMPL::Device& gpu, bool host_alloc, MEMORY_FLAGS... mem_flags ) 
   {
     this->count      = sz             ;
     this->element_sz = sizeof( TYPE ) ;
     this->gpu        = gpu            ;
     
-    this->memory_ptr = impl.createMemory( sz * sizeof( TYPE ), gpu, ::kgl::combine( 0, mem_flags... ) ) ;
+    this->memory_ptr = impl.createMemory( sz * sizeof( TYPE ), gpu, static_cast<typename IMPL::MemoryFlags>( ::kgl::combine( mem_flags... ) ) ) ;
     
     if( host_alloc )
     {
