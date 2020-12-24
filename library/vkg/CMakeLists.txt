@@ -7,11 +7,17 @@ ENDIF()
 SET( KGL_VULKAN_SOURCES 
      Vulkan.cpp
      Buffer.cpp
+     Device.cpp
+     Instance.cpp
+     Queue.cpp
    )
       
 SET( KGL_VULKAN_HEADERS
      Vulkan.h
      Buffer.h
+     Device.h
+     Instance.h
+     Queue.h
    )
 
 SET( KGL_VULKAN_INCLUDE_DIRS

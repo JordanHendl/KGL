@@ -1,6 +1,8 @@
 #include "Vulkan.h"
+#include "Device.h"
 #define VULKAN_HPP_NO_EXCEPTIONS
 #include <vulkan/vulkan.hpp>
+#include <algorithm>
 
 #ifdef KGL_VULKAN_FOUND // Won't get compiler errors when building this without vulkan.
 
@@ -27,7 +29,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        mem_prop = device.getMemoryProperties() ;
        for( unsigned i = 0; i < mem_prop.memoryTypeCount; i++ )
        {
-         if( filter & ( 1 << i ) && (mem_prop.memoryTypes[ i ].propertyFlags & flag ) == flag )
+         if( filter & ( 1 << i ) && ( mem_prop.memoryTypes[ i ].propertyFlags & flag ) == flag )
          {
            return i ;
          }
@@ -35,12 +37,6 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        return 0 ;
      }
          
-     struct VulkanData
-     {
-       ::vk::Device         gpu             ;
-       ::vk::PhysicalDevice physical_device ;
-     };
-
      kgl::vkg::Vulkan::MemoryFlags::MemoryFlags()
      {
        using Flags = ::vk::MemoryPropertyFlagBits ;
@@ -84,65 +80,45 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        return 0 ;
      }
 
-     Vulkan::Vulkan()
+     void Vulkan::copyTo( const Vulkan::Data src, Vulkan::Memory& dst, Vulkan::Device& gpu, unsigned amt )
      {
-       this->vulkan_data = new VulkanData() ;
-     }
-
-     Vulkan::~Vulkan()
-     {
-       delete this->vulkan_data ;
-     }
-     
-     void Vulkan::copyTo( const Vulkan::Data src, Vulkan::Memory& dst, ::vk::Device& gpu, unsigned amt )
-     {
-       const auto device = data().gpu ;
+       const auto device = gpu.device() ;
 
        ::vk::DeviceSize     offset ;
        ::vk::MemoryMapFlags flag   ;
        void*                mem    ;
        
        offset = 0 ;
-
        device.mapMemory  ( dst, offset, amt, flag, &mem         ) ;
-       memcpy            ( mem, src, static_cast<size_t>( amt ) ) ;
+       std::memcpy       ( mem, src, static_cast<size_t>( amt ) ) ;
        device.unmapMemory( dst                                  ) ;
      }
      
-     void Vulkan::copyTo( const Vulkan::Memory& src, Vulkan::Data dst, ::vk::Device& gpu, unsigned amt )
+     void Vulkan::copyTo( const Vulkan::Memory& src, Vulkan::Data dst, Vulkan::Device& gpu, unsigned amt )
      {
-       const auto device = data().gpu ;
+       const auto device = gpu.device() ;
        ::vk::DeviceSize     offset ;
        ::vk::MemoryMapFlags flag   ;
        void*                mem    ;
        
        offset = 0 ;
        device.mapMemory  ( src, offset, amt, flag, &mem         ) ;
-       memcpy            ( dst, mem, static_cast<size_t>( amt ) ) ;
+       std::memcpy       ( dst, mem, static_cast<size_t>( amt ) ) ;
        device.unmapMemory( src                                  ) ;
      }
      
-     void Vulkan::copyTo( const Memory& src, Memory& dst, unsigned amt )
+     void Vulkan::free( Vulkan::Memory& mem, Vulkan::Device& gpu )
      {
-       // Stub for vulkan. This does nothing as Buffers are needed for GPU -> GPU copy.
-     }
-     
-     void Vulkan::copyTo( const Memory& src, Memory& dst, CommandRecord& record, unsigned amt )
-     {
-     }
-     
-     void Vulkan::free( Vulkan::Memory& mem, ::vk::Device& gpu )
-     {
-       const auto device = data().gpu ;
+       const auto device = gpu.device() ;
        
        device.free ( mem ) ;
      }
      
-     Vulkan::Memory Vulkan::createMemory( unsigned size, ::vk::Device& gpu, Vulkan::MemoryFlags flags )
+     Vulkan::Memory Vulkan::createMemory( unsigned size, const Vulkan::Device& gpu, Vulkan::MemoryFlags flags )
      {
-       const auto                      device   = data().gpu             ;
-       const auto                      p_device = data().physical_device ;
-       const ::vk::MemoryPropertyFlags flag     = flags.val()            ;
+       const auto                      device   = gpu.device()         ;
+       const auto                      p_device = gpu.physicalDevice() ;
+       const ::vk::MemoryPropertyFlags flag     = flags.val()          ;
        Vulkan::Memory           mem    ;
        ::vk::MemoryAllocateInfo info   ;
 
@@ -154,23 +130,13 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        return mem ;
      }
      
-     Vulkan::Memory Vulkan::createMemory( unsigned size, ::vk::Device& gpu )
+     Vulkan::Memory Vulkan::createMemory( unsigned size, const Vulkan::Device& gpu )
      {
        Vulkan::MemoryFlags flags ;
        
        flags = static_cast<unsigned>( ::vk::MemoryPropertyFlagBits::eDeviceLocal ) ;
 
        return this->createMemory( size, gpu, flags ) ;
-     }
-
-     const VulkanData& Vulkan::data() const
-     {
-       return *this->vulkan_data ;
-     }
-     
-     VulkanData& Vulkan::data()
-     {
-       return *this->vulkan_data ;
      }
    }
  }

@@ -75,6 +75,16 @@ namespace kgl
          */
         void initialize( kgl::Memory<kgl::vkg::Vulkan>& prealloc, const vk::Device& gpu, unsigned width, unsigned height, unsigned num_layers = 1 ) ;
         
+        /** Method to retrieve the underlying memory of this object.
+         * @return The memory representation of this object.
+         */
+        kgl::Memory<kgl::vkg::Vulkan>& memory() ;
+        
+        /** Method to retrieve the underlying memory of this object.
+         * @return The memory representation of this object.
+         */
+        const kgl::Memory<kgl::vkg::Vulkan>& memory() const ;
+        
         /** Method to set this image's vulkan usage.
          * @param usage The Vulkan usage of the image.
          */

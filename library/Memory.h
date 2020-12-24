@@ -45,7 +45,7 @@ namespace kgl
        * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
        */
       template<typename TYPE, typename ... MEMORY_FLAGS>
-      void initialize( unsigned sz, typename IMPL::Device& gpu, bool host_alloc, MEMORY_FLAGS... mem_flags ) ;
+      void initialize( unsigned sz, const typename IMPL::Device& gpu, bool host_alloc, MEMORY_FLAGS... mem_flags ) ;
 
       /** Method to initialize this memory object with the input parameters.
        * @param sz The number of elements to store in this memory object.
@@ -53,8 +53,18 @@ namespace kgl
        * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
        */      
       template<typename TYPE>
-      void initialize( unsigned sz, typename IMPL::Device& gpu, bool host_alloc = true ) ;
+      void initialize( unsigned sz, const typename IMPL::Device& gpu, bool host_alloc = true ) ;
         
+      /** Method to retrieve the implementation-specific device used by this object.
+       * @return The implementation-specific device used by the object.
+       */
+      const typename IMPL::Device& device() const ;
+
+      /** Method to retrieve the offset into the memory handle this object's allowed to use.
+       * @return The offset into the memory handle this object is allowed to use.
+       */
+      unsigned offset() const ;
+
       /** Method to copy the input memory object into this.
        * @param src The memory object of the same implementation to copy.
        * @param amt_to_copy The amount of memory, in bytes, to copy. Defaults to entire object.
@@ -139,7 +149,7 @@ namespace kgl
       Data                  data       ;
       Size                  element_sz ;
       Size                  count      ;
-      Size                  offset     ;
+      Size                  mem_offset ;
       IMPL                  impl       ;
       typename IMPL::Device gpu        ;
       typename IMPL::Memory memory_ptr ;
@@ -154,7 +164,7 @@ namespace kgl
     this->data       = nullptr ;
     this->count      = 0       ;
     this->element_sz = 0       ;
-    this->offset     = 0       ;
+    this->mem_offset = 0       ;
     this->memory_ptr = nullptr ;
     this->host_alloc = false   ;
   }
@@ -174,7 +184,7 @@ namespace kgl
 
   template<typename IMPL>
   template<typename TYPE, typename ... MEMORY_FLAGS>
-  void Memory<IMPL>::initialize( unsigned sz, typename IMPL::Device& gpu, bool host_alloc, MEMORY_FLAGS... mem_flags ) 
+  void Memory<IMPL>::initialize( unsigned sz, const typename IMPL::Device& gpu, bool host_alloc, MEMORY_FLAGS... mem_flags ) 
   {
     this->count      = sz             ;
     this->element_sz = sizeof( TYPE ) ;
@@ -190,7 +200,7 @@ namespace kgl
 
   template<typename IMPL>
   template<typename TYPE>
-  void Memory<IMPL>::initialize( unsigned sz, typename IMPL::Device& gpu, bool host_alloc ) 
+  void Memory<IMPL>::initialize( unsigned sz, const typename IMPL::Device& gpu, bool host_alloc ) 
   {
     this->count      = sz             ;
     this->element_sz = sizeof( TYPE ) ;
@@ -247,9 +257,21 @@ namespace kgl
   }
 
   template<typename IMPL>
+  const typename IMPL::Device& Memory<IMPL>::device() const
+  {
+    return this->gpu ;
+  }
+  
+  template<typename IMPL>
+  unsigned Memory<IMPL>::offset() const
+  {
+    return this->mem_offset ;
+  }
+  
+  template<typename IMPL>
   const typename IMPL::Memory& Memory<IMPL>::memory() const
   {
-    return this->memory ;
+    return this->memory_ptr ;
   }
   
   template<typename IMPL>

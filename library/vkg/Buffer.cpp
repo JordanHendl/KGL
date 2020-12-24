@@ -1,5 +1,6 @@
 #include "Buffer.h"
 #include "Vulkan.h"
+#include "Device.h"
 #include "../Memory.h" //TODO fix this.
 #include <vulkan/vulkan.hpp>
 

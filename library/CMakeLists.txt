@@ -19,5 +19,5 @@ TARGET_INCLUDE_DIRECTORIES( kgl_memory PRIVATE ${KGL_MEMORY_INCLUDE_DIRS}       
 
 ADD_SUBDIRECTORY( vkg )
 
-ADD_EXECUTABLE( kgl_memory_test test.cpp )
+ADD_EXECUTABLE( kgl_memory_test Test.cpp )
 TARGET_LINK_LIBRARIES( kgl_memory_test PUBLIC kgl_memory kgl_vkg )

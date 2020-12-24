@@ -10,8 +10,6 @@ namespace vk
        
        class Buffer                 ;
        class DeviceMemory           ;
-       class Device                 ;
-       class PhysicalDevice         ;
        class CommandBuffer          ;
        class Instance               ;
   enum class MemoryPropertyFlagBits ;
@@ -30,14 +28,18 @@ namespace kgl
   
   namespace vkg
   {
+    /** Forward declared device decleration.
+     */
+    class Device ;
+
     /** Class that implements Vulkan functionality.
      */
     class Vulkan
     {
       public:
+        using Device         = ::kgl::vkg::Device                                  ;
         using Buffer         = ::vk::Buffer                                        ;
         using Memory         = ::vk::DeviceMemory                                  ;
-        using Device         = ::vk::Device                                        ;
         using CommandRecord  = ::vk::CommandBuffer                                 ;
         using MemoryPropFlag = ::vk::Flags<::vk::MemoryPropertyFlagBits, unsigned> ;
 
@@ -105,11 +107,11 @@ namespace kgl
   
         /** Default constructor.
          */
-        Vulkan() ;
+        Vulkan() = default ;
   
         /** Default Deconstructor.
          */
-        ~Vulkan() ;
+        ~Vulkan() = default ;
   
         /** Method to copy data from the host ( RAM ) to the GPU ( VRAM ).
          * @param src The source data on the host.
@@ -117,7 +119,7 @@ namespace kgl
          * @param gpu The device to use for this operation.
          * @param amt The amount of data to copy.
          */
-        void copyTo( const Data src, Memory& dst, vk::Device& gpu, unsigned amt ) ;
+        void copyTo( const Data src, Memory& dst, Vulkan::Device& gpu, unsigned amt ) ;
   
         /** Method to copy data from the GPU ( VRAM ) to the host ( RAM ).
          * @param src The source memory handle on the GPU.
@@ -125,36 +127,20 @@ namespace kgl
          * @param gpu The device to use for this operation.
          * @param amt The amount of data to copy.
          */
-        void copyTo( const Memory& src, Data dst, vk::Device& gpu, unsigned amt ) ;
-        
-        /** Method to copy data from one GPU memory handle to another.
-         *  This method immediately synchronizes upon completion.
-         * @param src The source to copy data from.
-         * @param dst The destination of the data copy. 
-         * @@param amt The amount of data to copy.
-         */
-        void copyTo( const Memory& src, Memory& dst, unsigned amt ) ;
-        
-        /** Method to copy data from one GPU memory handle to another.
-         * @param src The source to copy data from.
-         * @param dst The destination of the data copy. 
-         * @param record The Command Buffer to use to record the copy operation.
-         * @@param amt The amount of data to copy.
-         */
-        void copyTo( const Memory& src, Memory& dst, CommandRecord& record, unsigned amt ) ;
+        void copyTo( const Memory& src, Data dst, Vulkan::Device& gpu, unsigned amt ) ;
   
         /** Method to release the input memory handle.
          * @param mem The memory object to release.
          * @param gpu The device the memory object was allocated on.
          */
-        void free( Memory& mem, vk::Device& gpu ) ;
+        void free( Memory& mem, Vulkan::Device& gpu ) ;
   
         /** Method to create & allocate memory on the GPU.
          * @param size The size of the memory to allocate.
          * @param gpu The GPU to allocate data on.
          * @return Allocated memory on the GPU.
          */
-        Memory createMemory( unsigned size, vk::Device& gpu ) ;
+        Memory createMemory( unsigned size, const Vulkan::Device& gpu ) ;
         
         /** Method to create & allocate memory on the GPU.
          * @param size The size of the memory to allocate.
@@ -162,21 +148,7 @@ namespace kgl
          * @param mem_flags The memory property flags to use for creation of this memory object.
          * @return Allocated memory on the GPU.
          */
-        Memory createMemory( unsigned size, vk::Device& gpu, Vulkan::MemoryFlags mem_flags ) ;
-        
-        /** Forward declared object to contain this object's internal data.
-         */
-        struct VulkanData* vulkan_data ;
-        
-        /** Method to retrieve reference to this object's internal data structure.
-         * @return Reference to this object's internal data structure.
-         */
-        VulkanData& data() ;
-
-        /** Method to retrieve const-reference to this object's internal data structure.
-         * @return Const-reference to this object's internal data structure.
-         */
-        const VulkanData& data() const ;
+        Memory createMemory( unsigned size, const Vulkan::Device& gpu, Vulkan::MemoryFlags mem_flags ) ;
     };
   }
 }
