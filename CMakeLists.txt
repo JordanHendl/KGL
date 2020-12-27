@@ -2,10 +2,12 @@ cmake_minimum_required( VERSION 3.8.0 )
 
 set( KGL_MEMORY_SOURCES 
      Memory.cpp
+     Array.cpp
    )
       
 set( KGL_MEMORY_HEADERS
      Memory.h
+     Array.h
    )
 
 set( KGL_MEMORY_INCLUDE_DIRS
@@ -19,6 +21,7 @@ TARGET_LINK_LIBRARIES     ( kgl_memory PUBLIC  ${KGL_MEMORY_LIBRARIES}          
 TARGET_INCLUDE_DIRECTORIES( kgl_memory PRIVATE ${KGL_MEMORY_INCLUDE_DIRS}                  )
 
 ADD_SUBDIRECTORY( vkg )
+ADD_SUBDIRECTORY( cg  )
 
 ADD_EXECUTABLE( kgl_memory_test Test.cpp )
 TARGET_LINK_LIBRARIES( kgl_memory_test PUBLIC kgl_memory kgl_vkg )

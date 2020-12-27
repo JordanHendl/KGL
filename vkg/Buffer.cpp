@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2020 Jordan Hendl
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "Buffer.h"
 #include "Vulkan.h"
 #include "Device.h"
@@ -90,7 +107,7 @@ namespace kgl
       data().internal_memory = prealloc ;
       data().preallocated    = true     ;
       
-      return this->initialize( prealloc.device(), size == 0 ? prealloc.byteSize() : size ) ;
+      return this->initialize( prealloc.device(), size == 0 ? prealloc.size() : size ) ;
     }
 
     bool Buffer::initialize( const kgl::vkg::Device& gpu, unsigned size, bool host_local )
@@ -99,10 +116,10 @@ namespace kgl
 
       if( !data().preallocated )
       {
-        data().internal_memory.initialize<unsigned char>( size, gpu, host_local ) ;
+        data().internal_memory.initialize( size, gpu, host_local ) ;
       }
       
-      needed_size         = data().internal_memory.byteSize() - data().internal_memory.offset() ;
+      needed_size         = data().internal_memory.size() - data().internal_memory.offset() ;
       data().device       = gpu                                                                 ;
       data().buffer       = data().createBuffer( size )                                         ;
       data().requirements = gpu.device().getBufferMemoryRequirements( data().buffer )           ; 

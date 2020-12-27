@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2020 Jordan Hendl
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef KGL_VKG_BUFFER_H
 #define KGL_VKG_BUFFER_H
 
@@ -54,6 +71,24 @@ namespace kgl
          */
         void copy( const Buffer& buffer, unsigned size, ::vk::CommandBuffer cmd_buff, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
         
+        /** Method to copy an input buffer into this object's data.
+         * @param size The size in bytes to copy.
+         * @param buffer The buffer to copy from.
+         * @param cmd_buff The command buffer to record the copy operation to.
+         * @param srcoffset The offset of the input buffer to start at.
+         * @param dstoffset The offset of this buffer to start at.
+         */
+        void copyToHost( const unsigned char* src, unsigned size, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+
+        /** Method to copy an input buffer into this object's data.
+         * @param size The size in bytes to copy.
+         * @param buffer The buffer to copy from.
+         * @param cmd_buff The command buffer to record the copy operation to.
+         * @param srcoffset The offset of the input buffer to start at.
+         * @param dstoffset The offset of this buffer to start at.
+         */
+        void copyToHost( const unsigned char* src, unsigned size, ::vk::CommandBuffer cmd_buff, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+        
         /** Method to initialize this object using the input pre-allocated memory object. Does not allocate any extra data.
          * @param prealloc The pre-allocated memory object to use for this object's internal memory.
          * @param size The mount of the preallocated memory to use.
@@ -61,6 +96,15 @@ namespace kgl
          */
         bool  initialize( kgl::Memory<kgl::vkg::Vulkan>& prealloc, unsigned size = 0 ) ;
         
+        /** Method to initialize this object using the input parameters.
+         * @param gpu The device to use for all GPU calls.
+         * @param size The size in bytes to allocate for this object.
+         * @param host_local Whether to allocate a host-copy of this data.
+         * @return Whether or not this buffer was successfully initialized.
+         */
+        template<typename ... BUFFER_FLAGS>
+        bool initialize( const kgl::vkg::Device& gpu, unsigned size, bool host_local, BUFFER_FLAGS... buffer_flags ) ;
+
         /** Method to initialize this object using the input parameters.
          * @param gpu The device to use for all GPU calls.
          * @param size The size in bytes to allocate for this object.
@@ -79,6 +123,14 @@ namespace kgl
          */
         kgl::Memory<kgl::vkg::Vulkan>& memory() ;
         
+        /** Method to sync this buffer to the host.
+         */
+        void syncToHost() ;
+        
+        /** Method to sync this buffer to the device.
+         */
+        void syncToDevice() ;
+
         /** Method to retrieve a const-reference to this object's internal memory container.
          * @return Const-reference to this object's internal memory container.
          */
@@ -105,6 +157,15 @@ namespace kgl
         void setUsage( Buffer::UsageFlags flag  ) ;
 
       private:
+        
+        /** Method to provide a base for the variadic-template initialization function.
+         * @param gpu The device to use for this buffer's data.
+         * @param size The amount of data to allocate.
+         * @param host_local Whether or not this object to allocate a host-copy.
+         * @param buffer_flags The flags to use for buffer creation.
+         * @return 
+         */
+        bool initializeBase( const kgl::vkg::Device& gpu, unsigned size, bool host_local, unsigned buffer_flags ) ;
         
         /** Forward-declared structure to contain this object's internal data.
          */

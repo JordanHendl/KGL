@@ -1,10 +1,25 @@
+/*
+ * Copyright (C) 2020 Jordan Hendl
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef KGL_MEMORY_H
 #define KGL_MEMORY_H
 
 namespace kgl
 {
-  class List ;
-
   /** Template function to combine parameters.
    * @return The parameters bitwise OR'd together.
    */
@@ -55,20 +70,19 @@ namespace kgl
       Memory<IMPL> operator+( unsigned offset ) const ;
 
       /** Method to initialize this memory object with the input parameters.
-       * @param sz The number of elements to store in this memory object.
+       * @param sz The size in bytes to store in this object.
        * @param gpu The implementation-specific GPU to use for all gpu operations.
        * @param mem_flags The implementation-specific memory flags. OR'd together to get the flags to use.
        * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
        */
-      template<typename TYPE, typename ... MEMORY_FLAGS>
+      template<typename ... MEMORY_FLAGS>
       void initialize( unsigned sz, const typename IMPL::Device& gpu, bool host_alloc, MEMORY_FLAGS... mem_flags ) ;
       
       /** Method to initialize this memory object with the input parameters.
-       * @param sz The number of elements to store in this memory object.
+       * @param sz The size in bytes to store in this object.
        * @param gpu The implementation-specific GPU to use for all gpu operations.
        * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
        */      
-      template<typename TYPE>
       void initialize( unsigned sz, const typename IMPL::Device& gpu, bool host_alloc = true ) ;
         
       /** Method to retrieve the host buffer of this object's data.
@@ -91,15 +105,7 @@ namespace kgl
        * @param amt_to_copy The amount of memory, in bytes, to copy. Defaults to entire object.
        * @param offset The offset into the input memory object to start copying at. Defaults to the start.
        */
-      void copy( const Memory<IMPL>& src, unsigned amt_to_copy = 0, unsigned offset = 0 ) ;
-      
-      /** Method to copy the input memory object into this.
-       * @param src The memory object of the same implementation to copy.
-       * @param cmd_buff The implementation-specific command record to push the copy command to.
-       * @param amt_to_copy The amount of memory, in bytes, to copy. Defaults to entire object.
-       * @param offset The offset into the input memory object to start copying at. Defaults to the start.
-       */
-      void copy( const Memory<IMPL>& src, typename IMPL::CommandRecord& cmd_buff, unsigned amt_to_copy = 0, unsigned offset = 0 ) ;
+      void copy( const Memory<IMPL>& src, unsigned amt_to_copy = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
       
       /** Method to copy the input host ( CPU-side ) data into this object's host & GPU copies.
        * @param src Pointer to the input data to copy from.
@@ -108,7 +114,7 @@ namespace kgl
        * @param src_offset The offset in indices of the input data to copy from.
        */
       template<typename TYPE>
-      void copySynced( const TYPE* src, unsigned amt, unsigned offset = 0, unsigned src_offset = 0 ) ;
+      void copySynced( const TYPE* src, unsigned amt, unsigned offset = 0, unsigned src_offset = 0, unsigned dstoffset = 0 ) ;
 
       /** Method to copy the input host ( CPU-side ) data into this object's host data.
        * @param src Pointer to the input data to copy from.
@@ -117,7 +123,7 @@ namespace kgl
        * @param src_offset The offset in indices of the input data to copy from.
        */      
       template<typename TYPE>
-      void copyToHost( const TYPE* src, unsigned amt, unsigned offset = 0, unsigned src_offset = 0 ) ;
+      void copyToHost( const TYPE* src, unsigned amt, unsigned offset = 0, unsigned src_offset = 0, unsigned dstoffset = 0 ) ;
       
       /** Method to copy the input host ( CPU-side ) data into this object's GPU data.
        * @param src Pointer to the input data to copy from.
@@ -126,7 +132,7 @@ namespace kgl
        * @param src_offset The offset in indices of the input data to copy from.
        */
       template<typename TYPE>
-      void copyToDevice( const TYPE* src, unsigned amt, unsigned offset = 0, unsigned src_offset = 0 ) ;
+      void copyToDevice( const TYPE* src, unsigned amt, unsigned offset = 0, unsigned src_offset = 0, unsigned dstoffset = 0 ) ;
       
       /** Method to retrieve a const reference to this object's internal implementation-specific memory.
        * @return 
@@ -155,15 +161,10 @@ namespace kgl
        */
       bool dirty() const ;
       
-      /** Returns the size in elements of this object.
-       * @return The size in elements of this object.
+      /** Returns the size in bytes of this object.
+       * @return The size in bytes of this object.
        */
       unsigned size() const ;
-      
-      /** Method to retrieve the size in bytes of this object.
-       * @return The size of this object's memory in bytes.
-       */
-      unsigned byteSize() const ;
       
     private:
       typedef unsigned       Size   ;
@@ -173,8 +174,7 @@ namespace kgl
       Flag                  dirty_bit  ;
       Flag                  host_alloc ;
       Data                  data       ;
-      Size                  element_sz ;
-      Size                  count      ;
+      Size                  byte_size  ;
       Size                  mem_offset ;
       IMPL                  impl       ;
       typename IMPL::Device gpu        ;
@@ -186,8 +186,7 @@ namespace kgl
   {
     this->dirty_bit  = false   ;
     this->data       = nullptr ;
-    this->count      = 0       ;
-    this->element_sz = 0       ;
+    this->byte_size  = 0       ;
     this->mem_offset = 0       ;
     this->memory_ptr = nullptr ;
     this->host_alloc = false   ;
@@ -204,8 +203,7 @@ namespace kgl
   {
     this->dirty_bit  = src.dirty_bit  ;
     this->data       = src.data       ;
-    this->count      = src.count      ;
-    this->element_sz = src.element_sz ;
+    this->byte_size  = src.byte_size  ;
     this->mem_offset = src.mem_offset ;
     this->memory_ptr = src.memory_ptr ;
     this->host_alloc = src.host_alloc ;
@@ -227,8 +225,8 @@ namespace kgl
     const unsigned next_offset = this->mem_offset + offset ;
     Memory<IMPL> memory ;
     
-    memory            = *this                                                             ;
-    memory.mem_offset = next_offset >= this->byteSize() ? this->byteSize() :  next_offset ;
+    memory            = *this                                                     ;
+    memory.mem_offset = next_offset >= this->size() ? this->size() :  next_offset ;
 
     return memory ;
   }
@@ -245,52 +243,43 @@ namespace kgl
   }
 
   template<typename IMPL>
-  template<typename TYPE, typename ... MEMORY_FLAGS>
+  template< typename ... MEMORY_FLAGS>
   void Memory<IMPL>::initialize( unsigned sz, const typename IMPL::Device& gpu, bool host_alloc, MEMORY_FLAGS... mem_flags ) 
   {
-    this->count      = sz             ;
-    this->element_sz = sizeof( TYPE ) ;
-    this->gpu        = gpu            ;
+    this->byte_size  = sz  ;
+    this->gpu        = gpu ;
     
-    this->memory_ptr = impl.createMemory( sz * sizeof( TYPE ), gpu, static_cast<typename IMPL::MemoryFlags>( ::kgl::combine( mem_flags... ) ) ) ;
+    this->memory_ptr = impl.createMemory( sz, gpu, static_cast<typename IMPL::MemoryFlags>( ::kgl::combine( mem_flags... ) ) ) ;
     
     if( host_alloc )
     {
-      this->data = new unsigned char[ sz * sizeof( TYPE ) ] ;
+      this->data = new unsigned char[ sz ] ;
     }
   }
 
   template<typename IMPL>
-  template<typename TYPE>
   void Memory<IMPL>::initialize( unsigned sz, const typename IMPL::Device& gpu, bool host_alloc ) 
   {
-    this->count      = sz             ;
-    this->element_sz = sizeof( TYPE ) ;
-    this->gpu        = gpu            ;
+    this->byte_size  = sz  ;
+    this->gpu        = gpu ;
     
-    this->memory_ptr = impl.createMemory( sz * sizeof( TYPE ), gpu ) ;
+    this->memory_ptr = impl.createMemory( sz, gpu ) ;
     
     if( host_alloc )
     {
-      this->data = new unsigned char[ sz * sizeof( TYPE ) ] ;
+      this->data = new unsigned char[ sz ] ;
     }
   }
 
   template<typename IMPL>
-  void Memory<IMPL>::copy( const Memory<IMPL>& src, unsigned amt_to_copy, unsigned offset )
+  void Memory<IMPL>::copy( const Memory<IMPL>& src, unsigned amt_to_copy, unsigned srcoffset, unsigned dstoffset )
   {
     this->impl.copyTo( src.memory_ptr, this->memory_ptr, offset ) ;
   }
   
   template<typename IMPL>
-  void Memory<IMPL>::copy( const Memory<IMPL>& src, typename IMPL::CommandRecord& cmd_buff, unsigned amt_to_copy, unsigned offset )
-  {
-    this->impl.copyTo( this->memory_ptr, src.memory_ptr, cmd_buff, offset ) ;
-  }
-  
-  template<typename IMPL>
   template<typename TYPE>
-  void Memory<IMPL>::copySynced( const TYPE* src, unsigned amt, unsigned offset, unsigned src_offset )
+  void Memory<IMPL>::copySynced( const TYPE* src, unsigned amt, unsigned offset, unsigned src_offset, unsigned dstoffset )
   {
     this->copyToDevice( src, amt, offset, src_offset ) ;
     this->copyToHost  ( src, amt, offset, src_offset ) ;
@@ -298,20 +287,20 @@ namespace kgl
 
   template<typename IMPL>
   template<typename TYPE>
-  void Memory<IMPL>::copyToHost( const TYPE* src, unsigned token_amt, unsigned offset, unsigned src_offset )
+  void Memory<IMPL>::copyToHost( const TYPE* src, unsigned token_amt, unsigned offset, unsigned src_offset, unsigned dstoffset )
   {
-    auto amt = token_amt > this->count ? this->count : token_amt ;
+    auto amt = token_amt > this->byte_size ? this->byte_size : token_amt ;
     
     memcpy( this->data, src, amt * this->element_sz ) ;
   }
 
   template<typename IMPL>
   template<typename TYPE>
-  void Memory<IMPL>::copyToDevice( const TYPE* src, unsigned token_amt, unsigned offset, unsigned src_offset )
+  void Memory<IMPL>::copyToDevice( const TYPE* src, unsigned byte_amt, unsigned offset, unsigned src_offset, unsigned dstoffset )
   {
-    auto amt = token_amt > this->count ? this->count : token_amt ;
+    auto amt = byte_amt > this->byte_size ? this->byte_size : byte_amt ;
     
-    this->impl.copyTo( static_cast<const void*>( src ), this->memory_ptr, this->gpu, amt * this->element_sz ) ;
+    this->impl.copyTo( static_cast<const void*>( src ), this->memory_ptr, this->gpu, amt ) ;
   }
 
   template<typename IMPL>
@@ -341,25 +330,19 @@ namespace kgl
   template<typename IMPL>
   void Memory<IMPL>::syncToDevice() 
   {
-    this->impl.copyTo( this->data, this->memory_ptr, this->gpu, this->element_sz * this->count ) ;
+    this->impl.copyTo( this->data, this->memory_ptr, this->gpu, this->element_sz * this->byte_size ) ;
   }
   
   template<typename IMPL>
   void Memory<IMPL>::syncToHost() 
   {
-    this->impl.copyTo( this->memory_ptr, this->data, this->gpu, this->element_sz * this->count ) ;
+    this->impl.copyTo( this->memory_ptr, this->data, this->gpu, this->byte_size ) ;
   } 
 
   template<typename IMPL>
   unsigned Memory<IMPL>::size() const
   {
-    return this->count ;
-  }
-  
-  template<typename IMPL>
-  unsigned Memory<IMPL>::byteSize() const
-  {
-    return ( this->count * this->element_sz ) ;
+    return this->byte_size ;
   }
 }
 #endif 

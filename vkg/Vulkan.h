@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2020 Jordan Hendl
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef KGL_VULKAN_H
 #define KGL_VULKAN_H
 
@@ -7,7 +24,7 @@ namespace vk
 {
        template <typename BitType, typename MaskType>
        class Flags ;
-       
+
        class Buffer                 ;
        class DeviceMemory           ;
        class CommandBuffer          ;
@@ -21,16 +38,24 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second ) ;
 
 namespace kgl
 {
+  
   /** Forward declared Memory object for friendship.
    */
   template<typename IMPL>
   class Memory ;
   
+  template<typename IMPL, typename TYPE>
+  class Array ;
+
   namespace vkg
   {
-    /** Forward declared device decleration.
+    /** Forward declared device declaration.
      */
     class Device ;
+    
+    /** Forward declared buffer declaration.
+     */
+    class Buffer ;
 
     /** Class that implements Vulkan functionality.
      */
@@ -38,7 +63,7 @@ namespace kgl
     {
       public:
         using Device         = ::kgl::vkg::Device                                  ;
-        using Buffer         = ::vk::Buffer                                        ;
+        using Buffer         = ::kgl::vkg::Buffer                                  ;
         using Memory         = ::vk::DeviceMemory                                  ;
         using CommandRecord  = ::vk::CommandBuffer                                 ;
         using MemoryPropFlag = ::vk::Flags<::vk::MemoryPropertyFlagBits, unsigned> ;
@@ -151,6 +176,12 @@ namespace kgl
         Memory createMemory( unsigned size, const Vulkan::Device& gpu, Vulkan::MemoryFlags mem_flags ) ;
     };
   }
+  
+  /** Aliases for parent types.
+   */
+  template<typename TYPE>
+  using VkArray  = kgl::Array <kgl::vkg::Vulkan, TYPE> ;
+  using VkMemory = kgl::Memory<kgl::vkg::Vulkan      > ;
 }
 
 #endif

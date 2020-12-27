@@ -1,25 +1,18 @@
 /*
- * The MIT License
+ * Copyright (C) 2020 Jordan Hendl
  *
- * Copyright 2020 Jordan Hendl.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /* 
@@ -33,6 +26,7 @@
 #include "vkg/Device.h"
 #include "vkg/Instance.h"
 #include "vkg/Buffer.h"
+#include "Array.h"
 #include "Memory.h"
 #include <vulkan/vulkan.hpp>
 #include <vector>
@@ -50,11 +44,11 @@ bool testMemoryHostGPUCopy()
   kgl::Memory<Impl>     memory   ;
   std::vector<unsigned> host_mem ;
   
-  memory.initialize<unsigned>( 200, device, true, ::vk::MemoryPropertyFlagBits::eHostVisible | ::vk::MemoryPropertyFlagBits::eHostCoherent ) ;
+  memory.initialize( sizeof( unsigned ) * 200, device, true, ::vk::MemoryPropertyFlagBits::eHostVisible | ::vk::MemoryPropertyFlagBits::eHostCoherent ) ;
   host_mem.resize( 200 ) ;
   std::fill( host_mem.begin(), host_mem.end(), 2503 ) ;
   
-  memory.copyToDevice( host_mem.data(), 200 ) ;
+  memory.copyToDevice( host_mem.data(), sizeof( unsigned ) * 200 ) ;
   memory.syncToHost() ;
   
   for( unsigned i = 0; i < 200; i++ )
@@ -98,8 +92,8 @@ bool testBufferPreallocatedSingle()
   
   binded = 0 ;
   
-            memory.initialize<unsigned>( 500, device         ) ;
-  binded += buffer.initialize          ( memory, buffer_size ) ;
+            memory.initialize( sizeof( unsigned ) * 1000, device ) ;
+  binded += buffer.initialize( memory, buffer_size               ) ;
   
   buffer.reset()      ;
   memory.deallocate() ;
@@ -123,8 +117,8 @@ bool testBufferPreallocatedMultiple()
   
   binded = 0 ;
   
-            memory_one.initialize<unsigned>( 800, device             ) ;
-  binded += buffer_one.initialize          ( memory_one, buffer_size ) ;
+            memory_one.initialize( sizeof( unsigned ) * 1000, device ) ;
+  binded += buffer_one.initialize( memory_one, buffer_size           ) ;
   
   memory_two = memory_one + buffer_one.size() ;
 
@@ -142,6 +136,16 @@ bool testBufferPreallocatedMultiple()
   return false ;
 }
 
+bool simpleArrayTest()
+{
+  kgl::VkArray<float> array ;
+  
+  array.initialize( device, 500, true ) ;
+  
+  
+  return true ;
+}
+
 int main()
 {
   instance.setApplicationName( "KGL-VKG Test App" ) ;
@@ -149,20 +153,24 @@ int main()
   instance.initialize() ;
   device.initialize( instance.device( 0 ) ) ;
   
+  std::cout << "Testing VKG Buffer Creation & Allocation...\n"  ;
+  assert( testBufferSingleAllocation() ) ;
+  std::cout << "Passed! \n\n"  ;
+  
+  std::cout << "Testing VKG Single Buffer Creation | Preallocated \n"  ;
+  assert( testBufferPreallocatedSingle() ) ;
+  std::cout << "Passed! \n\n"  ;
+  
+  std::cout << "Testing VKG Multiple Buffer Creation | Preallocated \n"  ;
+  assert( testBufferPreallocatedMultiple() ) ;
+  std::cout << "Passed! \n\n"  ;
+  
   std::cout << "Testing Memory Host-GPU copy...\n"  ;
   assert( testMemoryHostGPUCopy() ) ;
   std::cout << "Passed! \n\n"  ;
   
-  std::cout << "Testing Buffer Creation & Allocation...\n"  ;
-  assert( testBufferSingleAllocation() ) ;
-  std::cout << "Passed! \n\n"  ;
-  
-  std::cout << "Testing Single Buffer Creation | Preallocated \n"  ;
-  assert( testBufferPreallocatedSingle() ) ;
-  std::cout << "Passed! \n\n"  ;
-  
-  std::cout << "Testing Multiple Buffer Creation | Preallocated \n"  ;
-  assert( testBufferPreallocatedMultiple() ) ;
+  std::cout << "Testing Simple Array Test... \n"  ;
+  assert( simpleArrayTest() ) ;
   std::cout << "Passed! \n\n"  ;
   
   std::cout << "All Tests Passed!" << std::endl ;

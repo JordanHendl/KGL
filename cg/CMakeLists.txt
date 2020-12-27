@@ -1,0 +1,17 @@
+FIND_PACKAGE( CUDA )
+
+IF( ${CUDA_FOUND} )
+  ADD_DEFINITIONS( -DKGL_CUDA_FOUND )
+ENDIF()
+
+SET( KGL_CUDA_SOURCES 
+     Cuda.cu
+   )
+      
+SET( KGL_CUDA_HEADERS
+     Cuda.h
+   )
+
+CUDA_ADD_LIBRARY           ( kgl_cg SHARED  ${KGL_CUDA_SOURCES}     ${KGL_CUDA_HEADERS} )
+#TARGET_LINK_LIBRARIES     ( kgl_cg PUBLIC  ${KGL_CUDA_LIBRARIES}                         )
+#TARGET_INCLUDE_DIRECTORIES( kgl_cg PRIVATE ${KGL_CUDA_INCLUDE_DIRS}                      )
