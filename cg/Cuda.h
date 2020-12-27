@@ -46,8 +46,8 @@ namespace kgl
          */
         static void initialize() ;
         
-        /** Static method to convert a vulkan error to an error of the library.
-         * @param error An error defined by vulkan.
+        /** Static method to convert a cuda error to an error of the library.
+         * @param error An error defined by cuda.
          * @return An error defined by the library.
          */
         static unsigned convertError( unsigned error ) ;
