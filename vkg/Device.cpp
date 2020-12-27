@@ -30,7 +30,6 @@
  */
 
 #include "Device.h"
-#include "Queue.h"
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <string>

@@ -9,7 +9,6 @@ SET( KGL_VULKAN_SOURCES
      Buffer.cpp
      Device.cpp
      Instance.cpp
-     Queue.cpp
    )
       
 SET( KGL_VULKAN_HEADERS
@@ -17,7 +16,6 @@ SET( KGL_VULKAN_HEADERS
      Buffer.h
      Device.h
      Instance.h
-     Queue.h
    )
 
 SET( KGL_VULKAN_INCLUDE_DIRS
