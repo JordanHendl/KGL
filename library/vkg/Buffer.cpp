@@ -12,11 +12,46 @@ namespace kgl
     
     struct BufferData
     {
-      kgl::Memory<IMPL>    internal_memory ;
-      vk::BufferUsageFlags usage_flags     ;
-      vk::Buffer           buffer          ;
+      kgl::Memory<IMPL>      internal_memory ;
+      ::kgl::vkg::Device     device          ;
+      vk::MemoryRequirements requirements    ;
+      vk::BufferUsageFlags   usage_flags     ;
+      vk::Buffer             buffer          ;
+      bool                   preallocated    ;
+      unsigned               device_size     ;
+
+      /** Method to create a vulkan buffer and return it.
+       * @param size The byte size of buffer to make.
+       * @return A Buffer created to the input size.
+       */
+      ::vk::Buffer createBuffer( unsigned size ) ;
+      
+      /** Default constructor.
+       */
+      BufferData() ;
     };
 
+    ::vk::Buffer BufferData::createBuffer( unsigned size )
+    {
+      ::vk::BufferCreateInfo info   ;
+      ::vk::Buffer           buffer ;
+      
+      info.setSize       ( size                          ) ;
+      info.setUsage      ( this->usage_flags             ) ;
+      info.setSharingMode( ::vk::SharingMode::eExclusive ) ;
+      
+      buffer = this->device.device().createBuffer( info, nullptr ) ;
+      
+      return buffer ;
+    }
+
+    BufferData::BufferData()
+    {
+      this->preallocated = false                                                                             ;
+      this->usage_flags  = ::vk::BufferUsageFlagBits::eTransferSrc | ::vk::BufferUsageFlagBits::eTransferDst ;
+      this->device_size  = 0                                                                                 ;
+    }
+    
     Buffer::Buffer()
     {
       this->buffer_data = new BufferData() ;
@@ -39,20 +74,82 @@ namespace kgl
       
       return *this ;
     }
-
-    void Buffer::initialize( kgl::Memory<kgl::vkg::Vulkan>& prealloc )
+    
+    void Buffer::reset()
     {
-    
-    }
-
-    void Buffer::initialize( const vk::Device& gpu, unsigned size, bool host_local )
-    {
-    
-    }
-    
-    void Buffer::copy( const Buffer& buffer, ::vk::CommandBuffer cmd_buff )
-    { 
+      data().device.device().destroyBuffer( data().buffer ) ;
       
+      if( !data().preallocated )
+      {
+        data().internal_memory.deallocate() ;
+      }
+    }
+    
+    bool Buffer::initialize( kgl::Memory<kgl::vkg::Vulkan>& prealloc, unsigned size )
+    {
+      data().internal_memory = prealloc ;
+      data().preallocated    = true     ;
+      
+      return this->initialize( prealloc.device(), size == 0 ? prealloc.byteSize() : size ) ;
+    }
+
+    bool Buffer::initialize( const kgl::vkg::Device& gpu, unsigned size, bool host_local )
+    {
+      unsigned needed_size ;
+
+      if( !data().preallocated )
+      {
+        data().internal_memory.initialize<unsigned char>( size, gpu, host_local ) ;
+      }
+      
+      needed_size         = data().internal_memory.byteSize() - data().internal_memory.offset() ;
+      data().device       = gpu                                                                 ;
+      data().buffer       = data().createBuffer( size )                                         ;
+      data().requirements = gpu.device().getBufferMemoryRequirements( data().buffer )           ; 
+
+      if( data().requirements.size < needed_size )
+      {
+        data().device.device().bindBufferMemory( data().buffer, data().internal_memory.memory(), data().internal_memory.offset() ) ;
+        
+        return true ;
+      }
+      else
+      {
+        return false ;
+      }
+    }
+    
+    const ::vk::Buffer& Buffer::buffer() const
+    {
+      return data().buffer ;
+    }
+
+    void Buffer::copy( const Buffer& buffer, unsigned size, ::vk::CommandBuffer cmd_buff, unsigned srcoffset, unsigned dstoffset )
+    { 
+      ::vk::BufferCopy          region       ;
+      ::vk::MemoryBarrier       mem_barrier  ;
+      ::vk::BufferMemoryBarrier buff_barrier ;
+      ::vk::DependencyFlags     dep_flags    ;
+      
+      region.setSize     ( data().requirements.size ) ;
+      region.setSrcOffset( srcoffset                ) ;
+      region.setDstOffset( dstoffset                ) ;
+      
+      mem_barrier .setSrcAccessMask      ( ::vk::AccessFlagBits::eMemoryWrite ) ;
+      mem_barrier .setDstAccessMask      ( ::vk::AccessFlagBits::eMemoryRead  ) ;
+      buff_barrier.setSrcAccessMask      ( ::vk::AccessFlagBits::eMemoryWrite ) ;
+      buff_barrier.setDstAccessMask      ( ::vk::AccessFlagBits::eMemoryRead  ) ;
+      buff_barrier.setBuffer             ( data().buffer                      ) ;
+      buff_barrier.setSize               ( data().requirements.size           ) ;
+      buff_barrier.setSrcQueueFamilyIndex( 0                                  ) ;
+      buff_barrier.setDstQueueFamilyIndex( 0                                  ) ;
+      
+      cmd_buff.copyBuffer( buffer.buffer(), this->buffer(), 1, &region ) ;
+    }
+    
+    unsigned Buffer::size() const 
+    {
+      return data().requirements.size ;
     }
     
     kgl::Memory<kgl::vkg::Vulkan>& Buffer::memory()
@@ -67,12 +164,12 @@ namespace kgl
 
     void Buffer::setUsage( vk::BufferUsageFlagBits flag  )
     {
-      
+      data().usage_flags = flag ;
     }
     
     void Buffer::setUsage( Buffer::UsageFlags flag  )
     {
-      
+      data().usage_flags = flag ;
     }
 
     BufferData& Buffer::data()

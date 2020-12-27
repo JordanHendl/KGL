@@ -86,6 +86,10 @@ namespace kgl
        */
       DeviceData() ;
 
+      /** Copy operator
+       */
+      DeviceData& operator=( const DeviceData& data ) ;
+      
       /** Method to generate the virtual Vulkan device.
        */
       void generateDevice() ;
@@ -122,6 +126,22 @@ namespace kgl
       this->compute_priorities  = { 1.0f } ;
       this->transfer_priorities = { 1.0f } ;
       this->present_priorities  = { 1.0f } ;
+    }
+    
+    DeviceData& DeviceData::operator=(const DeviceData& data) 
+    {
+      this->gpu                 = data.gpu                 ;
+      this->physical_device     = data.physical_device     ;
+      this->surface             = data.surface             ;
+      this->features            = data.features            ;
+      this->extension_list      = data.extension_list      ;
+      this->queue_families      = data.queue_families      ;
+      this->graphics_priorities = data.graphics_priorities ;
+      this->compute_priorities  = data.compute_priorities  ;
+      this->present_priorities  = data.present_priorities  ;
+      this->transfer_priorities = data.transfer_priorities ;
+      
+      return *this ;
     }
 
     void DeviceData::generateDevice()

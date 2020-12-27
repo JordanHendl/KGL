@@ -80,16 +80,19 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        return 0 ;
      }
 
-     void Vulkan::copyTo( const Vulkan::Data src, Vulkan::Memory& dst, Vulkan::Device& gpu, unsigned amt )
+     void Vulkan::copyTo( const void* src, Vulkan::Memory& dst, Vulkan::Device& gpu, unsigned amt )
      {
        const auto device = gpu.device() ;
 
        ::vk::DeviceSize     offset ;
+       ::vk::DeviceSize     amount ;
        ::vk::MemoryMapFlags flag   ;
        void*                mem    ;
        
-       offset = 0 ;
-       device.mapMemory  ( dst, offset, amt, flag, &mem         ) ;
+       offset = 0   ;
+       amount = amt ;
+       
+       device.mapMemory  ( dst, offset, amount, flag, &mem      ) ;
        std::memcpy       ( mem, src, static_cast<size_t>( amt ) ) ;
        device.unmapMemory( dst                                  ) ;
      }
@@ -98,11 +101,14 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
      {
        const auto device = gpu.device() ;
        ::vk::DeviceSize     offset ;
+       ::vk::DeviceSize     amount ;
        ::vk::MemoryMapFlags flag   ;
        void*                mem    ;
        
-       offset = 0 ;
-       device.mapMemory  ( src, offset, amt, flag, &mem         ) ;
+       offset = 0   ;
+       amount = amt ;
+       
+       device.mapMemory  ( src, offset, amount, flag, &mem      ) ;
        std::memcpy       ( dst, mem, static_cast<size_t>( amt ) ) ;
        device.unmapMemory( src                                  ) ;
      }

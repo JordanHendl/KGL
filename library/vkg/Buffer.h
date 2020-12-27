@@ -6,7 +6,6 @@ namespace vk
        template <typename BitType, typename MaskType>
        class Flags ;
        
-       class Device              ;
        class Buffer              ;
        class CommandBuffer       ;
   enum class BufferUsageFlagBits ;
@@ -20,7 +19,7 @@ namespace kgl
   namespace vkg
   {
     class Vulkan ;
-    
+    class Device ;
     class Buffer
     {
       public:
@@ -47,22 +46,33 @@ namespace kgl
         Buffer& operator=( const Buffer& src ) ;
         
         /** Method to copy an input buffer into this object's data.
+         * @param size The size in bytes to copy.
          * @param buffer The buffer to copy from.
          * @param cmd_buff The command buffer to record the copy operation to.
+         * @param srcoffset The offset of the input buffer to start at.
+         * @param dstoffset The offset of this buffer to start at.
          */
-        void copy( const Buffer& buffer, ::vk::CommandBuffer cmd_buff ) ;
+        void copy( const Buffer& buffer, unsigned size, ::vk::CommandBuffer cmd_buff, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
         
         /** Method to initialize this object using the input pre-allocated memory object. Does not allocate any extra data.
          * @param prealloc The pre-allocated memory object to use for this object's internal memory.
+         * @param size The mount of the preallocated memory to use.
+         * @return Whether or not this object was successfully initialized.
          */
-        void initialize( kgl::Memory<kgl::vkg::Vulkan>& prealloc ) ;
+        bool  initialize( kgl::Memory<kgl::vkg::Vulkan>& prealloc, unsigned size = 0 ) ;
         
         /** Method to initialize this object using the input parameters.
          * @param gpu The device to use for all GPU calls.
          * @param size The size in bytes to allocate for this object.
          * @param host_local Whether to allocate a host-copy of this data.
+         * @return Whether or not this buffer was successfully initialized.
          */
-        void initialize( const vk::Device& gpu, unsigned size, bool host_local = false ) ;
+        bool initialize( const kgl::vkg::Device& gpu, unsigned size, bool host_local = false ) ;
+        
+        /** Method to return the size of this object on the GPU.
+         * @return The size in bytes of this object on the GPU.
+         */
+        unsigned size() const ;
         
         /** Method to retrieve a reference to this object's internal memory container.
          * @return Reference to this object's internal memory container.
@@ -78,6 +88,11 @@ namespace kgl
          * @return Const-reference to this object's internal Vulkan buffer.
          */
         const vk::Buffer& buffer() const ;
+        
+        /** Method to reset this buffer and free allocated data.
+         * @note if preallocated, unbinds memory and does not deallocate.
+         */
+        void reset() ;
 
         /** Method to set the Vulkan usage for this buffer.
          * @param flag The Vulkan usage flag to use for this object.

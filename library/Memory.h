@@ -34,10 +34,26 @@ namespace kgl
        */
       Memory() ;
       
+      /** Copy constructor. Copies the values of the input, does not perform a deep copy.
+       * @param src The input to copy.
+       */
+      Memory( const Memory<IMPL>& src ) ;
+      
       /** Default Deconstructor.
        */
       ~Memory() = default ;
       
+      /** Operator to assign this object to another memory object.
+       * @param src The memory to copy.
+       * @return Reference to this object after the assignment.
+       */
+      Memory<IMPL>& operator=( const Memory<IMPL>& src ) ;
+      
+      /** Operator to return a copy of this object at the specified offset
+       * @param offset The amount to offset this object into the memory.
+       */
+      Memory<IMPL> operator+( unsigned offset ) const ;
+
       /** Method to initialize this memory object with the input parameters.
        * @param sz The number of elements to store in this memory object.
        * @param gpu The implementation-specific GPU to use for all gpu operations.
@@ -46,7 +62,7 @@ namespace kgl
        */
       template<typename TYPE, typename ... MEMORY_FLAGS>
       void initialize( unsigned sz, const typename IMPL::Device& gpu, bool host_alloc, MEMORY_FLAGS... mem_flags ) ;
-
+      
       /** Method to initialize this memory object with the input parameters.
        * @param sz The number of elements to store in this memory object.
        * @param gpu The implementation-specific GPU to use for all gpu operations.
@@ -55,6 +71,11 @@ namespace kgl
       template<typename TYPE>
       void initialize( unsigned sz, const typename IMPL::Device& gpu, bool host_alloc = true ) ;
         
+      /** Method to retrieve the host buffer of this object's data.
+       * @return The host-buffer containing this object's data.
+       */
+      const void* hostData() const ;
+
       /** Method to retrieve the implementation-specific device used by this object.
        * @return The implementation-specific device used by the object.
        */
@@ -116,6 +137,11 @@ namespace kgl
        */
       void deallocate() ;
       
+      /** Method to retrieve the element size of this object.
+       * @return The size of each element of this object.
+       */
+      unsigned elementSize() const ;
+
       /** Method to copy this object's host data to the GPU.
        */
       void syncToDevice() ;
@@ -140,9 +166,9 @@ namespace kgl
       unsigned byteSize() const ;
       
     private:
-      typedef unsigned Size   ;
-      typedef bool     Flag   ;
-      typedef void*    Data   ;
+      typedef unsigned       Size   ;
+      typedef bool           Flag   ;
+      typedef unsigned char* Data   ;
       
       Flag                  dirty_bit  ;
       Flag                  host_alloc ;
@@ -155,8 +181,6 @@ namespace kgl
       typename IMPL::Memory memory_ptr ;
   };
   
-  /** Class to manage memory on the GPU & CPU.
-   */
   template<typename IMPL>
   Memory<IMPL>::Memory()
   {
@@ -170,6 +194,46 @@ namespace kgl
   }
   
   template<typename IMPL>
+  Memory<IMPL>::Memory( const Memory<IMPL>& src )
+  {
+    *this = src ;
+  }
+  
+  template<typename IMPL>
+  Memory<IMPL>& Memory<IMPL>::operator=( const Memory<IMPL>& src )
+  {
+    this->dirty_bit  = src.dirty_bit  ;
+    this->data       = src.data       ;
+    this->count      = src.count      ;
+    this->element_sz = src.element_sz ;
+    this->mem_offset = src.mem_offset ;
+    this->memory_ptr = src.memory_ptr ;
+    this->host_alloc = src.host_alloc ;
+    this->gpu        = src.gpu        ;
+    this->impl       = src.impl       ;
+    
+    return *this ;
+  }
+  
+  template<typename IMPL>
+  const void* Memory<IMPL>::hostData() const
+  {
+    return static_cast<const void*>( this->data ) ;
+  }
+
+  template<typename IMPL>
+  Memory<IMPL> Memory<IMPL>::operator+( unsigned offset ) const
+  {
+    const unsigned next_offset = this->mem_offset + offset ;
+    Memory<IMPL> memory ;
+    
+    memory            = *this                                                             ;
+    memory.mem_offset = next_offset >= this->byteSize() ? this->byteSize() :  next_offset ;
+
+    return memory ;
+  }
+  
+  template<typename IMPL>
   void Memory<IMPL>::deallocate()
   {
     if( this->data )
@@ -177,9 +241,7 @@ namespace kgl
       delete this->data ;
     }
 
-    impl.free( this->memory, this->gpu ) ;
-    
-    this->memory = nullptr ;
+    impl.free( this->memory_ptr, this->gpu ) ;
   }
 
   template<typename IMPL>
@@ -240,8 +302,6 @@ namespace kgl
   {
     auto amt = token_amt > this->count ? this->count : token_amt ;
     
-    static_assert( sizeof( TYPE ) == this->element_sz, "The size of the input is different than this object. Stop." ) ;
-
     memcpy( this->data, src, amt * this->element_sz ) ;
   }
 
@@ -251,15 +311,19 @@ namespace kgl
   {
     auto amt = token_amt > this->count ? this->count : token_amt ;
     
-    static_assert( sizeof( TYPE ) == this->element_sz, "The size of the input is different than this object. Stop." ) ;
-
-    this->impl.copyTo( static_cast<void*>( src ), this->memory_ptr, amt ) ;
+    this->impl.copyTo( static_cast<const void*>( src ), this->memory_ptr, this->gpu, amt * this->element_sz ) ;
   }
 
   template<typename IMPL>
   const typename IMPL::Device& Memory<IMPL>::device() const
   {
     return this->gpu ;
+  }
+  
+  template<typename IMPL>
+  unsigned Memory<IMPL>::elementSize() const
+  {
+    return this->element_sz ;
   }
   
   template<typename IMPL>
@@ -277,25 +341,25 @@ namespace kgl
   template<typename IMPL>
   void Memory<IMPL>::syncToDevice() 
   {
-    this->impl.copyTo( this->data, this->memory_ptr, this->element_sz * this->count ) ;
+    this->impl.copyTo( this->data, this->memory_ptr, this->gpu, this->element_sz * this->count ) ;
   }
   
   template<typename IMPL>
   void Memory<IMPL>::syncToHost() 
   {
-    this->impl.copyTo( this->memory_ptr, this->data, this->element_sz * this->count ) ;
+    this->impl.copyTo( this->memory_ptr, this->data, this->gpu, this->element_sz * this->count ) ;
   } 
 
   template<typename IMPL>
   unsigned Memory<IMPL>::size() const
   {
-    return this->count * this->element_sz ;
+    return this->count ;
   }
   
   template<typename IMPL>
   unsigned Memory<IMPL>::byteSize() const
   {
-    return this->count * this->element_sz ;
+    return ( this->count * this->element_sz ) ;
   }
 }
 #endif 
