@@ -27,14 +27,15 @@
 
 namespace kgl
 {
-  template<typename IMPL>
+  template<typename IMPL, typename TYPE>
   class Image
   {
     public:
       Image() ;
       Image( const Image<IMPL>& image ) ;
       ~Image() = default ;
-      
+      Image& operator=( const Image<IMPL>& image ) ;
+      void initialize( unsigned )
     private:
   };
 }

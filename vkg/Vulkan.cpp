@@ -20,7 +20,6 @@
 #define VULKAN_HPP_NO_EXCEPTIONS
 #include <algorithm>
 
-#ifdef KGL_VULKAN_FOUND // Won't get compiler errors when building this without vulkan.
 #include <vulkan/vulkan.hpp>
 
 
@@ -97,7 +96,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        return 0 ;
      }
 
-     void Vulkan::copyTo( const void* src, Vulkan::Memory& dst, Vulkan::Device& gpu, unsigned amt )
+     void Vulkan::copyToDevice( const void* src, Vulkan::Memory& dst, Vulkan::Device& gpu, unsigned amt )
      {
        const auto device = gpu.device() ;
 
@@ -114,7 +113,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        device.unmapMemory( dst                                  ) ;
      }
      
-     void Vulkan::copyTo( const Vulkan::Memory& src, Vulkan::Data dst, Vulkan::Device& gpu, unsigned amt )
+     void Vulkan::copyToHost( const Vulkan::Memory& src, Vulkan::Data dst, Vulkan::Device& gpu, unsigned amt )
      {
        const auto device = gpu.device() ;
        ::vk::DeviceSize     offset ;
@@ -163,4 +162,3 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
      }
    }
  }
-#endif

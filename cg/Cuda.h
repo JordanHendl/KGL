@@ -77,7 +77,7 @@ namespace kgl
          * @param gpu The device to use for this operation.
          * @param amt The amount of data to copy.
          */
-        void copyTo( const void* src, Memory& dst, Cuda::Device& gpu, unsigned amt ) ;
+        void copyToDevice( const void* src, Memory& dst, Cuda::Device& gpu, unsigned amt ) ;
   
         /** Method to copy data from the GPU ( VRAM ) to the host ( RAM ).
          * @param src The source memory handle on the GPU.
@@ -85,7 +85,7 @@ namespace kgl
          * @param gpu The device to use for this operation.
          * @param amt The amount of data to copy.
          */
-        void copyTo( const Memory& src, Data dst, Cuda::Device& gpu, unsigned amt ) ;
+        void copyToHost( const Memory& src, Data dst, Cuda::Device& gpu, unsigned amt ) ;
   
         /** Method to release the input memory handle.
          * @param mem The memory object to release.

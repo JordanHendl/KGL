@@ -22,12 +22,12 @@
  * Created on December 23, 2020, 10:18 PM
  */
 
-#include "vkg/Vulkan.h"
-#include "vkg/Device.h"
-#include "vkg/Instance.h"
-#include "vkg/Buffer.h"
-#include "Array.h"
-#include "Memory.h"
+#include "Vulkan.h"
+#include "Device.h"
+#include "Instance.h"
+#include "Buffer.h"
+#include "../Array.h"
+#include "../Memory.h"
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <algorithm>

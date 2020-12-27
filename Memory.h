@@ -300,7 +300,7 @@ namespace kgl
   {
     auto amt = byte_amt > this->byte_size ? this->byte_size : byte_amt ;
     
-    this->impl.copyTo( static_cast<const void*>( src ), this->memory_ptr, this->gpu, amt ) ;
+    this->impl.copyToDevice( static_cast<const void*>( src ), this->memory_ptr, this->gpu, amt ) ;
   }
 
   template<typename IMPL>
@@ -330,13 +330,13 @@ namespace kgl
   template<typename IMPL>
   void Memory<IMPL>::syncToDevice() 
   {
-    this->impl.copyTo( this->data, this->memory_ptr, this->gpu, this->element_sz * this->byte_size ) ;
+    this->impl.copyToDevice( this->data, this->memory_ptr, this->gpu, this->element_sz * this->byte_size ) ;
   }
   
   template<typename IMPL>
   void Memory<IMPL>::syncToHost() 
   {
-    this->impl.copyTo( this->memory_ptr, this->data, this->gpu, this->byte_size ) ;
+    this->impl.copyToHost( static_cast<typename IMPL::Memory>( this->memory_ptr ), this->data, this->gpu, this->byte_size ) ;
   } 
 
   template<typename IMPL>
