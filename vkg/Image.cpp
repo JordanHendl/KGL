@@ -198,11 +198,14 @@ namespace kgl
       ::vk::DependencyFlags    dep_flags ;
       
       cmd_buff.pipelineBarrier( src, dst, dep_flags, 0, nullptr, 0, nullptr, 1, &barrier ) ;
+      
+      data().old_layout = data().layout ;
+      data().layout     = layout        ;
     }
 
     void Image::revertLayout( vk::CommandBuffer& cmd_buff )
     {
-    
+      this->transition( data().old_layout, cmd_buff ) ;
     }
     
     const ::vk::Sampler& Image::sampler() const

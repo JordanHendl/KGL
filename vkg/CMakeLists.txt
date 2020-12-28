@@ -7,6 +7,7 @@ IF( ${Vulkan_FOUND} )
          Device.cpp
          Instance.cpp
          Image.cpp
+         RenderPass.cpp
        )
 
     SET( KGL_VULKAN_HEADERS
@@ -15,6 +16,7 @@ IF( ${Vulkan_FOUND} )
          Device.h
          Instance.h
          Image.h
+         RenderPass.h
        )
 
     SET( KGL_VULKAN_INCLUDE_DIRS
