@@ -30,6 +30,8 @@ namespace vk
        class CommandBuffer          ;
        class Instance               ;
   enum class MemoryPropertyFlagBits ;
+  enum class ImageLayout            ;
+  enum class Format                 ;
 }
 
 /** Operator definition for OR'ing a memory property flag bit and an unsigned integer.
@@ -44,8 +46,15 @@ namespace kgl
   template<typename IMPL>
   class Memory ;
   
+  /** Forward declared generic Array object.
+   */
   template<typename IMPL, typename TYPE>
   class Array ;
+  
+  /** Forward declared generic image object.
+   */
+  template<typename IMPL, typename TYPE>
+  class Image ;
 
   namespace vkg
   {
@@ -56,6 +65,10 @@ namespace kgl
     /** Forward declared buffer declaration.
      */
     class Buffer ;
+    
+    /** Forward declared image declaration.
+     */
+    class Image ;
 
     /** Class that implements Vulkan functionality.
      */
@@ -64,9 +77,12 @@ namespace kgl
       public:
         using Device         = ::kgl::vkg::Device                                  ;
         using Buffer         = ::kgl::vkg::Buffer                                  ;
+        using Image          = ::kgl::vkg::Image                                   ;
         using Memory         = ::vk::DeviceMemory                                  ;
         using CommandRecord  = ::vk::CommandBuffer                                 ;
         using MemoryPropFlag = ::vk::Flags<::vk::MemoryPropertyFlagBits, unsigned> ;
+        using ImageLayout    = ::vk::ImageLayout                                   ;
+        using ImageFormat    = ::vk::Format                                        ;
 
         /** Static method to initialize this implementation with a vulkan instance.
          * @param instance
@@ -181,7 +197,13 @@ namespace kgl
    */
   template<typename TYPE>
   using VkArray  = kgl::Array <kgl::vkg::Vulkan, TYPE> ;
-  using VkMemory = kgl::Memory<kgl::vkg::Vulkan      > ;
+  
+  template<typename TYPE>
+  using VkImage = kgl::Image<kgl::vkg::Vulkan, TYPE> ;
+  
+  using VkMemory     = kgl::Memory<kgl::vkg::Vulkan              > ;
+  using FloatVkImage = kgl::Image<kgl::vkg::Vulkan, float        > ;
+  using CharVkImage  = kgl::Image<kgl::vkg::Vulkan, unsigned char> ;
 }
 
 #endif

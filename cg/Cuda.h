@@ -18,7 +18,7 @@
 #ifndef KGL_CUDA_H
 #define KGL_CUDA_H
 
-
+struct cudaChannelFormatDesc  ;
 
 namespace kgl
 {
@@ -30,18 +30,23 @@ namespace kgl
   
   template<typename IMPL, typename TYPE>
   class Array ;
+  
+  template<typename IMPL, typename TYPE>
+  class Image ;
 
   namespace cg
   {
     class Cuda
     {
       public:
-        using Device         = unsigned            ;
-        using Buffer         = ::kgl::Memory<Cuda> ;
-        using Memory         = unsigned char*      ;
-        using CommandRecord  = unsigned            ;
-        using MemoryFlags    = unsigned            ;
-
+        using Device         = unsigned              ;
+        using Buffer         = ::kgl::Memory<Cuda>   ;
+        using ImageFormat    = cudaChannelFormatDesc ;
+        using ImageLayout    = int                   ;
+        using Memory         = unsigned char*        ;
+        using CommandRecord  = unsigned              ;
+        using MemoryFlags    = unsigned              ;
+        
         /** Static method to initialize this implementation.
          */
         static void initialize() ;
@@ -110,11 +115,17 @@ namespace kgl
     };
   }
   
-  /** Aliases for parent types.
+  /** Helper Aliases for useful types.
    */
   template<typename TYPE>
+  using CudaImage = kgl::Image<kgl::cg::Cuda, TYPE> ;
+  
+  template<typename TYPE>
   using CudaArray  = kgl::Array <kgl::cg::Cuda, TYPE> ;
-  using CudaMemory = kgl::Memory<kgl::cg::Cuda      > ;
+  
+  using CudaMemory     = kgl::Memory<kgl::cg::Cuda              > ;
+  using FloatCudaImage = kgl::Image<kgl::cg::Cuda, float        > ;
+  using CharCudaImage  = kgl::Image<kgl::cg::Cuda, unsigned char> ;
 }
 
 #endif

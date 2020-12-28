@@ -6,6 +6,7 @@ IF( ${Vulkan_FOUND} )
          Buffer.cpp
          Device.cpp
          Instance.cpp
+         Image.cpp
        )
 
     SET( KGL_VULKAN_HEADERS
@@ -13,6 +14,7 @@ IF( ${Vulkan_FOUND} )
          Buffer.h
          Device.h
          Instance.h
+         Image.h
        )
 
     SET( KGL_VULKAN_INCLUDE_DIRS

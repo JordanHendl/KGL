@@ -20,10 +20,17 @@
 
 namespace vk
 {
-       class CommandBuffer ;
-       class Device        ;
-  enum class ImageLayout   ;
-  enum class Format        ;
+   template <typename BitType, typename MaskType>
+   class Flags ;
+
+       class CommandBuffer       ;
+       class Sampler             ;
+       class ImageView           ;
+  enum class ImageLayout         ;
+  enum class ImageType           ;
+  enum class Format              ;
+  enum class ImageUsageFlagBits  ;
+  enum class SampleCountFlagBits ;
 }
 
 namespace kgl
@@ -34,12 +41,20 @@ namespace kgl
   namespace vkg
   {
     class Vulkan ;
-
+    class Device ;
     /** Abstraction of a Vulkan Image.
      */
     class Image 
     {
       public:
+        
+        /** Alias for Vulkan Usage flags.
+         */
+        using UsageFlags = ::vk::Flags<::vk::ImageUsageFlagBits, unsigned> ;
+        
+        /** Alias for Vulkan Sample flags.
+         */
+        using SampleFlags = ::vk::Flags<::vk::SampleCountFlagBits, unsigned> ;
 
         /** Constructor
          */
@@ -81,7 +96,7 @@ namespace kgl
          * @param height The height of the image in pixels.
          * @param num_layers The number of layers of the image.
          */
-        void initialize( const vk::Device& gpu, unsigned width, unsigned height, unsigned num_layers = 1 ) ;
+        bool initialize( const kgl::vkg::Device& gpu, unsigned width, unsigned height, unsigned num_layers = 1 ) ;
         
         /** Method to initialize this object with the input parameters.
          * @note Uses any set values from other setters in initialization.
@@ -90,7 +105,7 @@ namespace kgl
          * @param height The height of the image in pixels.
          * @param num_layers The number of layers of the image.
          */
-        void initialize( kgl::Memory<kgl::vkg::Vulkan>& prealloc, const vk::Device& gpu, unsigned width, unsigned height, unsigned num_layers = 1 ) ;
+        bool initialize( kgl::Memory<kgl::vkg::Vulkan>& prealloc, unsigned width, unsigned height, unsigned num_layers = 1 ) ;
         
         /** Method to retrieve the underlying memory of this object.
          * @return The memory representation of this object.
@@ -105,17 +120,22 @@ namespace kgl
         /** Method to set this image's vulkan usage.
          * @param usage The Vulkan usage of the image.
          */
-        void setUsage( unsigned usage ) ;
+        void setUsage( const ::vk::ImageUsageFlagBits& usage ) ;
+        
+        /** Method to set this image's vulkan usage.
+         * @param usage The Vulkan usage of the image.
+         */
+        void setUsage( const Image::UsageFlags& usage ) ;
         
         /** Method to set the type of image this is.
          * @param The vulkan type of image.
          */
-        void setType( unsigned type ) ;
+        void setType( const ::vk::ImageType& type ) ;
         
         /** Method to set the number of samples to use for this image.
          * @param num_samples Numer of mip-levels to use for this image.
          */
-        void setNumSamples( unsigned num_samples ) ;
+        void setNumSamples( const ::vk::SampleCountFlagBits& num_samples ) ;
         
         /** Method to set the number of mip-levels to use for this image.
          * @param mip_levels The number of mip-levels to use for this image.
@@ -136,13 +156,23 @@ namespace kgl
          * @param layout The layout to transition this image to.
          * @param cmd_buff The Vulkan command buffer to record the transition operation to.
          */
-        void transitionLayout( const vk::ImageLayout& layout, vk::CommandBuffer& cmd_buff ) ;
+        void transition( const vk::ImageLayout& layout, vk::CommandBuffer& cmd_buff ) ;
         
         /** Method to transition the image back to it's last known layout.
          * @param cmd_buff The Vulkan command buffer to record the transition operation to.
          */
         void revertLayout( vk::CommandBuffer& cmd_buff ) ;
         
+        /** Method to retrieve the vulkan image view associated with this image.
+         * @return The vulkan image view associated with this image.
+         */ 
+        const ::vk::ImageView& view() const ;
+        
+        /** Method to retrieve the vulkan sampler associated with this image.
+         * @return The vulkan sampler associated with this image.
+         */
+        const ::vk::Sampler& sampler() const ;
+
         /** Method to retrieve this image's width in pixels.
          * @return The image width in pixels.
          */
@@ -156,7 +186,7 @@ namespace kgl
         /** Method to retrieve the number of layers in this image.
          * @return The number of layers in this image.
          */
-        unsigned numLayers() const ;
+        unsigned layers() const ;
         
         /** Method to release all allocated data by this image.
          * @note If preallocated, this simply releases the memory control and does not deallocate.

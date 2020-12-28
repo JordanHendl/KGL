@@ -156,6 +156,10 @@ namespace kgl
        * @return Reference to this object's internal memory.
        */
       Memory<IMPL>& memory() ;
+      
+      /** Method to reset and release any allocated data.
+       */
+      void reset() ;
 
     private:
       typename IMPL::Buffer arr_buffer ; ///< The implementation specific buffer to associate with this object.
@@ -251,14 +255,18 @@ namespace kgl
   {
     return this->count ;
   }
-
+  
+  template<typename IMPL, class TYPE>
+  void Array<IMPL, TYPE>::reset()
+  {
+    this->arr_buffer.reset() ;
+  }
   
   template<typename IMPL, class TYPE>
   unsigned Array<IMPL, TYPE>::byteSize() const
   {
     return this->arr_memory.byteSize() ;
   }
-
   
   template<typename IMPL, class TYPE>
   void Array<IMPL, TYPE>::initialize( const typename IMPL::Buffer& buffer )

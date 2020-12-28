@@ -3,11 +3,13 @@ cmake_minimum_required( VERSION 3.8.0 )
 set( KGL_MEMORY_SOURCES 
      Memory.cpp
      Array.cpp
+     Image.cpp
    )
       
 set( KGL_MEMORY_HEADERS
      Memory.h
      Array.h
+     Image.h
    )
 
 set( KGL_MEMORY_INCLUDE_DIRS

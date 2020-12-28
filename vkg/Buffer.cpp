@@ -114,15 +114,16 @@ namespace kgl
     {
       unsigned needed_size ;
 
+      data().device       = gpu                                                       ;
+      data().buffer       = data().createBuffer( size )                               ;
+      data().requirements = gpu.device().getBufferMemoryRequirements( data().buffer ) ; 
+
       if( !data().preallocated )
       {
-        data().internal_memory.initialize( size, gpu, host_local ) ;
+        data().internal_memory.initialize( data().requirements.size, gpu, host_local ) ;
       }
-      
-      needed_size         = data().internal_memory.size() - data().internal_memory.offset() ;
-      data().device       = gpu                                                                 ;
-      data().buffer       = data().createBuffer( size )                                         ;
-      data().requirements = gpu.device().getBufferMemoryRequirements( data().buffer )           ; 
+
+      needed_size = data().internal_memory.size() - data().internal_memory.offset() ;
 
       if( data().requirements.size < needed_size )
       {

@@ -155,7 +155,7 @@ namespace kgl
          * @param flag The Vulkan usage flag to use for this object.
          */
         void setUsage( Buffer::UsageFlags flag  ) ;
-
+        
       private:
         
         /** Method to provide a base for the variadic-template initialization function.

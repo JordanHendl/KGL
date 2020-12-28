@@ -65,7 +65,6 @@ bool simpleArrayTest()
   
   array.initialize( device, 500, true ) ;
   
-  
   return true ;
 }
 

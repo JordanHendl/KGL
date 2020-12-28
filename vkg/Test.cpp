@@ -26,8 +26,10 @@
 #include "Device.h"
 #include "Instance.h"
 #include "Buffer.h"
+#include "Image.h"
 #include "../Array.h"
 #include "../Memory.h"
+#include "../Image.h"
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <algorithm>
@@ -141,9 +143,15 @@ bool simpleArrayTest()
   kgl::VkArray<float> array ;
   
   array.initialize( device, 500, true ) ;
-  
-  
+  array.reset() ;
   return true ;
+}
+
+bool simpleImageTest()
+{
+  kgl::CharVkImage image ;
+  
+  return image.initialize( device, 1280, 720 ) ;
 }
 
 int main()
@@ -171,6 +179,10 @@ int main()
   
   std::cout << "Testing Simple Array Test... \n"  ;
   assert( simpleArrayTest() ) ;
+  std::cout << "Passed! \n\n"  ;
+  
+  std::cout << "Testing Simple Image Test... \n"  ;
+  assert( simpleImageTest() ) ;
   std::cout << "Passed! \n\n"  ;
   
   std::cout << "All Tests Passed!" << std::endl ;
