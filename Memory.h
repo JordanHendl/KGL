@@ -69,6 +69,23 @@ namespace kgl
        */
       Memory<IMPL> operator+( unsigned offset ) const ;
 
+      /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
+       */
+      operator const typename IMPL::Memory&() const ;
+      
+
+      /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
+       */
+      operator typename IMPL::Memory() const ;
+      
+      /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
+       */
+      operator const typename IMPL::Memory&() ;
+      
+      /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
+       */
+      operator typename IMPL::Memory() ;
+        
       /** Method to initialize this memory object with the input parameters.
        * @param sz The size in bytes to store in this object.
        * @param gpu The implementation-specific GPU to use for all gpu operations.
@@ -232,6 +249,30 @@ namespace kgl
   }
   
   template<typename IMPL>
+  Memory<IMPL>::operator const typename IMPL::Memory&() const
+  {
+    return this->memory_ptr ;
+  }
+  
+  template<typename IMPL>
+  Memory<IMPL>::operator typename IMPL::Memory() const
+  {
+    return this->memory_ptr ;
+  }
+  
+  template<typename IMPL>
+  Memory<IMPL>::operator const typename IMPL::Memory&()
+  {
+    return this->memory_ptr ;
+  }
+  
+  template<typename IMPL>
+  Memory<IMPL>::operator typename IMPL::Memory()
+  {
+    return this->memory_ptr ;
+  }
+
+  template<typename IMPL>
   void Memory<IMPL>::deallocate()
   {
     if( this->data )
@@ -307,12 +348,6 @@ namespace kgl
   const typename IMPL::Device& Memory<IMPL>::device() const
   {
     return this->gpu ;
-  }
-  
-  template<typename IMPL>
-  unsigned Memory<IMPL>::elementSize() const
-  {
-    return this->element_sz ;
   }
   
   template<typename IMPL>

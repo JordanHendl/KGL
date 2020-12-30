@@ -34,12 +34,12 @@ namespace kgl
   {
     struct RenderPassData
     {
-      typedef std::vector<kgl::vkg::Image                 > FramebufferImages      ;
-      typedef std::vector<vk::Framebuffer                 > Framebuffers           ;
-      typedef std::vector<vk::AttachmentDescription       > AttachmentDescriptions ;
-      typedef std::vector<vk::AttachmentReference         > AttachmentReferences   ;
-      typedef std::vector<vk::SubpassDescription          > SubpassDescriptions    ;
-      typedef std::vector<vk::SubpassDependency           > SubpassDependencies    ;
+      typedef std::vector<kgl::vkg::Image          > FramebufferImages      ;
+      typedef std::vector<vk::Framebuffer          > Framebuffers           ;
+      typedef std::vector<vk::AttachmentDescription> AttachmentDescriptions ;
+      typedef std::vector<vk::AttachmentReference  > AttachmentReferences   ;
+      typedef std::vector<vk::SubpassDescription   > SubpassDescriptions    ;
+      typedef std::vector<vk::SubpassDependency    > SubpassDependencies    ;
       
       unsigned               width               ;
       unsigned               height              ;
@@ -69,9 +69,34 @@ namespace kgl
     
     RenderPassData::RenderPassData()
     {
+      ::vk::AttachmentDescription attach_desc ;
+      ::vk::AttachmentReference   attach_ref  ;
+      ::vk::SubpassDescription    sub_desc    ;
+      
+      attach_desc.setFormat        ( vk::Format::eR8G8B8A8Srgb                ) ;
+      attach_desc.setSamples       ( vk::SampleCountFlagBits::e1              ) ;
+      attach_desc.setLoadOp        ( vk::AttachmentLoadOp::eClear             ) ;
+      attach_desc.setStencilLoadOp ( vk::AttachmentLoadOp::eDontCare          ) ;
+      attach_desc.setStoreOp       ( vk::AttachmentStoreOp::eDontCare         ) ;
+      attach_desc.setStencilStoreOp( vk::AttachmentStoreOp::eDontCare         ) ;
+      attach_desc.setInitialLayout ( vk::ImageLayout::eUndefined              ) ;
+      attach_desc.setFinalLayout   ( vk::ImageLayout::eColorAttachmentOptimal ) ;
+      
+      attach_ref.setLayout    ( ::vk::ImageLayout::eGeneral ) ;
+      attach_ref.setAttachment( 0                           ) ;
+      
+      sub_desc.setPipelineBindPoint   ( ::vk::PipelineBindPoint::eGraphics ) ;
+      sub_desc.setColorAttachmentCount( 1                                  ) ;
+      sub_desc.setPColorAttachments   ( &attach_ref                        ) ;
+      
       this->width  = 0 ;
       this->height = 0 ;
       this->layers = 0 ;
+      
+      // Default to one set of descriptions for each. By default, this render pass describes a simple RGBA8 Render Pass with one color attachment.
+      this->attach_descriptions.push_back( attach_desc ) ;
+      this->attach_references  .push_back( attach_ref  ) ;
+      this->sub_descriptions   .push_back( sub_desc    ) ;
     }
     
     ::vk::RenderPass RenderPassData::makeRenderPass()
@@ -91,8 +116,34 @@ namespace kgl
 
     void RenderPassData::makeFramebuffers()
     {
-      vk::FramebufferCreateInfo info ;
-      
+      ::vk::Rect2D              area      ;
+      vk::FramebufferCreateInfo info      ;
+      unsigned                  index     ;
+      vk::ImageView             view[ 1 ] ;
+
+      index = 0 ;
+      info.setRenderPass( this->render_pass ) ;
+
+      for( auto& image : this->images )
+      {
+        image.initialize( this->device, this->width, this->height, this->layers ) ;
+
+        view[ 0 ] = image.view() ;
+        
+        /** TODO: Make this configurable. There are valid use cases for :
+         * Different image formats. Maybe RGBA32F framebuffer attachments?
+         * More than one attachment per framebuffer. Maybe depth and color attachments?
+         */
+        info.setAttachmentCount( 1            ) ; 
+        info.setPAttachments   ( view         ) ;
+        info.setWidth          ( this->width  ) ;
+        info.setHeight         ( this->height ) ;
+        info.setLayers         ( this->layers ) ;
+        
+        this->device.device().createFramebuffer( &info, nullptr, &this->framebuffers[ index ] ) ;
+        
+        index++ ;
+      }
     }
 
     RenderPass::RenderPass()
@@ -119,9 +170,12 @@ namespace kgl
       return *this ;
     }
 
-    void RenderPass::initalize( const kgl::vkg::Device& device )
+    void RenderPass::initialize( const kgl::vkg::Device& device )
     {
       data().device = device ;
+      
+      data().makeRenderPass()   ;
+      data().makeFramebuffers() ;
     }
 
     const ::vk::Framebuffer* RenderPass::framebuffers() const

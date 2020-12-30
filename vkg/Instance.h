@@ -42,7 +42,7 @@ namespace kgl
         
         /** Conversion operator for a vulkan instance, so this object can be used in the place of that as well.
          */
-        explicit operator ::vk::Instance() const ;
+        operator ::vk::Instance() const ;
         
         /** Conversion operator for a vulkan instance, so this object can be used in the place of that as well.
          */
@@ -50,7 +50,7 @@ namespace kgl
         
         /** Conversion operator for a vulkan instance, so this object can be used in the place of that as well.
          */
-        explicit operator ::vk::Instance() ;
+        operator ::vk::Instance() ;
 
         /** Method to initialize this Vulkan instance using the input application name.
          * @param application_name The name of this application.

@@ -52,6 +52,7 @@ namespace kgl
     class Device ;
     
     /** Class to abstract a vulkan render pass.
+     *  By default, this render pass describes a simple RGBA8 Render Pass with one color attachment.
      */
     class RenderPass
     {
@@ -83,7 +84,7 @@ namespace kgl
         /** Method to initialize this object & Generate a vulkan render pass.
          * @param device The Library device to use for the operation.
          */
-        void initalize( const kgl::vkg::Device& device ) ;
+        void initialize( const kgl::vkg::Device& device ) ;
         
         /** Method to retrieve the const pointer to an array of framebuffers.
          * @see numFramebuffers for the amount of framebuffers are in this array.

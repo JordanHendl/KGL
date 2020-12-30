@@ -55,6 +55,23 @@ namespace kgl
        */
       Image& operator=( const Image<IMPL, TYPE>& image ) ;
       
+      /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
+       */
+      operator const typename IMPL::Image&() const ;
+      
+
+      /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
+       */
+      operator typename IMPL::Image() const ;
+      
+      /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
+       */
+      operator const typename IMPL::Image&() ;
+      
+      /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
+       */
+      operator typename IMPL::Image() ;
+
       /** Method to retrieve the device associated with this image.
        * @return the GPU Device associated with this image.
        */
@@ -144,6 +161,30 @@ namespace kgl
   Image<IMPL, TYPE>& Image<IMPL, TYPE>::operator=( const Image<IMPL, TYPE>& image )
   {
     this->impl_image = image.impl_image ;
+  }
+
+  template<typename IMPL, typename TYPE>
+  Image<IMPL, TYPE>::operator const typename IMPL::Image&() const
+  {
+    return this->impl_image ;
+  }
+  
+  template<typename IMPL, typename TYPE>
+  Image<IMPL, TYPE>::operator typename IMPL::Image() const
+  {
+    return this->impl_image ;
+  }
+  
+  template<typename IMPL, typename TYPE>
+  Image<IMPL, TYPE>::operator const typename IMPL::Image&()
+  {
+    return this->impl_image ;
+  }
+  
+  template<typename IMPL, typename TYPE>
+  Image<IMPL, TYPE>::operator typename IMPL::Image()
+  {
+    return this->impl_image ;
   }
 
   template<typename IMPL, typename TYPE>
