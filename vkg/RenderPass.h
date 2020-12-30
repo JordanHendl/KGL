@@ -142,12 +142,6 @@ namespace kgl
          */
         void setAttachmentNumSamples( const ::vk::SampleCountFlagBits& flags, unsigned idx = 0 ) ;
         
-        /** Method to set the number of attachment samples.
-         * @param flags The number of samples to use for the selected attachment.
-         * @param idx The index of attachment to apply the parameter to.
-         */
-        void setAttachmentNumSamples( const RenderPass::SampleFlags& flags, unsigned idx = 0 ) ;
-        
         /** Method to set the load operation of the attachment at the specified index.
          * @param op The operation to use for loading the attachment.
          * @param idx The number of attachment to apply the load operation to.
@@ -170,7 +164,7 @@ namespace kgl
          * @param op The operation to use for storing the stencil attachment.
          * @param idx The number of attachment to apply the stencil store operation to.
          */
-        void setAttachmentStencilStoreOp( const ::vk::AttachmentLoadOp& op, unsigned idx = 0 ) ;
+        void setAttachmentStencilStoreOp( const ::vk::AttachmentStoreOp& op, unsigned idx = 0 ) ;
         
         /** Method to set the initial layout of the attachment at the specified index.
          * @param layout The initial layout to use for the attachment.
