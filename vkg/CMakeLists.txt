@@ -8,6 +8,10 @@ IF( ${Vulkan_FOUND} )
          Instance.cpp
          Image.cpp
          RenderPass.cpp
+         Queue.cpp
+         Pipeline.cpp
+         CommandBuffer.cpp
+         KgShader.cpp
        )
 
     SET( KGL_VULKAN_HEADERS
@@ -17,6 +21,10 @@ IF( ${Vulkan_FOUND} )
          Instance.h
          Image.h
          RenderPass.h
+         Queue.h
+         Pipeline.h
+         CommandBuffer.h
+         KgShader.h
        )
 
     SET( KGL_VULKAN_INCLUDE_DIRS

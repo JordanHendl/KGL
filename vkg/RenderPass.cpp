@@ -27,6 +27,7 @@
 #include "Image.h"
 #include <vulkan/vulkan.hpp>
 #include <vector>
+#include <array>
 
 namespace kgl
 {
@@ -45,6 +46,7 @@ namespace kgl
       unsigned               height              ;
       unsigned               layers              ;
       kgl::vkg::Device       device              ;
+      ::vk::ClearValue       clear_color         ;
       ::vk::RenderPass       render_pass         ;
       Framebuffers           framebuffers        ;
       FramebufferImages      images              ;
@@ -177,7 +179,17 @@ namespace kgl
       data().makeRenderPass()   ;
       data().makeFramebuffers() ;
     }
+    
+    const vk::ClearValue& RenderPass::clearColors() const
+    {
+      return data().clear_color ;
+    }
 
+    const kgl::vkg::Device& RenderPass::device() const
+    {
+      return data().device ;
+    }
+    
     const ::vk::Framebuffer* RenderPass::framebuffers() const
     {
       return data().framebuffers.data() ;
@@ -308,6 +320,13 @@ namespace kgl
     void RenderPass::setDependancyDstAccess( const ::vk::AccessFlagBits& dst, unsigned idx )
     {
       if( idx < data().sub_dependencies.size() ) data().sub_dependencies[ idx ].setDstAccessMask( dst ) ;
+    }
+    
+    void RenderPass::setClearColor( float red, float green, float blue, float alpha )
+    {
+      std::array<float, 4> clear_colors = { red, green, blue, alpha } ;
+      
+      data().clear_color.setColor( static_cast<vk::ClearColorValue>( clear_colors ) ) ;
     }
 
     RenderPassData& RenderPass::data()

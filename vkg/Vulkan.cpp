@@ -32,8 +32,6 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
  {
    namespace vkg
    {
-     using CommandBuffer = ::vk::CommandBuffer ;
-     
      /** The instance to use for all vulkan API calls.
       */
      static vk::Instance vk_instance ;

@@ -25,6 +25,9 @@
 #ifndef KGL_VKG_RENDERPASS_H
 #define KGL_VKG_RENDERPASS_H
 
+#include "Device.h"
+
+
 /** Vulkan forward declares.
  */
 namespace vk
@@ -34,6 +37,7 @@ namespace vk
 
        class Framebuffer           ;
        class RenderPass            ;
+       union ClearValue            ;
   enum class ImageLayout           ;
   enum class AttachmentStoreOp     ;
   enum class AttachmentLoadOp      ;
@@ -86,6 +90,16 @@ namespace kgl
          */
         void initialize( const kgl::vkg::Device& device ) ;
         
+        /** Method to retrieve the clear colors associated with this render pass.
+         * @return The clear colors associated with this render pass.
+         */
+        const vk::ClearValue& clearColors() const ;
+
+        /** Method to retrieve the library device used for this object.
+         * @return The library device used for this object.
+         */
+        const kgl::vkg::Device& device() const ;
+
         /** Method to retrieve the const pointer to an array of framebuffers.
          * @see numFramebuffers for the amount of framebuffers are in this array.
          * @return The const pointer to the start of this object's framebuffer array.
@@ -232,6 +246,14 @@ namespace kgl
          * @param idx The index of dependency to apply the flag to.
          */
         void setDependancyDstAccess( const ::vk::AccessFlagBits& dst, unsigned idx = 0 ) ;
+        
+        /** Method to set the RGBA float values for this render pass' clear color.
+         * @param red   The Red component of the clear color that is between 0.0f-1.0f.
+         * @param green The Green component of the clear color that is between 0.0f-1.0f.
+         * @param blue  The Blue component of the clear color that is between 0.0f-1.0f.
+         * @param alpha The Alpha component of the clear color that is between 0.0f-1.0f.
+         */
+        void setClearColor( float red, float green, float blue, float alpha ) ;
 
       private:
         

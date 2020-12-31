@@ -151,7 +151,13 @@ bool simpleImageTest()
 {
   kgl::CharVkImage image ;
   
-  return image.initialize( device, 1280, 720 ) ;
+  if( image.initialize( device, 1280, 720 ) )
+  {
+    image.reset() ;
+    return true ;
+  }
+
+  return false ;
 }
 
 int main()
