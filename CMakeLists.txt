@@ -1,21 +1,23 @@
-cmake_minimum_required( VERSION 3.8.0 )
+CMAKE_MINIMUM_REQUIRED( VERSION 3.8.0 )
 
-set( KGL_MEMORY_SOURCES 
+SET( KGL_MEMORY_SOURCES 
      Memory.cpp
      Array.cpp
      Image.cpp
+     Window.cpp
    )
       
-set( KGL_MEMORY_HEADERS
+SET( KGL_MEMORY_HEADERS
      Memory.h
      Array.h
      Image.h
+     Window.h
    )
 
-set( KGL_MEMORY_INCLUDE_DIRS
+SET( KGL_MEMORY_INCLUDE_DIRS
    )
 
-set( KGL_MEMORY_LIBRARIES
+SET( KGL_MEMORY_LIBRARIES
     )
 
 ADD_LIBRARY               ( kgl_memory SHARED  ${KGL_MEMORY_SOURCES} ${KGL_MEMORY_HEADERS} )
@@ -24,3 +26,4 @@ TARGET_INCLUDE_DIRECTORIES( kgl_memory PRIVATE ${KGL_MEMORY_INCLUDE_DIRS}       
 
 ADD_SUBDIRECTORY( vkg )
 ADD_SUBDIRECTORY( cg  )
+ADD_SUBDIRECTORY( x11 )

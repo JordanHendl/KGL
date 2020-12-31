@@ -1,0 +1,17 @@
+SET( KGL_X11_SOURCES 
+     X11.cpp
+   )
+      
+SET( KGL_X11_HEADERS
+     X11.h
+   )
+
+SET( KGL_X11_INCLUDE_DIRS
+   )
+
+SET( KGL_X11_LIBRARIES
+    )
+
+ADD_LIBRARY               ( kgl_x11 SHARED  ${KGL_X11_SOURCES} ${KGL_X11_HEADERS} )
+TARGET_LINK_LIBRARIES     ( kgl_x11 PUBLIC  ${KGL_X11_LIBRARIES}                     )
+TARGET_INCLUDE_DIRECTORIES( kgl_x11 PRIVATE ${KGL_X11_INCLUDE_DIRS}                  )
