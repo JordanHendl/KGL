@@ -25,20 +25,28 @@
 #ifndef KGL_WINDOW_H
 #define KGL_WINDOW_H
 
+#ifdef _WIN32
+  #include "./windows/Win32.h"
+  #include "./windows/Window.h"
+#elif __linux__ 
+  #include "./linux/Linux.h"
+  #include "./linux/Window.h"
+#endif
+
 namespace kgl
 {
   template<typename OS, typename API>
-  class Window
+  class BaseWindow
   {
     public:
       
       /** Default constructor.
        */
-      Window() = default ;
+      BaseWindow() = default ;
       
       /** Default deconstructor.
        */
-      ~Window() = default ;
+      ~BaseWindow() = default ;
       
       /** Method to initialize this object.
        * @param window_name The title of the window. 
@@ -47,6 +55,10 @@ namespace kgl
        */
       void initialize( const char* window_title, unsigned width, unsigned height ) ;
       
+      /** Method to process events being sent to the window.
+       */
+      void handleEvents() ;
+        
       /** Method to set the monitor to put the window on.
        * @param monitor_id The ID of the monitor to put the window on.
        */
@@ -92,60 +104,73 @@ namespace kgl
   };
   
   template<typename OS, typename API>
-  void Window<OS, API>::initialize( const char* window_title, unsigned width, unsigned height )
+  void BaseWindow<OS, API>::initialize( const char* window_title, unsigned width, unsigned height )
   {
     os_window.initialize( window_title, width, height ) ;
     
-    this->api_context = API::contextFromWindow( this->os_window ) ;
+    this->api_context = API::contextFromBaseWindow( this->os_window ) ;
   }
 
   template<typename OS, typename API>
-  void Window<OS, API>::setMonitor( unsigned monitor_id )
+  void BaseWindow<OS, API>::setMonitor( unsigned monitor_id )
   {
     os_window.setMonitor( monitor_id ) ;
   }
 
   template<typename OS, typename API>
-  void Window<OS, API>::setFullscreen( bool value )
+  void BaseWindow<OS, API>::setFullscreen( bool value )
   {
     os_window.setFullscreen( value ) ;
   }
 
   template<typename OS, typename API>
-  void Window<OS, API>::setResizable( bool value )
+  void BaseWindow<OS, API>::setResizable( bool value )
   {
     os_window.setResizable( value ) ;
   }
 
   template<typename OS, typename API>
-  void Window<OS, API>::setBorderless( bool value )
+  void BaseWindow<OS, API>::setBorderless( bool value )
   {
     os_window.setBorderless( value ) ;
   }
 
   template<typename OS, typename API>
-  void Window<OS, API>::setMinimize( bool value )
+  void BaseWindow<OS, API>::setMinimize( bool value )
   {
     os_window.setMinimize( value ) ;
   }
 
   template<typename OS, typename API>
-  void Window<OS, API>::setMaximized( bool value )
+  void BaseWindow<OS, API>::setMaximized( bool value )
   {
     os_window.setMaximize( value ) ;
   }
 
   template<typename OS, typename API>
-  const typename API::Context& Window<OS, API>::context() const
+  const typename API::Context& BaseWindow<OS, API>::context() const
   {
     return this->api_context ;
   }
   
   template<typename OS, typename API>
-  const typename OS::Window& Window<OS, API>::window() const 
+  const typename OS::Window& BaseWindow<OS, API>::window() const 
   {
     return this->os_window ;
   }
+  
+  template<typename OS, typename API>
+  void BaseWindow<OS, API>::handleEvents()
+  {
+    this->os_window.handleEvents() ;
+  }
+  #ifdef _WIN32
+    template<typename API>
+    using Window = kgl::BaseWindow<kgl::win32::Win32, API> ;
+  #elif __linux__ 
+    template<typename API>
+    using Window = kgl::BaseWindow<kgl::lx::Linux, API> ;
+  #endif
 }
 #endif
 

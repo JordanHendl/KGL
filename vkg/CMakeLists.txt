@@ -35,10 +35,16 @@ IF( ${Vulkan_FOUND} )
          ${Vulkan_LIBRARIES}
         )
 
+    IF( UNIX AND NOT APPLE )
+      SET( KGL_VULKAN_LIBRARIES ${KGL_VULKAN_LIBRARIES} kgl_linux )
+    ELSEIF( WIN32 )
+      SET( KGL_VULKAN_LIBRARIES ${KGL_VULKAN_LIBRARIES} kgl_win32 )
+    ENDIF()
+
     ADD_LIBRARY               ( kgl_vkg SHARED  ${KGL_VULKAN_SOURCES} ${KGL_VULKAN_HEADERS} )
     TARGET_LINK_LIBRARIES     ( kgl_vkg PUBLIC  ${KGL_VULKAN_LIBRARIES}                     )
     TARGET_INCLUDE_DIRECTORIES( kgl_vkg PRIVATE ${KGL_VULKAN_INCLUDE_DIRS}                  )
-
+    
     ADD_EXECUTABLE       ( kgl_vkg_test Test.cpp )
     TARGET_LINK_LIBRARIES( kgl_vkg_test kgl_vkg  )
 ENDIF()

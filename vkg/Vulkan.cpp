@@ -17,9 +17,16 @@
 
 #include "Vulkan.h"
 #include "Device.h"
-#define VULKAN_HPP_NO_EXCEPTIONS
 #include <algorithm>
+#define VULKAN_HPP_NO_EXCEPTIONS
 
+#ifdef __WIN32__
+#define VK_USE_PLATFORM_WIN32_KHR
+#include <windows/Window.h>
+#elif __linux__
+#define VK_USE_PLATFORM_XCB_KHR
+#include <linux/Window.h>
+#endif
 #include <vulkan/vulkan.hpp>
 
 
@@ -158,5 +165,47 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
 
        return this->createMemory( size, gpu, flags ) ;
      }
+     
+     
+     const char* Vulkan::platformSurfaceInstanceExtensions()
+     {
+       #ifdef __WIN32__
+//       return VK_KHR_WIN ;
+       return "" ;
+       #elif __linux__
+       return VK_KHR_XCB_SURFACE_EXTENSION_NAME ;
+       #endif 
+     }
+
+     #ifdef __WIN32__
+     Vulkan::Context Vulkan::contextFromBaseWindow( const kgl::win32::Window& window )
+     {
+       
+     }
+     #elif __linux__
+     Vulkan::Context Vulkan::contextFromBaseWindow( const kgl::lx::Window& window )
+     {
+       VkXcbSurfaceCreateInfoKHR info         ;
+       vk::SurfaceKHR            vk_surface   ;
+       VkSurfaceKHR              surface      ;
+       VkResult                  result       ;
+       PFN_vkCreateXcbSurfaceKHR function_ptr ;
+       
+       info.sType      = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR ;
+       info.pNext      = nullptr                                       ;
+       info.flags      = 0                                             ;
+       info.connection = window.connection()                           ;
+       info.window     = window.window()                               ;
+       
+       
+       if( kgl::vkg::vk_instance )
+       {
+         result = vkCreateXcbSurfaceKHR( kgl::vkg::vk_instance, &info, nullptr, &surface ) ;
+         vk_surface = surface ;
+       }
+
+       return vk_surface ;
+     }
+     #endif  
    }
  }

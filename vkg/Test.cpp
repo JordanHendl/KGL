@@ -30,6 +30,7 @@
 #include "../Array.h"
 #include "../Memory.h"
 #include "../Image.h"
+#include "../Window.h"
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <algorithm>
@@ -160,11 +161,21 @@ bool simpleImageTest()
   return false ;
 }
 
+bool windowSurfaceTest()
+{
+  kgl::Window<Impl> window ;
+  
+  window.initialize( "Test", 1240, 720 ) ;
+  
+  return true ;
+}
+
 int main()
 {
   instance.setApplicationName( "KGL-VKG Test App" ) ;
   
   instance.initialize() ;
+  Impl::initialize( instance ) ;
   device.initialize( instance.device( 0 ) ) ;
   
   std::cout << "Testing VKG Buffer Creation & Allocation...\n"  ;
@@ -189,6 +200,10 @@ int main()
   
   std::cout << "Testing Simple Image Test... \n"  ;
   assert( simpleImageTest() ) ;
+  std::cout << "Passed! \n\n"  ;
+  
+  std::cout << "Testing Vulkan Window... \n"  ;
+  assert( windowSurfaceTest() ) ;
   std::cout << "Passed! \n\n"  ;
   
   std::cout << "All Tests Passed!" << std::endl ;

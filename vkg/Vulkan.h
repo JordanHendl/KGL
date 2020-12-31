@@ -24,7 +24,8 @@ namespace vk
 {
        template <typename BitType, typename MaskType>
        class Flags ;
-
+       
+       class SurfaceKHR             ;
        class Buffer                 ;
        class DeviceMemory           ;
        class CommandBuffer          ;
@@ -56,6 +57,20 @@ namespace kgl
   template<typename IMPL, typename TYPE>
   class Image ;
 
+  /** Forward declared Linux window
+   */
+  namespace lx
+  {
+    class Window ;
+  }
+  
+  /** Forward declared Win32 window.
+   */
+  namespace win32
+  {
+    class Window ;
+  }
+  
   namespace vkg
   {
     /** Forward declared device declaration.
@@ -83,6 +98,7 @@ namespace kgl
         using MemoryPropFlag = ::vk::Flags<::vk::MemoryPropertyFlagBits, unsigned> ;
         using ImageLayout    = ::vk::ImageLayout                                   ;
         using ImageFormat    = ::vk::Format                                        ;
+        using Context        = ::vk::SurfaceKHR                                    ;
 
         /** Static method to initialize this implementation with a vulkan instance.
          * @param instance
@@ -94,6 +110,23 @@ namespace kgl
          * @return An error defined by the library.
          */
         static unsigned convertError( unsigned error ) ;
+
+        /** Static method for retrieving a vulkan surface from a window's window.
+         * @param window The Win32 window to get a surface from.
+         * @return A Valid vulkan surface.
+         */
+        static Vulkan::Context contextFromBaseWindow( const kgl::win32::Window& window ) ;
+        
+        /** Method to retrieve the platform-specific instance extension names for the surface of this system.
+         * @return String names of the platform-specific extensions needed by this system for a vulkan surface.
+         */
+        static const char* platformSurfaceInstanceExtensions() ;
+
+        /** Static method for retrieving a vulkan surface from a linux window.
+         * @param window The Linux window to get a surface from.
+         * @return A Valid vulkan surface.
+         */
+        static Vulkan::Context contextFromBaseWindow( const kgl::lx::Window& window ) ;
 
       private:
         
@@ -175,7 +208,7 @@ namespace kgl
          * @param gpu The device the memory object was allocated on.
          */
         void free( Memory& mem, Vulkan::Device& gpu ) ;
-  
+        
         /** Method to create & allocate memory on the GPU.
          * @param size The size of the memory to allocate.
          * @param gpu The GPU to allocate data on.

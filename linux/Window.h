@@ -22,12 +22,14 @@
  * Created on December 30, 2020, 9:00 PM
  */
 
-#ifndef KGL_X11_WINDOW_H
-#define KGL_X11_WINDOW_H
+#ifndef KGL_LINUX_WINDOW_H
+#define KGL_LINUX_WINDOW_H
 
+typedef struct xcb_connection_t xcb_connection_t ; 
+typedef        unsigned         xcb_window_t     ;
 namespace kgl
 {
-  namespace x11
+  namespace lx
   {
     class Window
     {
@@ -77,6 +79,20 @@ namespace kgl
          * @param value Whether or not the menu should be maximized.
          */
         void setMaximized( bool value ) ;
+        
+        /** Method to process events being sent to the window.
+         */
+        void handleEvents() ;
+
+        /** Method to retrieve the implementation-specific connection object.
+         * @return The implementation-specific connection object.
+         */
+        xcb_connection_t* connection() const ;
+        
+        /** Method to retrieve the implementation-specific window object.
+         * @return The implementation-specific window object.
+         */
+        xcb_window_t window() const ; 
 
       private:
         

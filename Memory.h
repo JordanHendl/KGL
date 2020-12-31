@@ -73,7 +73,6 @@ namespace kgl
        */
       operator const typename IMPL::Memory&() const ;
       
-
       /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
        */
       operator typename IMPL::Memory() const ;

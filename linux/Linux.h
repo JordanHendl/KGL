@@ -16,22 +16,28 @@
  */
 
 /* 
- * File:   X11.h
+ * File:   Linux.h
  * Author: Jordan Hendl
  *
  * Created on December 30, 2020, 8:57 PM
  */
 
-#ifndef KGL_X11_H
-#define KGL_X11_H
+#ifndef KGL_LINUX_H
+#define KGL_LINUX_H
+
+#include "Window.h"
+
 
 namespace kgl
 {
-  namespace x11
+  namespace lx
   {
-    class X11
+    class Window ;
+
+    class Linux
     {
-      
+      public:
+        using Window = kgl::lx::Window ;
     };
   }
 }
