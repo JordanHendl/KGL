@@ -1,4 +1,5 @@
 #include "Instance.h"
+#include "Vulkan.h"
 #include <vulkan/vulkan.hpp>
 #include <string>
 #include <vector>
@@ -239,6 +240,8 @@ namespace kgl
       
       data().instance     = ::vk::createInstance( info )               ;
       data().physical_dev = data().instance.enumeratePhysicalDevices() ;
+      
+      Vulkan::initialize( data().instance ) ;
     }
 
     void Instance::setApplicationVersion( unsigned major, unsigned minor, unsigned revision )

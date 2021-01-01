@@ -1,30 +1,120 @@
+# 
+# Copyright (C) 2020 Jordan Hendl
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# 
+
+# 
+# File:   CMakeLists.h
+# Author: Jordan Hendl
+# 
+# Created on December 31, 2020, 11:30 PM
+# 
+
 CMAKE_MINIMUM_REQUIRED( VERSION 3.8.0 )
 
-SET( KGL_MEMORY_SOURCES 
-     Memory.cpp
-     Array.cpp
-     Image.cpp
-     Window.cpp
-   )
-      
-SET( KGL_MEMORY_HEADERS
-     Memory.h
-     Array.h
-     Image.h
-     Window.h
-   )
+LIST( APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/modules" )
 
-SET( KGL_MEMORY_INCLUDE_DIRS
-   )
+INCLUDE( Message   )
+INCLUDE( BuildTest )
 
-SET( KGL_MEMORY_LIBRARIES
-    )
+# Build options
+OPTION( BUILD_WIN32  "Whether or not the KGL::WIN32 library will be built, if available" ON )
+OPTION( BUILD_LINUX  "Whether or not the KGL::LINUX library will be built, if available" ON )
+OPTION( BUILD_CUDA   "Whether or not the KGL::CUDA library will be built, if available"  ON )
+OPTION( BUILD_VULKAN "Whether or not the KGL::VKG library will be built, if available"   ON )
+OPTION( RUN_TESTS    "Whether or not the KGL tests should be fun"                        ON )
 
-ADD_LIBRARY               ( kgl_memory SHARED  ${KGL_MEMORY_SOURCES} ${KGL_MEMORY_HEADERS} )
-TARGET_LINK_LIBRARIES     ( kgl_memory PUBLIC  ${KGL_MEMORY_LIBRARIES}                     )
-TARGET_INCLUDE_DIRECTORIES( kgl_memory PRIVATE ${KGL_MEMORY_INCLUDE_DIRS}                  )
+PROJECT( KGL CXX )
 
-INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR} ) 
-ADD_SUBDIRECTORY( vkg   )
-ADD_SUBDIRECTORY( cg    )
-ADD_SUBDIRECTORY( linux )
+# Print build options
+MESSAGE( STATUS "" ) 
+MESSAGE( INFO "Build Options:" ) 
+MESSAGE(      "├─BUILD_WIN32    ${BUILD_WIN32} " )
+MESSAGE(      "├─BUILD_LINUX    ${BUILD_LINUX} " )
+MESSAGE(      "├─BUILD_CUDA     ${BUILD_CUDA}  " )
+MESSAGE(      "├─BUILD_VULKAN   ${BUILD_VULKAN}" )
+MESSAGE(      "└─RUN_TESTS      ${RUN_TESTS}   " )
+MESSAGE( STATUS "" ) 
+
+# Set build config.
+SET( ARCHITECTURE "64bit" CACHE STRING "The system architecture."              )
+SET( CXX_STANDARD "17"    CACHE STRING "The C++ standard to use for building." )
+SET( MAJOR        "0"     CACHE STRING "The major version of this build."      )
+SET( MINOR        "0"     CACHE STRING "The minor version of this build."      )
+SET( BRANCH       "0"     CACHE STRING "The branch version of this build."     )
+SET( REVISION     "0"     CACHE STRING "The revision of this build."           )
+
+SET( PROJECT_VERSION "${MAJOR}.${MINOR}.${BRANCH}.${REVISION}" )
+
+# Print build configurations.
+MESSAGE( INFO " " ) 
+MESSAGE( INFO "Build Configuration:"                 )
+MESSAGE( INFO "├─ARCHITECTURE:   ${ARCHITECTURE}"    )
+MESSAGE( INFO "├─CXX_STANDARD:   ${CXX_STANDARD}"    )
+MESSAGE( INFO "└─VERSION:        ${PROJECT_VERSION}" )
+MESSAGE( INFO "  ├─MAJOR:        ${MAJOR}"           )
+MESSAGE( INFO "  ├─MINOR:        ${MINOR}"           )
+MESSAGE( INFO "  ├─BRANCH:       ${BRANCH}"          )
+MESSAGE( INFO "  └─REVISION:     ${REVISION}"        )
+
+STRING( TIMESTAMP DATE "%Y%m%d" )
+STRING( TIMESTAMP Time "%H%M%S" )
+
+# Handle compiler information
+STRING( TOLOWER ${CMAKE_CXX_COMPILER_ID} CXX_COMPILER_NAME )
+SET( CXX_COMPILER  "${CXX_COMPILER_NAME}${CMAKE_CXX_COMPILER_VERSION}" )
+
+SET( CLANG FALSE )
+SET( INTEL FALSE )
+SET( GNU   FALSE )
+SET( MSVC  FALSE )
+IF( CXX_COMPILER_NAME MATCHES "clang" )
+  SET( CLANG TRUE )
+ELSEIF( CXX_COMPILER_NAME MATCHES "gnu" )
+  SET( GNU TRUE )
+ELSEIF( CXX_COMPILER_NAME MATCHES "intel" )
+  SET( INTEL TRUE )
+ELSEIF( CXX_COMPILER_NAME MATCHES "msvc" )
+  SET( MSVC TRUE )
+ENDIF()
+
+MESSAGE( INFO " " ) 
+MESSAGE( INFO  "System Configuration:"                     )
+MESSAGE( INFO  "├─CXX_COMPILER_NAME: ${CXX_COMPILER_NAME}" )
+MESSAGE( INFO  "├─CXX_COMPILER:      ${CXX_COMPILER}"      )
+MESSAGE( INFO  "├─INTEL:             ${INTEL}"             )
+MESSAGE( INFO  "├─GNU:               ${GNU}"               )
+MESSAGE( INFO  "└─MSVC:              ${MSVC}"              )
+MESSAGE( INFO " " ) 
+
+SET( BIN_DIR     "bin/${CMAKE_PROJECT_NAME}"     )
+SET( INCLUDE_DIR "include/${CMAKE_PROJECT_NAME}" )
+SET( LIB_DIR     "lib64/${CMAKE_PROJECT_NAME}"   )
+SET( DOC_DIR     "doc/${CMAKE_PROJECT_NAME}"     )
+SET( CONFIG_DIR  "${CMAKE_PROJECT_NAME}"         )
+
+INCLUDE( KPackage ) 
+
+# Set output directories.
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${LIB_DIR} )
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${LIB_DIR} )
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${BIN_DIR} )
+set(DOCUMENTATION_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${DOC_DIR} )
+
+INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR}/src ) 
+
+ADD_SUBDIRECTORY( src )
+
+INSTALL( EXPORT kgl FILE KGLConfig.cmake NAMESPACE Karma:: DESTINATION ${CONFIG_INSTALL_DIR}/${CONFIG_DIR} )

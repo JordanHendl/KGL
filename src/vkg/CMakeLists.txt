@@ -47,4 +47,8 @@ IF( ${Vulkan_FOUND} )
     
     ADD_EXECUTABLE       ( kgl_vkg_test Test.cpp )
     TARGET_LINK_LIBRARIES( kgl_vkg_test kgl_vkg  )
+
+    INSTALL( FILES  ${KGL_VULKAN_HEADERS} DESTINATION ${INCLUDE_DIR}/vkg )
+    INSTALL( TARGETS kgl_vkg EXPORT kgl DESTINATION   ${LIB_DIR}/vkg     )
+
 ENDIF()

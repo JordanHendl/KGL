@@ -23,8 +23,8 @@
  */
 
 #include "Cuda.h"
-#include "../Array.h"
-#include "../Memory.h"
+#include <library/Array.h>
+#include <library/Memory.h>
 #include <vector>
 #include <algorithm>
 #include <assert.h>

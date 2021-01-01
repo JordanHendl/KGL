@@ -23,5 +23,7 @@ IF( ${X11_FOUND} )
   ADD_EXECUTABLE            ( kgl_linux_test Test.cpp         )
   TARGET_LINK_LIBRARIES     ( kgl_linux_test PUBLIC kgl_linux )
 
+  INSTALL( FILES  ${KGL_LINUX_HEADERS} DESTINATION ${INCLUDE_DIR}/linux )
+  INSTALL( TARGETS kgl_linux EXPORT kgl DESTINATION ${LIB_DIR}/linux    )
 ENDIF()
 

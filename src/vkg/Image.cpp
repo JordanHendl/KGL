@@ -1,7 +1,7 @@
 #include "Image.h"
 #include "Device.h"
-#include "../Memory.h"
 #include "Vulkan.h"
+#include <library/Memory.h>
 #include <vulkan/vulkan.hpp>
 
 namespace kgl
@@ -11,7 +11,7 @@ namespace kgl
     struct ImageData
     {
       vkg::Device               device       ;
-      kgl::VkMemory             memory       ;
+      kgl::vkg::VkMemory        memory       ;
       vk::MemoryRequirements    requirements ;
       bool                      preallocated ;
       unsigned                  width        ;

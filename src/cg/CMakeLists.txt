@@ -12,4 +12,7 @@ IF( ${CUDA_FOUND} )
     CUDA_ADD_LIBRARY     ( kgl_cg SHARED ${KGL_CUDA_SOURCES} ${KGL_CUDA_HEADERS} )
     CUDA_ADD_EXECUTABLE  ( kgl_cg_test Test.cpp                                  ) 
     TARGET_LINK_LIBRARIES( kgl_cg_test kgl_cg                                    )
+
+    INSTALL( FILES  ${KGL_CUDA_HEADERS} DESTINATION ${INCLUDE_DIR}/cuda )
+    INSTALL( TARGETS kgl_cg EXPORT kgl DESTINATION ${LIB_DIR}/cuda      )
 ENDIF()

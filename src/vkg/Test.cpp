@@ -27,10 +27,10 @@
 #include "Instance.h"
 #include "Buffer.h"
 #include "Image.h"
-#include "../Array.h"
-#include "../Memory.h"
-#include "../Image.h"
-#include "../Window.h"
+#include <library/Array.h>
+#include <library/Memory.h>
+#include <library/Image.h>
+#include <library/Window.h>
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <algorithm>
@@ -39,15 +39,17 @@
 
 using Impl = ::kgl::vkg::Vulkan ;
 
-static kgl::vkg::Instance instance ;
-static kgl::vkg::Device   device   ;
+static kgl::vkg::Instance instance       ;
+static kgl::vkg::Device   compute_device ;
+static kgl::vkg::Device   surface_device ;
+static kgl::Window<Impl>  window         ;
 
 bool testMemoryHostGPUCopy()
 {
   kgl::Memory<Impl>     memory   ;
   std::vector<unsigned> host_mem ;
   
-  memory.initialize( sizeof( unsigned ) * 200, device, true, ::vk::MemoryPropertyFlagBits::eHostVisible | ::vk::MemoryPropertyFlagBits::eHostCoherent ) ;
+  memory.initialize( sizeof( unsigned ) * 200, compute_device, true, ::vk::MemoryPropertyFlagBits::eHostVisible | ::vk::MemoryPropertyFlagBits::eHostCoherent ) ;
   host_mem.resize( 200 ) ;
   std::fill( host_mem.begin(), host_mem.end(), 2503 ) ;
   
@@ -72,7 +74,7 @@ bool testBufferSingleAllocation()
 {
   kgl::vkg::Buffer buffer ;
   
-  buffer.initialize( device, 200, false ) ;
+  buffer.initialize( compute_device, 200, false ) ;
   
   
 
@@ -95,7 +97,7 @@ bool testBufferPreallocatedSingle()
   
   binded = 0 ;
   
-            memory.initialize( sizeof( unsigned ) * 1000, device ) ;
+            memory.initialize( sizeof( unsigned ) * 1000, compute_device ) ;
   binded += buffer.initialize( memory, buffer_size               ) ;
   
   buffer.reset()      ;
@@ -120,7 +122,7 @@ bool testBufferPreallocatedMultiple()
   
   binded = 0 ;
   
-            memory_one.initialize( sizeof( unsigned ) * 1000, device ) ;
+            memory_one.initialize( sizeof( unsigned ) * 1000, compute_device ) ;
   binded += buffer_one.initialize( memory_one, buffer_size           ) ;
   
   memory_two = memory_one + buffer_one.size() ;
@@ -141,18 +143,18 @@ bool testBufferPreallocatedMultiple()
 
 bool simpleArrayTest()
 {
-  kgl::VkArray<float> array ;
+  kgl::vkg::VkArray<float> array ;
   
-  array.initialize( device, 500, true ) ;
+  array.initialize( compute_device, 500, true ) ;
   array.reset() ;
   return true ;
 }
 
 bool simpleImageTest()
 {
-  kgl::CharVkImage image ;
+  kgl::vkg::CharVkImage image ;
   
-  if( image.initialize( device, 1280, 720 ) )
+  if( image.initialize( compute_device, 1280, 720 ) )
   {
     image.reset() ;
     return true ;
@@ -161,22 +163,15 @@ bool simpleImageTest()
   return false ;
 }
 
-bool windowSurfaceTest()
-{
-  kgl::Window<Impl> window ;
-  
-  window.initialize( "Test", 1240, 720 ) ;
-  
-  return true ;
-}
-
 int main()
 {
   instance.setApplicationName( "KGL-VKG Test App" ) ;
   
   instance.initialize() ;
-  Impl::initialize( instance ) ;
-  device.initialize( instance.device( 0 ) ) ;
+  window.initialize( "Test", 1024, 720 ) ;
+  
+  compute_device.initialize( instance.device( 0 ) ) ;
+  surface_device.initialize( instance.device( 0 ), window.context() ) ;
   
   std::cout << "Testing VKG Buffer Creation & Allocation...\n"  ;
   assert( testBufferSingleAllocation() ) ;
@@ -200,10 +195,6 @@ int main()
   
   std::cout << "Testing Simple Image Test... \n"  ;
   assert( simpleImageTest() ) ;
-  std::cout << "Passed! \n\n"  ;
-  
-  std::cout << "Testing Vulkan Window... \n"  ;
-  assert( windowSurfaceTest() ) ;
   std::cout << "Passed! \n\n"  ;
   
   std::cout << "All Tests Passed!" << std::endl ;
