@@ -25,14 +25,23 @@
 #include "Window.h"
 #include <chrono>
 #include <thread>
+#include <KT/Manager.h>
 
-int main(int argc, char** argv) 
+bool testWindowCreation()
 {
   kgl::lx::Window window ;
   
   window.initialize( "Test", 1024, 720 ) ;
   
-  std::this_thread::sleep_for( std::chrono::seconds( 5 ) ) ;
-  return 0;
+  if( window.window() ) return true ;
+  return false ;
+}
+
+int main(int argc, char** argv) 
+{
+  karma::test::Manager manager ;
+  
+  manager.add( "Linux Window Creation Test", &testWindowCreation ) ;
+  return manager.test( karma::test::Output::Verbose ) ;
 }
 

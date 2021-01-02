@@ -20,10 +20,14 @@ IF( ${X11_FOUND} )
   TARGET_LINK_LIBRARIES     ( kgl_linux PUBLIC  ${KGL_LINUX_LIBRARIES}                    )
   TARGET_INCLUDE_DIRECTORIES( kgl_linux PRIVATE ${KGL_LINUX_INCLUDE_DIRS}                 )
   
-  ADD_EXECUTABLE            ( kgl_linux_test Test.cpp         )
-  TARGET_LINK_LIBRARIES     ( kgl_linux_test PUBLIC kgl_linux )
+  # If running tests, make and run them.
+  IF( RUN_TESTS )
+    BUILD_TEST( TARGET kgl_linux )
+  ENDIF()
 
-  INSTALL( FILES  ${KGL_LINUX_HEADERS} DESTINATION ${INCLUDE_DIR}/linux )
-  INSTALL( TARGETS kgl_linux EXPORT kgl DESTINATION ${LIB_DIR}/linux    )
+  INSTALL( FILES  ${KGL_LINUX_HEADERS}  DESTINATION  ${INSTALL_INCLUDE_DIR}/linux )
+  INSTALL( TARGETS kgl_linux EXPORT kgl 
+             LIBRARY  DESTINATION ${EXPORT_LIB_DIR}/linux
+             INCLUDES DESTINATION ${EXPORT_INCLUDE_DIR}/linux )
 ENDIF()
 

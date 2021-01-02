@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <iostream>
+#include <KT/Manager.h>
 
 using Impl = ::kgl::cg::Cuda ;
 const unsigned device = 0 ;
@@ -70,14 +71,12 @@ bool simpleArrayTest()
 
 int main()
 {
-  std::cout << "Testing Memory Host-GPU copy...\n"  ;
-  assert( testMemoryHostGPUCopy() ) ;
-  std::cout << "Passed! \n\n"  ;
+  karma::test::Manager manager ;
   
-  std::cout << "Testing Simple Array Test... \n"  ;
-  assert( simpleArrayTest() ) ;
-  std::cout << "Passed! \n\n"  ;
+  std::cout << "Testing KGL CUDA Library" << std::endl ;
   
-  std::cout << "All Tests Passed!" << std::endl ;
-  return 0 ;
+  manager.add( "Memory Host-GPU Copy", &testMemoryHostGPUCopy ) ;
+  manager.add( "Testing Cuda Array"  , &simpleArrayTest       ) ;
+  
+  return manager.test( karma::test::Output::Verbose ) ;
 }

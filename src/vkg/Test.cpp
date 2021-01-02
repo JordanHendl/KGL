@@ -36,13 +36,15 @@
 #include <algorithm>
 #include <assert.h>
 #include <iostream>
+#include <KT/Manager.h>
 
 using Impl = ::kgl::vkg::Vulkan ;
 
-static kgl::vkg::Instance instance       ;
-static kgl::vkg::Device   compute_device ;
-static kgl::vkg::Device   surface_device ;
-static kgl::Window<Impl>  window         ;
+static kgl::vkg::Instance   instance       ;
+static kgl::vkg::Device     compute_device ;
+static kgl::vkg::Device     surface_device ;
+static kgl::Window<Impl>    window         ;
+static karma::test::Manager manager        ;
 
 bool testMemoryHostGPUCopy()
 {
@@ -172,31 +174,14 @@ int main()
   
   compute_device.initialize( instance.device( 0 ) ) ;
   surface_device.initialize( instance.device( 0 ), window.context() ) ;
+  manager.add( "VKG Buffer Creation & Allocation"         , &testBufferSingleAllocation     ) ;
+  manager.add( "VKG Preallocated Buffer Creation"         , &testBufferPreallocatedSingle   ) ;
+  manager.add( "VKG Multiple Preallocated Buffer Creation", &testBufferPreallocatedMultiple ) ;
+  manager.add( "Memory Host-GPU Copy"                     , &testMemoryHostGPUCopy          ) ;
+  manager.add( "Array Test"                               , &simpleArrayTest                ) ;
+  manager.add( "Image Test"                               , &simpleImageTest                ) ;
   
-  std::cout << "Testing VKG Buffer Creation & Allocation...\n"  ;
-  assert( testBufferSingleAllocation() ) ;
-  std::cout << "Passed! \n\n"  ;
+  std::cout << "\nTesting VKG Library" << std::endl ;
   
-  std::cout << "Testing VKG Single Buffer Creation | Preallocated \n"  ;
-  assert( testBufferPreallocatedSingle() ) ;
-  std::cout << "Passed! \n\n"  ;
-  
-  std::cout << "Testing VKG Multiple Buffer Creation | Preallocated \n"  ;
-  assert( testBufferPreallocatedMultiple() ) ;
-  std::cout << "Passed! \n\n"  ;
-  
-  std::cout << "Testing Memory Host-GPU copy...\n"  ;
-  assert( testMemoryHostGPUCopy() ) ;
-  std::cout << "Passed! \n\n"  ;
-  
-  std::cout << "Testing Simple Array Test... \n"  ;
-  assert( simpleArrayTest() ) ;
-  std::cout << "Passed! \n\n"  ;
-  
-  std::cout << "Testing Simple Image Test... \n"  ;
-  assert( simpleImageTest() ) ;
-  std::cout << "Passed! \n\n"  ;
-  
-  std::cout << "All Tests Passed!" << std::endl ;
-  return 0 ;
+  return manager.test( karma::test::Output::Verbose ) ;
 }
