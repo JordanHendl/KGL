@@ -31,35 +31,36 @@ INCLUDE( Message   )
 INCLUDE( BuildTest )
 
 # Build options
-OPTION( BUILD_WIN32  "Whether or not the KGL::WIN32 library will be built, if available" ON  )
-OPTION( BUILD_LINUX  "Whether or not the KGL::LINUX library will be built, if available" ON  )
-OPTION( BUILD_CUDA   "Whether or not the KGL::CUDA library will be built, if available"  ON  )
-OPTION( BUILD_VULKAN "Whether or not the KGL::VKG library will be built, if available"   ON  )
-OPTION( RUN_TESTS    "Whether or not the KGL tests should be run"                        OFF )
+OPTION( BUILD_WIN32  "Whether or not the KGL::WIN32 library will be built, if available" ON )
+OPTION( BUILD_LINUX  "Whether or not the KGL::LINUX library will be built, if available" ON )
+OPTION( BUILD_CUDA   "Whether or not the KGL::CUDA library will be built, if available"  ON )
+OPTION( BUILD_VULKAN "Whether or not the KGL::VKG library will be built, if available"   ON )
+OPTION( RUN_TESTS    "Whether or not the KGL tests should be run"                        ON )
 
 PROJECT( KGL CXX )
 
-CONFIGURE_TEST( RUN_TESTS   ${SHOULD_RUN_TESTS}  )
-CONFIGURE_TEST( TEST_BUILSD ${SHOULD_TEST_BUILD} )
+MESSAGE( INFO "KGL Library Prebuild" ) 
+MESSAGE( INFO " " ) 
+
 # Print build options
 MESSAGE( STATUS "" ) 
 MESSAGE( INFO "Build Options:" ) 
-MESSAGE(      "├─BUILD_WIN32    ${BUILD_WIN32} " )
-MESSAGE(      "├─BUILD_LINUX    ${BUILD_LINUX} " )
-MESSAGE(      "├─BUILD_CUDA     ${BUILD_CUDA}  " )
-MESSAGE(      "├─BUILD_VULKAN   ${BUILD_VULKAN}" )
-MESSAGE(      "└─RUN_TESTS      ${RUN_TESTS}   " )
+MESSAGE( INFO "├─BUILD_WIN32    ${BUILD_WIN32} " )
+MESSAGE( INFO "├─BUILD_LINUX    ${BUILD_LINUX} " )
+MESSAGE( INFO "├─BUILD_CUDA     ${BUILD_CUDA}  " )
+MESSAGE( INFO "├─BUILD_VULKAN   ${BUILD_VULKAN}" )
+MESSAGE( INFO "└─RUN_TESTS      ${RUN_TESTS}   " )
 MESSAGE( STATUS "" ) 
 
 # Set build config.
 SET( ARCHITECTURE "64bit" CACHE STRING "The system architecture."              )
 SET( CXX_STANDARD "17"    CACHE STRING "The C++ standard to use for building." )
 SET( MAJOR        "0"     CACHE STRING "The major version of this build."      )
-SET( MINOR        "0"     CACHE STRING "The minor version of this build."      )
+SET( MINOR        "1"     CACHE STRING "The minor version of this build."      )
 SET( BRANCH       "0"     CACHE STRING "The branch version of this build."     )
 SET( REVISION     "0"     CACHE STRING "The revision of this build."           )
 
-SET( PROJECT_VERSION "${MAJOR}.${MINOR}.${BRANCH}.${REVISION}" )
+SET( PROJECT_VERSION "${MAJOR}.${MINOR}.${BRANCH}" )
 
 # Print build configurations.
 MESSAGE( INFO " " ) 
@@ -104,17 +105,17 @@ MESSAGE( INFO " " )
 
 INCLUDE( KPackage ) 
 
-SET( INSTALL_BIN_DIR     "bin"                          )
-SET( INSTALL_INCLUDE_DIR "include/${CMAKE_PROJECT_NAME}")
-SET( INSTALL_LIB_DIR     "lib64"                        )
-SET( INSTALL_DOC_DIR     "doc"                          )
-SET( INSTALL_CONFIG_DIR  "config"                       )
+SET( BIN_DIR     "bin"                           )
+SET( INCLUDE_DIR "include/${CMAKE_PROJECT_NAME}" )
+SET( LIB_DIR     "lib64"                         )
+SET( DOC_DIR     "doc"                           )
+SET( CONFIG_DIR  "config"                        )
 
-SET( EXPORT_BIN_DIR     "${CPACK_PACKAGING_INSTALL_PREFIX}/bin"     )
-SET( EXPORT_INCLUDE_DIR "${CPACK_PACKAGING_INSTALL_PREFIX}/include" )
-SET( EXPORT_LIB_DIR     "${CPACK_PACKAGING_INSTALL_PREFIX}/lib64"   )
-SET( EXPORT_DOC_DIR     "${CPACK_PACKAGING_INSTALL_PREFIX}/doc"     )
-SET( EXPORT_CONFIG_DIR  "${CPACK_PACKAGING_INSTALL_PREFIX}/config"  )
+SET( EXPORT_BIN_DIR     "${CPACK_PACKAGING_INSTALL_PREFIX}/${BIN_DIR}"     )
+SET( EXPORT_INCLUDE_DIR "${CPACK_PACKAGING_INSTALL_PREFIX}/${INCLUDE_DIR}" )
+SET( EXPORT_LIB_DIR     "${CPACK_PACKAGING_INSTALL_PREFIX}/${LIB_DIR}"     )
+SET( EXPORT_DOC_DIR     "${CPACK_PACKAGING_INSTALL_PREFIX}/${DOC_DIR}"     )
+SET( EXPORT_CONFIG_DIR  "${CPACK_PACKAGING_INSTALL_PREFIX}/${CONFIG_DIR}"  )
 
 # Set output directories.
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${LIB_DIR} )
@@ -126,4 +127,4 @@ INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR}/src )
 
 ADD_SUBDIRECTORY( src )
 
-INSTALL( EXPORT kgl FILE KGLConfig.cmake DESTINATION ${INSTALL_CONFIG_DIR} COMPONENT dev )
+INSTALL( EXPORT kgl FILE KGLConfig.cmake DESTINATION ${CONFIG_DIR} COMPONENT dev )

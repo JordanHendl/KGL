@@ -174,6 +174,11 @@ namespace kgl
     {
       delete this->instance_data ;
     }
+    
+    unsigned Instance::numDevices() const
+    {
+      return data().physical_dev.size() ;
+    }
 
     Instance& Instance::operator=( const Instance& instance )
     {
@@ -257,6 +262,11 @@ namespace kgl
     void Instance::reset()
     {
       data().instance.destroy() ;
+    }
+    
+    bool Instance::isInitialized() const
+    {
+      return data().instance ? true : false ;
     }
 
     void Instance::addExtension( const char* extension_name )

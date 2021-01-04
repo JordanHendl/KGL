@@ -332,7 +332,12 @@ namespace kgl
       
       this->initialize( physical_device ) ;
     }
-
+    
+    void Device::reset()
+    {
+      data().gpu.destroy( nullptr ) ;
+    }
+    
     void Device::addExtension( const char* extension_name )
     {
       data().extension_list.push_back( extension_name ) ;

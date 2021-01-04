@@ -189,7 +189,6 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        vk::SurfaceKHR            vk_surface   ;
        VkSurfaceKHR              surface      ;
        VkResult                  result       ;
-       PFN_vkCreateXcbSurfaceKHR function_ptr ;
        
        info.sType      = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR ;
        info.pNext      = nullptr                                       ;

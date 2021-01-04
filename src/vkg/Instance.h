@@ -80,6 +80,11 @@ namespace kgl
          */
         void reset() ;
         
+        /** Method to retrieve whether or not this object is initialized.
+         * @return Whether or not this object is initialized.
+         */
+        bool isInitialized() const ;
+
         /** Method to retrieve the underlying Vulkan Instance of this object.
          * @return 
          */

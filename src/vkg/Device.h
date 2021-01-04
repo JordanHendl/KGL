@@ -78,6 +78,10 @@ namespace kgl
          */
         operator const ::vk::Device&() ;
         
+        /** Method to reset and deallocate all data from this device.
+         */
+        void reset() ;
+        
         /** Method to set the priority of the input queue id.
          * @param queue_index the index of queue in this family to set the priority of.
          * @param priority The 0.0 - 1.0 priority for this queue.
@@ -161,7 +165,7 @@ namespace kgl
          * @param value Whether or not to enable the feature.
          */
         void setRobustBufferAccess( bool value ) ;
-
+        
       private:
         
         /** Forward declared structure containing this object's data.
