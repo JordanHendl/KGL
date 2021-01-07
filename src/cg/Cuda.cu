@@ -145,8 +145,8 @@ namespace kgl
         case cudaErrorUnknown                      :
         case cudaErrorApiFailureBase               :
           
-          std::cout << "Error handling for Cuda Library not implemented yet." << std::endl ;
-          break ;
+        std::cout << "Error handling for Cuda Library not implemented yet." << std::endl ;
+        break ;
       }
     }
 

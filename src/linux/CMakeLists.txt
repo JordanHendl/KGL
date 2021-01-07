@@ -13,7 +13,8 @@ IF( ${X11_FOUND} )
      )
   
   SET( KGL_LINUX_LIBRARIES
-      ${X11_LIBRARIES}
+        ${X11_LIBRARIES}
+        kgl_event 
       )
   
   ADD_LIBRARY               ( kgl_linux SHARED  ${KGL_LINUX_SOURCES} ${KGL_LINUX_HEADERS} )

@@ -83,6 +83,10 @@ namespace kgl
         /** Method to process events being sent to the window.
          */
         void handleEvents() ;
+        
+        /** Method to reset this object to it's initial state.
+         */
+        void reset() ;
 
         /** Method to retrieve the implementation-specific connection object.
          * @return The implementation-specific connection object.

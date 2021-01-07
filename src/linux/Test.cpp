@@ -23,25 +23,76 @@
  */
 
 #include "Window.h"
-#include <chrono>
-#include <thread>
+#include <event/Event.h>
 #include <KT/Manager.h>
+#include <iostream> 
+static const unsigned object_input_expected = 250 ;
+static const unsigned only_type_expected    = 480 ;
+static unsigned object_input = 0 ;
+static unsigned only_type    = 0 ;
+class Object
+{
+public :
+  void inputB( const kgl::Event& event )
+  {
+    if( event.key() == kgl::Key::B )
+    {
+      object_input = object_input_expected ;
+    }
+  }
+};
+
+void onlyKeyUp( const kgl::Event& event )
+{
+  if( event.type() == kgl::Event::Type::KeyUp )
+  {
+    only_type = only_type_expected ;
+  }
+}
+
+static Object               obj     ;
+static karma::test::Manager manager ;
+static kgl::EventManager    event   ;
+
+bool checkMethodInput()
+{
+  kgl::Event tmp = kgl::makeKeyEvent( kgl::Event::Type::KeyDown, kgl::Key::B ) ;
+  
+  event.pushEvent( tmp ) ;
+  if( object_input == object_input_expected ) return true ;
+  return false ;
+}
+
+bool checkTypeOnlyInput()
+{
+  kgl::Event tmp = kgl::makeKeyEvent( kgl::Event::Type::KeyUp, kgl::Key::A ) ;
+  
+  event.pushEvent( tmp ) ;
+  if( only_type == only_type_expected ) return true ;
+  return false ;
+}
 
 bool testWindowCreation()
 {
   kgl::lx::Window window ;
   
   window.initialize( "Test", 1024, 720 ) ;
+
+  if( window.window() )
+  {
+    return true ;
+  }
   
-  if( window.window() ) return true ;
   return false ;
 }
-
 int main(int argc, char** argv) 
 {
-  karma::test::Manager manager ;
-  
-  manager.add( "Linux Window Creation Test", &testWindowCreation ) ;
+  event.enroll( &obj, &Object::inputB, kgl::Key::B, "OnlyBMethod" ) ;
+  event.enroll( &onlyKeyUp, kgl::Key::A, "OnlyA" ) ;
+  manager.add( "Linux Event Handler: Method Only Specific Key Events Test."   , &checkMethodInput   ) ;
+  manager.add( "Linux Event Handler: Function Only Specific Type Events Test.", &checkMethodInput   ) ;
+  manager.add( "Linux Window Creation Test."                                  , &testWindowCreation ) ;
+
   return manager.test( karma::test::Output::Verbose ) ;
 }
 
