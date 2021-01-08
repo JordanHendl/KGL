@@ -13,7 +13,7 @@ IF( ${CUDA_FOUND} )
 
     # If running tests, make and run them.
     IF( RUN_TESTS )
-#      BUILD_TEST( TARGET kgl_cg )
+      BUILD_TEST( TARGET kgl_cg )
     ENDIF()
 
     INSTALL( FILES  ${KGL_CUDA_HEADERS} DESTINATION ${INCLUDE_DIR}/cuda )

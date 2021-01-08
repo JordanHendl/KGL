@@ -59,6 +59,10 @@ namespace kgl
        */
       void handleEvents() ;
         
+      /** Method to reset this object back to it's initial state.
+       */
+      void reset() ;
+
       /** Method to set the monitor to put the window on.
        * @param monitor_id The ID of the monitor to put the window on.
        */
@@ -83,7 +87,7 @@ namespace kgl
        * @param value Whether or not the window should be minimized.
        */
       void setMinimize( bool value ) ;
-      
+
       /** Method to set whether or not the window should be maximized or not.
        * @param value Whether or not the menu should be maximized.
        */
@@ -109,6 +113,12 @@ namespace kgl
     os_window.initialize( window_title, width, height ) ;
     
     this->api_context = API::contextFromBaseWindow( this->os_window ) ;
+  }
+  
+  template<typename OS, typename API>
+  void BaseWindow<OS, API>::reset()
+  {
+    os_window.reset() ;
   }
 
   template<typename OS, typename API>

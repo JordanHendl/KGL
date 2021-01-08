@@ -18,21 +18,23 @@
 #ifndef KGL_VULKAN_H
 #define KGL_VULKAN_H
 
+typedef unsigned VkFlags ;
+
 /** Forward declared vulkan-specific objects.
  */
 namespace vk
 {
-       template <typename BitType, typename MaskType>
+       template <typename BitType>
        class Flags ;
        
-       class SurfaceKHR             ;
-       class Buffer                 ;
-       class DeviceMemory           ;
-       class CommandBuffer          ;
-       class Instance               ;
-  enum class MemoryPropertyFlagBits ;
-  enum class ImageLayout            ;
-  enum class Format                 ;
+       class SurfaceKHR                       ;
+       class Buffer                           ;
+       class DeviceMemory                     ;
+       class CommandBuffer                    ;
+       class Instance                         ;
+  enum class MemoryPropertyFlagBits : VkFlags ;
+  enum class ImageLayout                      ;
+  enum class Format                           ;
 }
 
 /** Operator definition for OR'ing a memory property flag bit and an unsigned integer.
@@ -91,15 +93,15 @@ namespace kgl
     class Vulkan
     {
       public:
-        using Device         = ::kgl::vkg::Device                                  ;
-        using Buffer         = ::kgl::vkg::Buffer                                  ;
-        using Image          = ::kgl::vkg::Image                                   ;
-        using Memory         = ::vk::DeviceMemory                                  ;
-        using CommandRecord  = ::vk::CommandBuffer                                 ;
-        using MemoryPropFlag = ::vk::Flags<::vk::MemoryPropertyFlagBits, unsigned> ;
-        using ImageLayout    = ::vk::ImageLayout                                   ;
-        using ImageFormat    = ::vk::Format                                        ;
-        using Context        = ::vk::SurfaceKHR                                    ;
+        using Device         = ::kgl::vkg::Device                        ;
+        using Buffer         = ::kgl::vkg::Buffer                        ;
+        using Image          = ::kgl::vkg::Image                         ;
+        using Memory         = ::vk::DeviceMemory                        ;
+        using CommandRecord  = ::vk::CommandBuffer                       ;
+        using MemoryPropFlag = ::vk::Flags<::vk::MemoryPropertyFlagBits> ;
+        using ImageLayout    = ::vk::ImageLayout                         ;
+        using ImageFormat    = ::vk::Format                              ;
+        using Context        = ::vk::SurfaceKHR                          ;
 
         /** Static method to initialize this implementation with a vulkan instance.
          * @param instance
@@ -215,7 +217,7 @@ namespace kgl
          * @param gpu The GPU to allocate data on.
          * @return Allocated memory on the GPU.
          */
-        Memory createMemory( unsigned size, const Vulkan::Device& gpu ) ;
+        Memory createMemory( const Vulkan::Device& gpu, unsigned size ) ;
         
         /** Method to create & allocate memory on the GPU.
          * @param size The size of the memory to allocate.
@@ -223,7 +225,7 @@ namespace kgl
          * @param mem_flags The memory property flags to use for creation of this memory object.
          * @return Allocated memory on the GPU.
          */
-        Memory createMemory( unsigned size, const Vulkan::Device& gpu, Vulkan::MemoryFlags mem_flags ) ;
+        Memory createMemory( const Vulkan::Device& gpu, unsigned size, Vulkan::MemoryFlags mem_flags ) ;
     };
 
     /** Aliases for parent types.

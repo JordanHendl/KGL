@@ -1,25 +1,18 @@
 /*
- * The MIT License
+ * Copyright (C) 2020 Jordan Hendl
  *
- * Copyright 2020 jhendl.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /* 
@@ -30,56 +23,66 @@
  */
 
 #include "Device.h"
+#include "Queue.h"
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <string>
 #include <mutex>
 #include <map>
 #include <limits>
+#include <tuple>
 
 namespace kgl
 {
   namespace vkg
   {
+    struct QueueCount
+    {
+      std::vector<std::tuple<unsigned, vk::QueueFamilyProperties*>> queues ;
+      unsigned count ;
+      
+      QueueCount() ;
+      unsigned getQueue() ;
+      unsigned index( unsigned family )    ;
+    };
+    
     struct QueueFamilies
     {
       typedef unsigned                            Queue       ;
       typedef unsigned                            MaxCount    ;
       typedef std::map<Queue, std::vector<float>> PriorityMap ;
       
-      std::vector<unsigned>     total_families  ;
-      PriorityMap               priority_map    ;
-      unsigned                  compute_family  ;
-      unsigned                  graphics_family ;
-      unsigned                  present_family  ;
-      unsigned                  transfer_family ;
+      std::vector<unsigned>                  total_families ;
+      QueueCount                             graphics       ;
+      QueueCount                             compute        ;
+      QueueCount                             present        ;
+      QueueCount                             transfer       ;
+      PriorityMap                            priority_map   ;
       
       /** Default constructor.
        */
-      QueueFamilies() ;
-
-      /** Method to retrieve whether all families have been found.
-       * @return Whether or not all families have been found.
-       */
-      bool isComplete() const ;
+      QueueFamilies() = default ;
     };
 
     struct DeviceData
     {
-      typedef std::vector<std::string> ExtList        ;
-      typedef std::vector<const char*> CharExtList    ;
-      typedef std::vector<float>       Priorities     ;
+      typedef std::vector<std::string    > ExtList        ;
+      typedef std::vector<kgl::vkg::Queue> QueueList      ;
+      typedef std::vector<const char*    > CharExtList    ;
+      typedef std::vector<float          > Priorities     ;
       
-      ::vk::Device                 gpu                 ;
-      ::vk::PhysicalDevice         physical_device     ;
-      ::vk::SurfaceKHR             surface             ;
-      ::vk::PhysicalDeviceFeatures features            ;
-      ExtList                      extension_list      ;
-      QueueFamilies                queue_families      ;
-      Priorities                   graphics_priorities ;
-      Priorities                   compute_priorities  ;
-      Priorities                   present_priorities  ;
-      Priorities                   transfer_priorities ;
+      ::vk::Device                           gpu                 ;
+      ::vk::PhysicalDevice                   physical_device     ;
+      ::vk::SurfaceKHR                       surface             ;
+      ::vk::PhysicalDeviceFeatures           features            ;
+      std::vector<vk::QueueFamilyProperties> properties          ;
+      ExtList                                extension_list      ;
+      QueueList                              queues              ;
+      QueueFamilies                          queue_families      ;
+      Priorities                             graphics_priorities ;
+      Priorities                             compute_priorities  ;
+      Priorities                             present_priorities  ;
+      Priorities                             transfer_priorities ;
 
       /** Default Constructor
        */
@@ -102,23 +105,33 @@ namespace kgl
        */
       CharExtList filterExtensions() const ;
     };
+    
+    QueueCount::QueueCount()
+    {
+      this->count = 0 ;
+    }
 
-    QueueFamilies::QueueFamilies()
+    unsigned QueueCount::index( unsigned family )
     {
-      this->compute_family  = UINT32_MAX ;
-      this->graphics_family = UINT32_MAX ;
-      this->present_family  = UINT32_MAX ;
-      this->transfer_family = UINT32_MAX ;
+      return this->count++ ;
     }
-    
-    bool QueueFamilies::isComplete() const
+
+    unsigned QueueCount::getQueue()
     {
-      return this->compute_family  != UINT32_MAX &&
-             this->graphics_family != UINT32_MAX && 
-             this->present_family  != UINT32_MAX && 
-             this->transfer_family != UINT32_MAX   ;
+      
+      for( auto tup : this->queues )
+      {
+        auto family = std::get<0>( tup ) ;
+        auto prop   = std::get<1>( tup ) ;
+
+        if( prop->queueCount != 0 )
+        {
+          return family ;
+        }
+      }
+
+      return UINT32_MAX ;
     }
-    
     DeviceData::DeviceData()
     {
       this->graphics_priorities = { 1.0f } ;
@@ -158,8 +171,8 @@ namespace kgl
 
       for( unsigned i = 0; i < this->queue_families.total_families.size(); i++ )
       {
-        auto priorities = this->queue_families.priority_map  [ queue_id ] ;
         queue_id        = this->queue_families.total_families[ i        ] ;
+        auto priorities = this->queue_families.priority_map  [ queue_id ] ;
         num_queues      = priorities.size()                               ;
 
         queue_infos[ i ].setQueueFamilyIndex( queue_id          ) ;
@@ -180,14 +193,13 @@ namespace kgl
     {
       typedef std::vector<::vk::QueueFamilyProperties> FamilyPropList ;
 
-      FamilyPropList list    ;
       unsigned       id      ;
       ::vk::Bool32   support ;
 
-      list = this->physical_device.getQueueFamilyProperties() ;
-      id   = 0                                                ;
+      this->properties = this->physical_device.getQueueFamilyProperties() ;
+      id   = 0                                                            ;
       
-      for( const auto& queue : list )
+      for( auto& queue : this->properties )
       {
         if( this->surface )
         {
@@ -197,8 +209,8 @@ namespace kgl
           {
             this->present_priorities.resize( std::min( static_cast<unsigned>( this->present_priorities.size() ), queue.queueCount ) ) ;
             
-            this->queue_families.present_family     = id                       ;
-            this->queue_families.priority_map[ id ] = this->present_priorities ;
+            this->queue_families.present.queues.push_back( std::make_tuple( id, &queue ) ) ;
+            this->queue_families.priority_map[ id ] = this->present_priorities             ;
           }
         }
 
@@ -206,33 +218,28 @@ namespace kgl
         {
             this->graphics_priorities.resize( std::min( static_cast<unsigned>( this->graphics_priorities.size() ), queue.queueCount ) ) ;
             
-            this->queue_families.present_family     = id                        ;
-            this->queue_families.priority_map[ id ] = this->graphics_priorities ;
+            this->queue_families.graphics.queues.push_back( std::make_tuple( id, &queue ) ) ;
+            this->queue_families.priority_map[ id ] = this->graphics_priorities             ;
         }
         
         if( queue.queueFlags & ::vk::QueueFlagBits::eCompute )
         {
             this->compute_priorities.resize( std::min( static_cast<unsigned>( this->compute_priorities.size() ), queue.queueCount ) ) ;
             
-            this->queue_families.present_family     = id                       ;
-            this->queue_families.priority_map[ id ] = this->compute_priorities ;
+            this->queue_families.compute.queues.push_back( std::make_tuple( id, &queue ) ) ;
+            this->queue_families.priority_map[ id ] = this->compute_priorities             ;
         }
         
         if( queue.queueFlags & ::vk::QueueFlagBits::eTransfer )
         {
-            this->transfer_priorities.resize( std::min( static_cast<unsigned>( this->transfer_priorities.size() ), queue.queueCount ) ) ;
+          this->transfer_priorities.resize( std::min( static_cast<unsigned>( this->transfer_priorities.size() ), queue.queueCount ) ) ;
             
-            this->queue_families.present_family     = id                        ;
-            this->queue_families.priority_map[ id ] = this->transfer_priorities ;
+          this->queue_families.transfer.queues.push_back( std::make_tuple( id, &queue ) ) ;
+          this->queue_families.priority_map[ id ] = this->transfer_priorities             ;
         }
         
         this->queue_families.total_families.push_back( id ) ;
 
-        if( this->queue_families.isComplete() )
-        {
-          return ;
-        }
-        
         id++ ;
       }
     }
@@ -248,9 +255,9 @@ namespace kgl
       {
         for( const auto& requested : this->extension_list )
         {
-          if( std::string( ext.extensionName ) == std::string( requested ) )
+          if( std::string( ext.extensionName.data() ) == std::string( requested ) )
           {
-            list.push_back( ext.extensionName ) ;
+            list.push_back( ext.extensionName.data() ) ;
           }
         }
       }
@@ -341,6 +348,67 @@ namespace kgl
     void Device::addExtension( const char* extension_name )
     {
       data().extension_list.push_back( extension_name ) ;
+    }
+    
+    //TODO These getters for queues are very bad. Do better eventually.
+    const kgl::vkg::Queue& Device::graphicsQueue()
+    {
+      const unsigned family = data().queue_families.graphics.getQueue() ;
+      const unsigned index  = data().queue_families.graphics.index( family ) ;
+      vk::Queue       vk_queue ;
+      kgl::vkg::Queue queue    ;
+      
+      vk_queue = data().gpu.getQueue( family, index ) ;
+      queue.initialize( *this, vk_queue, family, data().queues.size() ) ;
+      
+      data().queues.push_back( queue ) ;
+      
+      return data().queues.back() ;
+    }
+    
+    const kgl::vkg::Queue& Device::presentQueue()
+    {
+      const unsigned family = data().queue_families.present.getQueue()      ;
+      const unsigned index  = data().queue_families.present.index( family ) ;
+      vk::Queue       vk_queue ;
+      kgl::vkg::Queue queue    ;
+      
+      vk_queue = data().gpu.getQueue( family, index ) ;
+      queue.initialize( *this, vk_queue, family, data().queues.size() ) ;
+      
+      data().queues.push_back( queue ) ;
+      
+      return data().queues.back() ;
+    }
+    
+    const kgl::vkg::Queue& Device::computeQueue()
+    {
+      const unsigned family = data().queue_families.compute.getQueue()      ;
+      const unsigned index  = data().queue_families.compute.index( family ) ;
+      vk::Queue       vk_queue ;
+      kgl::vkg::Queue queue    ;
+      
+      vk_queue = data().gpu.getQueue( family, index ) ;
+      queue.initialize( *this, vk_queue, family, data().queues.size() ) ;
+      
+      data().queues.push_back( queue ) ;
+      
+      return data().queues.back() ;
+    }
+    
+    const kgl::vkg::Queue& Device::transferQueue()
+    {
+      const unsigned family = data().queue_families.transfer.getQueue()      ;
+      const unsigned index  = data().queue_families.transfer.index( family ) ;
+      vk::Queue       vk_queue ;
+      kgl::vkg::Queue queue    ;
+      
+      vk_queue = data().gpu.getQueue( family, index ) ;
+      queue.initialize( *this, vk_queue, family, data().queues.size() ) ;
+      
+      data().queues.push_back( queue ) ;
+      
+      return data().queues.back() ;
     }
     
     void Device::setGraphicsQueueCount( unsigned amt )

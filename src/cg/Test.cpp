@@ -39,7 +39,7 @@ bool testMemoryHostGPUCopy()
   kgl::Memory<Impl>     memory   ;
   std::vector<unsigned> host_mem ;
   
-  memory.initialize( sizeof( unsigned ) * 200, device, true ) ;
+  memory.initialize( device, sizeof( unsigned ) * 200, true ) ;
   host_mem.resize( 200 ) ;
   std::fill( host_mem.begin(), host_mem.end(), 2503 ) ;
   

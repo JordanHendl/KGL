@@ -17,20 +17,21 @@
 
 #ifndef KGL_VKG_IMAGE_H
 #define KGL_VKG_IMAGE_H
+typedef unsigned VkFlags ;
 
 namespace vk
 {
-   template <typename BitType, typename MaskType>
+   template <typename BitType>
    class Flags ;
 
-       class CommandBuffer       ;
-       class Sampler             ;
-       class ImageView           ;
-  enum class ImageLayout         ;
-  enum class ImageType           ;
-  enum class Format              ;
-  enum class ImageUsageFlagBits  ;
-  enum class SampleCountFlagBits ;
+       class CommandBuffer                 ;
+       class Sampler                       ;
+       class ImageView                     ;
+  enum class ImageLayout                   ;
+  enum class ImageType                     ;
+  enum class Format                        ;
+  enum class ImageUsageFlagBits  : VkFlags ;
+  enum class SampleCountFlagBits : VkFlags ;
 }
 
 namespace kgl
@@ -50,11 +51,11 @@ namespace kgl
         
         /** Alias for Vulkan Usage flags.
          */
-        using UsageFlags = ::vk::Flags<::vk::ImageUsageFlagBits, unsigned> ;
+        using UsageFlags = ::vk::Flags<::vk::ImageUsageFlagBits> ;
         
         /** Alias for Vulkan Sample flags.
          */
-        using SampleFlags = ::vk::Flags<::vk::SampleCountFlagBits, unsigned> ;
+        using SampleFlags = ::vk::Flags<::vk::SampleCountFlagBits> ;
 
         /** Constructor
          */

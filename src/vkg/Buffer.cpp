@@ -120,7 +120,7 @@ namespace kgl
 
       if( !data().preallocated )
       {
-        data().internal_memory.initialize( data().requirements.size, gpu, host_local ) ;
+        data().internal_memory.initialize( gpu, data().requirements.size, host_local ) ;
       }
 
       needed_size = data().internal_memory.size() - data().internal_memory.offset() ;

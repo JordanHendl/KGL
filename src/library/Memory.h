@@ -92,14 +92,14 @@ namespace kgl
        * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
        */
       template<typename ... MEMORY_FLAGS>
-      void initialize( unsigned sz, const typename IMPL::Device& gpu, bool host_alloc, MEMORY_FLAGS... mem_flags ) ;
+      void initialize( const typename IMPL::Device& gpu, unsigned sz, bool host_alloc, MEMORY_FLAGS... mem_flags ) ;
       
       /** Method to initialize this memory object with the input parameters.
        * @param sz The size in bytes to store in this object.
        * @param gpu The implementation-specific GPU to use for all gpu operations.
        * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
        */      
-      void initialize( unsigned sz, const typename IMPL::Device& gpu, bool host_alloc = true ) ;
+      void initialize( const typename IMPL::Device& gpu, unsigned sz, bool host_alloc = true ) ;
         
       /** Method to retrieve the host buffer of this object's data.
        * @return The host-buffer containing this object's data.
@@ -284,12 +284,12 @@ namespace kgl
 
   template<typename IMPL>
   template< typename ... MEMORY_FLAGS>
-  void Memory<IMPL>::initialize( unsigned sz, const typename IMPL::Device& gpu, bool host_alloc, MEMORY_FLAGS... mem_flags ) 
+  void Memory<IMPL>::initialize( const typename IMPL::Device& gpu, unsigned sz, bool host_alloc, MEMORY_FLAGS... mem_flags ) 
   {
     this->byte_size  = sz  ;
     this->gpu        = gpu ;
     
-    this->memory_ptr = impl.createMemory( sz, gpu, static_cast<typename IMPL::MemoryFlags>( ::kgl::combine( mem_flags... ) ) ) ;
+    this->memory_ptr = impl.createMemory( gpu, sz, static_cast<typename IMPL::MemoryFlags>( ::kgl::combine( mem_flags... ) ) ) ;
     
     if( host_alloc )
     {
@@ -298,12 +298,12 @@ namespace kgl
   }
 
   template<typename IMPL>
-  void Memory<IMPL>::initialize( unsigned sz, const typename IMPL::Device& gpu, bool host_alloc ) 
+  void Memory<IMPL>::initialize( const typename IMPL::Device& gpu, unsigned sz, bool host_alloc ) 
   {
     this->byte_size  = sz  ;
     this->gpu        = gpu ;
     
-    this->memory_ptr = impl.createMemory( sz, gpu ) ;
+    this->memory_ptr = impl.createMemory( gpu, sz ) ;
     
     if( host_alloc )
     {

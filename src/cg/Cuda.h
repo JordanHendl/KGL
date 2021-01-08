@@ -103,7 +103,7 @@ namespace kgl
          * @param gpu The GPU to allocate data on.
          * @return Allocated memory on the GPU.
          */
-        Memory createMemory( unsigned size, const Cuda::Device& gpu ) ;
+        Memory createMemory( const Cuda::Device& gpu, unsigned size ) ;
         
         /** Method to create & allocate memory on the GPU.
          * @param size The size of the memory to allocate.
@@ -111,7 +111,7 @@ namespace kgl
          * @param mem_flags The memory property flags to use for creation of this memory object.
          * @return Allocated memory on the GPU.
          */
-        Memory createMemory( unsigned size, const Cuda::Device& gpu, Cuda::MemoryFlags mem_flags ) ;
+        Memory createMemory( const Cuda::Device& gpu, unsigned size, Cuda::MemoryFlags mem_flags ) ;
     };
   }
   

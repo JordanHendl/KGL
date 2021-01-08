@@ -34,7 +34,7 @@ namespace kgl
     {
       switch( error )
       {
-        case cudaSuccess                           :
+        case cudaSuccess                           : break ;
         case cudaErrorInvalidValue                 :
         case cudaErrorMemoryAllocation             :
         case cudaErrorInitializationError          :
@@ -178,12 +178,12 @@ namespace kgl
       cg::handleError( cudaFree( mem )      ) ;
     }
     
-    Cuda::Memory Cuda::createMemory( unsigned size, const Cuda::Device& gpu, Cuda::MemoryFlags flags )
+    Cuda::Memory Cuda::createMemory( const Cuda::Device& gpu, unsigned size, Cuda::MemoryFlags flags )
     {
-      return Cuda::createMemory( size, gpu ) ;
+      return Cuda::createMemory( gpu, size ) ;
     }
     
-    Cuda::Memory Cuda::createMemory( unsigned size, const Cuda::Device& gpu )
+    Cuda::Memory Cuda::createMemory( const Cuda::Device& gpu, unsigned size )
     {
       unsigned char* data ;
 

@@ -37,9 +37,8 @@ FUNCTION( BUILD_TEST )
         FIND_PACKAGE( KT )
         
         # Add Test executable.
-        SET                  ( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BIN_DIR}/${TEST_DIR} )
-        ADD_EXECUTABLE       ( ${TARGET}_test Test.cpp                               )
-        TARGET_LINK_LIBRARIES( ${TARGET}_test ${TARGET} karma_test                   )
+        ADD_EXECUTABLE       ( ${TARGET}_test Test.cpp             )
+        TARGET_LINK_LIBRARIES( ${TARGET}_test ${TARGET} karma_test )
     
           # If we should run tests, add custom command to run them after the fact.
           ADD_CUSTOM_COMMAND(

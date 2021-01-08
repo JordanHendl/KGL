@@ -30,6 +30,7 @@ namespace vk
   class Queue      ;
   class Device     ;
   class SubmitInfo ;
+  class Queue      ;
 }
 namespace kgl
 {
@@ -58,6 +59,16 @@ namespace kgl
          */
         ~Queue() ;
         
+        /** Method to retrieve the vulkan queue family associated with this queue.
+         * @return The queue family associated with this queue.
+         */
+        unsigned family() const ;
+        
+        /** Conversion operator for boolean to check if this object is valid.
+         * @return Whether or not this object is initalized.
+         */
+        operator bool() const ;
+
         /** Assignment operator. Assigns this queue to the input.
          * @param queue The queue to assign this object to.
          * @return Reference to this object after assignment.
@@ -91,7 +102,7 @@ namespace kgl
          * @param queue_family The index of queue family associated with this queue. 
          * @param queue_id The unique queue-id of this object.
          */
-        void initialize( const kgl::vkg::Device& device, unsigned queue_family, unsigned queue_id ) ;
+        void initialize( const kgl::vkg::Device& device, const vk::Queue& queue, unsigned queue_family, unsigned queue_id ) ;
         
 
         /** Forward Declared structure to contain this object's internal data.

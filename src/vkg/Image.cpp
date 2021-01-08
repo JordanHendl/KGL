@@ -133,7 +133,7 @@ namespace kgl
       
       if( !data().preallocated )
       {
-        data().memory.initialize( data().requirements.size, device, false ) ;
+        data().memory.initialize( device, data().requirements.size, false ) ;
       }
       
       if( data().requirements.size <= data().memory.size() - data().memory.offset() )

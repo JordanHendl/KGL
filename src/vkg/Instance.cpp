@@ -124,9 +124,9 @@ namespace kgl
       {
         for( const auto& requested : this->ext_list )
         {
-          if( std::string( ext.extensionName ) == std::string( requested ) )
+          if( std::string( ext.extensionName.data() ) == std::string( requested ) )
           {
-            list.push_back( ext.extensionName ) ;
+            list.push_back( ext.extensionName.data() ) ;
           }
         }
       }
@@ -147,9 +147,9 @@ namespace kgl
         {
           for( const auto& requested : this->layer_list )
           {
-            if( std::string( prop.layerName ) == std::string( requested ) )
+            if( std::string( prop.layerName.data() ) == std::string( requested ) )
             {
-              list.push_back( prop.layerName ) ;
+              list.push_back( prop.layerName.data() ) ;
             }
           }
         }

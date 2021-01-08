@@ -15,17 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+typedef unsigned VkFlags ;
+
 #ifndef KGL_VKG_BUFFER_H
 #define KGL_VKG_BUFFER_H
 
 namespace vk
 {
-       template <typename BitType, typename MaskType>
+       template <typename BitType>
        class Flags ;
        
-       class Buffer              ;
-       class CommandBuffer       ;
-  enum class BufferUsageFlagBits ;
+       class Buffer                        ;
+       class CommandBuffer                 ;
+  enum class BufferUsageFlagBits : VkFlags ;
 }
 
 namespace kgl
@@ -43,7 +45,7 @@ namespace kgl
         
         /** Alias for Vulkan flags.
          */
-        using UsageFlags = ::vk::Flags<::vk::BufferUsageFlagBits, unsigned> ;
+        using UsageFlags = ::vk::Flags<::vk::BufferUsageFlagBits> ;
 
         /** Default Constructor.
          */

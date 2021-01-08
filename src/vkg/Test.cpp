@@ -27,6 +27,8 @@
 #include "Instance.h"
 #include "Buffer.h"
 #include "Image.h"
+#include "Queue.h"
+#include "CommandBuffer.h"
 #include <library/Array.h>
 #include <library/Memory.h>
 #include <library/Image.h>
@@ -41,8 +43,8 @@
 using Impl = ::kgl::vkg::Vulkan ;
 
 static kgl::vkg::Instance   instance       ;
-static kgl::vkg::Device     compute_device ;
-static kgl::vkg::Device     surface_device ;
+static kgl::vkg::Device     device         ;
+static kgl::vkg::Queue      graphics_queue ;
 static kgl::Window<Impl>    window         ;
 static karma::test::Manager manager        ;
 
@@ -51,7 +53,7 @@ bool testMemoryHostGPUCopy()
   kgl::Memory<Impl>     memory   ;
   std::vector<unsigned> host_mem ;
   
-  memory.initialize( sizeof( unsigned ) * 200, compute_device, true, ::vk::MemoryPropertyFlagBits::eHostVisible | ::vk::MemoryPropertyFlagBits::eHostCoherent ) ;
+  memory.initialize( device, sizeof( unsigned ) * 200, true, ::vk::MemoryPropertyFlagBits::eHostVisible | ::vk::MemoryPropertyFlagBits::eHostCoherent ) ;
   host_mem.resize( 200 ) ;
   std::fill( host_mem.begin(), host_mem.end(), 2503 ) ;
   
@@ -76,7 +78,7 @@ bool testBufferSingleAllocation()
 {
   kgl::vkg::Buffer buffer ;
   
-  buffer.initialize( compute_device, 200, false ) ;
+  buffer.initialize( device, 200, false ) ;
   
   
 
@@ -99,8 +101,8 @@ bool testBufferPreallocatedSingle()
   
   binded = 0 ;
   
-            memory.initialize( sizeof( unsigned ) * 1000, compute_device ) ;
-  binded += buffer.initialize( memory, buffer_size               ) ;
+            memory.initialize( device, sizeof( unsigned ) * 1000 ) ;
+  binded += buffer.initialize( memory, buffer_size                       ) ;
   
   buffer.reset()      ;
   memory.deallocate() ;
@@ -124,8 +126,8 @@ bool testBufferPreallocatedMultiple()
   
   binded = 0 ;
   
-            memory_one.initialize( sizeof( unsigned ) * 1000, compute_device ) ;
-  binded += buffer_one.initialize( memory_one, buffer_size           ) ;
+            memory_one.initialize( device, sizeof( unsigned ) * 1000 ) ;
+  binded += buffer_one.initialize( memory_one, buffer_size                   ) ;
   
   memory_two = memory_one + buffer_one.size() ;
 
@@ -147,7 +149,7 @@ bool simpleArrayTest()
 {
   kgl::vkg::VkArray<float> array ;
   
-  array.initialize( compute_device, 500, true ) ;
+  array.initialize( device, 500, true ) ;
   array.reset() ;
   return true ;
 }
@@ -156,7 +158,7 @@ bool simpleImageTest()
 {
   kgl::vkg::CharVkImage image ;
   
-  if( image.initialize( compute_device, 1280, 720 ) )
+  if( image.initialize( device, 1280, 720 ) )
   {
     image.reset() ;
     return true ;
@@ -165,6 +167,13 @@ bool simpleImageTest()
   return false ;
 }
 
+bool queueTest()
+{
+  graphics_queue = device.graphicsQueue() ;
+  
+  if( graphics_queue ) return true ;
+  return false ;
+}
 int main()
 {
   instance.setApplicationName( "KGL-VKG Test App" ) ;
@@ -172,14 +181,14 @@ int main()
   instance.initialize() ;
   window.initialize( "Test", 1024, 720 ) ;
   
-  compute_device.initialize( instance.device( 0 ) ) ;
-  surface_device.initialize( instance.device( 0 ), window.context() ) ;
-  manager.add( "VKG Buffer Creation & Allocation"         , &testBufferSingleAllocation     ) ;
-  manager.add( "VKG Preallocated Buffer Creation"         , &testBufferPreallocatedSingle   ) ;
-  manager.add( "VKG Multiple Preallocated Buffer Creation", &testBufferPreallocatedMultiple ) ;
-  manager.add( "Memory Host-GPU Copy"                     , &testMemoryHostGPUCopy          ) ;
-  manager.add( "Array Test"                               , &simpleArrayTest                ) ;
-  manager.add( "Image Test"                               , &simpleImageTest                ) ;
+  device.initialize( instance.device( 0 ), window.context() ) ;
+  manager.add( "Buffer Creation & Allocation"         , &testBufferSingleAllocation     ) ;
+  manager.add( "Preallocated Buffer Creation"         , &testBufferPreallocatedSingle   ) ;
+  manager.add( "Multiple Preallocated Buffer Creation", &testBufferPreallocatedMultiple ) ;
+  manager.add( "Memory Host-GPU Copy"                 , &testMemoryHostGPUCopy          ) ;
+  manager.add( "Array Test"                           , &simpleArrayTest                ) ;
+  manager.add( "Image Test"                           , &simpleImageTest                ) ;
+  manager.add( "Queue Test"                           , &queueTest                      ) ;
   
   std::cout << "\nTesting VKG Library" << std::endl ;
   

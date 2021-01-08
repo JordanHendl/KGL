@@ -23,4 +23,96 @@
  */
 
 #include "Queue.h"
+#include "Device.h"
+#include <vulkan/vulkan.hpp>
+#include <limits>
 
+namespace kgl
+{
+  namespace vkg
+  {
+    struct QueueData
+    {
+      vk::Queue        queue  ;
+      kgl::vkg::Device device ;
+      unsigned         family ;
+      unsigned         id     ;
+      
+      QueueData() ;
+    };
+
+    QueueData::QueueData()
+    {
+      this->family = UINT32_MAX ;
+      this->id     = UINT32_MAX ;
+    }
+
+    Queue::Queue()
+    {
+      this->queue_data = new QueueData() ;
+    }
+
+    Queue::Queue( const Queue& queue )
+    {
+      this->queue_data = new QueueData() ;
+      
+      *this = queue ;
+    }
+ 
+    Queue::~Queue()
+    {
+      delete this->queue_data ;
+    }
+    
+    Queue::operator bool() const
+    {
+      if( data().queue && data().family != UINT32_MAX )
+      {
+        return true ;
+      }
+
+      return false ;
+    }
+    
+    Queue& Queue::operator=( const Queue& queue )
+    {
+      *this->queue_data = *queue.queue_data ;
+      
+      return *this ;
+    }
+
+    const vk::Queue& Queue::queue() const
+    {
+      return data().queue ;
+    }
+
+    const kgl::vkg::Device& Queue::device() const
+    {
+      return data().device ;
+    }
+
+    void Queue::submit( const vk::SubmitInfo& info )
+    {
+      static vk::Fence dummy ;
+      data().queue.submit( 1, &info, dummy ) ;
+    }
+
+    void Queue::initialize( const kgl::vkg::Device& device, const vk::Queue& queue, unsigned queue_family, unsigned queue_id )
+    {
+      data().device = device       ;
+      data().queue  = queue        ;
+      data().family = queue_family ;
+      data().id     = queue_id     ;
+    }
+
+    QueueData& Queue::data()
+    {
+      return *this->queue_data ;
+    }
+
+    const QueueData& Queue::data() const
+    {
+      return *this->queue_data ;
+    }
+  }
+}

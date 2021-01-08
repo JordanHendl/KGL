@@ -141,7 +141,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        device.free ( mem ) ;
      }
      
-     Vulkan::Memory Vulkan::createMemory( unsigned size, const Vulkan::Device& gpu, Vulkan::MemoryFlags flags )
+     Vulkan::Memory Vulkan::createMemory( const Vulkan::Device& gpu, unsigned size, Vulkan::MemoryFlags flags )
      {
        const auto                      device   = gpu.device()         ;
        const auto                      p_device = gpu.physicalDevice() ;
@@ -157,13 +157,13 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        return mem ;
      }
      
-     Vulkan::Memory Vulkan::createMemory( unsigned size, const Vulkan::Device& gpu )
+     Vulkan::Memory Vulkan::createMemory( const Vulkan::Device& gpu, unsigned size )
      {
        Vulkan::MemoryFlags flags ;
        
        flags = static_cast<unsigned>( ::vk::MemoryPropertyFlagBits::eDeviceLocal ) ;
 
-       return this->createMemory( size, gpu, flags ) ;
+       return this->createMemory( gpu, size, flags ) ;
      }
      
      

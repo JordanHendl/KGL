@@ -27,26 +27,27 @@
 
 #include "Device.h"
 
+typedef unsigned VkFlags ;
 
 /** Vulkan forward declares.
  */
 namespace vk
 {
-  template <typename BitType, typename MaskType>
+  template <typename BitType>
   class Flags ;
 
-       class Framebuffer           ;
-       class RenderPass            ;
-       union ClearValue            ;
-  enum class ImageLayout           ;
-  enum class AttachmentStoreOp     ;
-  enum class AttachmentLoadOp      ;
-  enum class Format                ;
-  enum class ImageUsageFlagBits    ;
-  enum class SampleCountFlagBits   ;
-  enum class PipelineStageFlagBits ;
-  enum class AccessFlagBits        ;
-  enum class PipelineBindPoint     ;
+       class Framebuffer                     ;
+       class RenderPass                      ;
+       union ClearValue                      ;
+  enum class ImageLayout                     ;
+  enum class AttachmentStoreOp               ;
+  enum class AttachmentLoadOp                ;
+  enum class Format                          ;
+  enum class ImageUsageFlagBits    : VkFlags ;
+  enum class SampleCountFlagBits   : VkFlags ;
+  enum class PipelineStageFlagBits : VkFlags ;
+  enum class AccessFlagBits        : VkFlags ;
+  enum class PipelineBindPoint               ;
 }
 
 namespace kgl
@@ -64,7 +65,7 @@ namespace kgl
         
         /** Alias for Vulkan Sample flags.
          */
-        using SampleFlags = ::vk::Flags<::vk::SampleCountFlagBits, unsigned> ;
+        using SampleFlags = ::vk::Flags<::vk::SampleCountFlagBits> ;
         
         /** Default constructor. 
          */
