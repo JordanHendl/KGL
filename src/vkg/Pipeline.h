@@ -25,10 +25,6 @@
 #ifndef KGL_VKG_PIPELINE_H
 #define KGL_VKG_PIPELINE_H
 
-#include <vulkan/vulkan.hpp>
-
-#include "RenderPass.h"
-
 namespace vk
 {
   class PipelineLayout ;

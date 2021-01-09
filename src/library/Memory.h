@@ -115,7 +115,7 @@ namespace kgl
        * @return The offset into the memory handle this object is allowed to use.
        */
       unsigned offset() const ;
-
+      
       /** Method to copy the input memory object into this.
        * @param src The memory object of the same implementation to copy.
        * @param amt_to_copy The amount of memory, in bytes, to copy. Defaults to entire object.
@@ -148,7 +148,7 @@ namespace kgl
        * @param src_offset The offset in indices of the input data to copy from.
        */
       template<typename TYPE>
-      void copyToDevice( const TYPE* src, unsigned amt, unsigned offset = 0, unsigned src_offset = 0, unsigned dstoffset = 0 ) ;
+      void copyToDevice( const TYPE* src, unsigned amt, unsigned src_offset = 0, unsigned dstoffset = 0 ) ;
       
       /** Method to retrieve a const reference to this object's internal implementation-specific memory.
        * @return 
@@ -336,7 +336,7 @@ namespace kgl
 
   template<typename IMPL>
   template<typename TYPE>
-  void Memory<IMPL>::copyToDevice( const TYPE* src, unsigned byte_amt, unsigned offset, unsigned src_offset, unsigned dstoffset )
+  void Memory<IMPL>::copyToDevice( const TYPE* src, unsigned byte_amt, unsigned src_offset, unsigned dstoffset )
   {
     auto amt = byte_amt > this->byte_size ? this->byte_size : byte_amt ;
     

@@ -89,9 +89,9 @@ int main(int argc, char** argv)
 {
   event.enroll( &obj, &Object::inputB, kgl::Key::B, "OnlyBMethod" ) ;
   event.enroll( &onlyKeyUp, kgl::Key::A, "OnlyA" ) ;
-  manager.add( "Linux Event Handler: Method Only Specific Key Events Test."   , &checkMethodInput   ) ;
-  manager.add( "Linux Event Handler: Function Only Specific Type Events Test.", &checkMethodInput   ) ;
-  manager.add( "Linux Window Creation Test."                                  , &testWindowCreation ) ;
+  manager.add( "1) Linux Event Handler: Method Only Specific Key Events Test."   , &checkMethodInput   ) ;
+  manager.add( "2) Linux Event Handler: Function Only Specific Type Events Test.", &checkMethodInput   ) ;
+  manager.add( "3) Linux Window Creation Test."                                  , &testWindowCreation ) ;
 
   return manager.test( karma::test::Output::Verbose ) ;
 }

@@ -72,11 +72,11 @@ bool simpleArrayTest()
 int main()
 {
   karma::test::Manager manager ;
-  
+  Impl::initialize() ;
   std::cout << "Testing KGL CUDA Library" << std::endl ;
   
-  manager.add( "Memory Host-GPU Copy", &testMemoryHostGPUCopy ) ;
-  manager.add( "Testing Cuda Array"  , &simpleArrayTest       ) ;
+  manager.add( "1) Memory Host-GPU Copy", &testMemoryHostGPUCopy ) ;
+  manager.add( "2) Testing Cuda Array"  , &simpleArrayTest       ) ;
   
   return manager.test( karma::test::Output::Verbose ) ;
 }

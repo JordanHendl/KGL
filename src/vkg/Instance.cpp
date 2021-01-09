@@ -5,8 +5,8 @@
 #include <vector>
 
 #define KGL_MAJOR_VERSION 0 
-#define KGL_MINOR_VERSION 1 
-#define KGL_REVISION      1
+#define KGL_MINOR_VERSION 2 
+#define KGL_REVISION      0
 
 namespace kgl
 {
@@ -63,12 +63,18 @@ namespace kgl
       /** Method to retrieve a filtered list of available extensions.
        * @return A Valid list of extensions.
        */
-      CharList filterExtensions() const ;
+      List filterExtensions() const ;
       
       /** Method to retrieve a filtered list of available validation layers.
        * @return A valid list of validiation layers.
        */
-      CharList filterValidationLayers() const ;
+      List filterValidationLayers() const ;
+      
+      /** Method to convert a list of strings to list of char* for vulkan objects.
+       * @param list The list to convert.
+       * @return A List of const char* pointing to string list's strings.
+       */
+      CharList listToCharList( List& list ) ;
     };
     
     
@@ -113,9 +119,9 @@ namespace kgl
       return info ;
     }
     
-    InstanceData::CharList InstanceData::filterExtensions() const
+    InstanceData::List InstanceData::filterExtensions() const
     {
-      CharList                               list                 ;
+      List                                   list                 ;
       std::vector<::vk::ExtensionProperties> available_extentions ;
       
       available_extentions = ::vk::enumerateInstanceExtensionProperties() ;
@@ -126,7 +132,7 @@ namespace kgl
         {
           if( std::string( ext.extensionName.data() ) == std::string( requested ) )
           {
-            list.push_back( ext.extensionName.data() ) ;
+            list.push_back( std::string( ext.extensionName.data() ) ) ;
           }
         }
       }
@@ -134,9 +140,9 @@ namespace kgl
       return list ;
     }
     
-    InstanceData::CharList InstanceData::filterValidationLayers() const
+    InstanceData::List InstanceData::filterValidationLayers() const
     {
-      CharList                           list             ;
+      List                               list             ;
       std::vector<::vk::LayerProperties> available_layers ;
       
       if( this->debug )
@@ -149,7 +155,7 @@ namespace kgl
           {
             if( std::string( prop.layerName.data() ) == std::string( requested ) )
             {
-              list.push_back( prop.layerName.data() ) ;
+              list.push_back( std::string( prop.layerName.data() ) ) ;
             }
           }
         }
@@ -158,6 +164,18 @@ namespace kgl
       return list ;
     }
     
+    InstanceData::CharList InstanceData::listToCharList( List& list )
+    {
+      InstanceData::CharList char_list ;
+      
+      for( auto &str : list )
+      {
+        char_list.push_back( str.c_str() ) ;
+      }
+      
+      return char_list ;
+    }
+
     Instance::Instance()
     {
       this->instance_data = new InstanceData() ;
@@ -219,11 +237,13 @@ namespace kgl
 
     void Instance::initialize()
     {
-      ::vk::InstanceCreateInfo               info       ;
-      ::vk::ApplicationInfo                  app_info   ;
-      ::vk::DebugUtilsMessengerCreateInfoEXT debug_info ;
-      InstanceData::CharList                 ext_list   ;
-      InstanceData::CharList                 layer_list ;
+      ::vk::InstanceCreateInfo               info            ;
+      ::vk::ApplicationInfo                  app_info        ;
+      ::vk::DebugUtilsMessengerCreateInfoEXT debug_info      ;
+      InstanceData::List                     ext_list        ;
+      InstanceData::List                     layer_list      ;
+      InstanceData::CharList                 ext_list_char   ;
+      InstanceData::CharList                 layer_list_char ;
       
       app_info   = data().makeAppInfo()            ;
       debug_info = data().makeDebugInfo()          ;
@@ -236,12 +256,15 @@ namespace kgl
         ext_list.push_back( VK_EXT_DEBUG_UTILS_EXTENSION_NAME ) ;
         info.setPNext( reinterpret_cast<VkDebugUtilsMessengerCreateInfoEXT*>( &debug_info ) ) ;
       }
+      
+      ext_list_char   = data().listToCharList( ext_list )   ;
+      layer_list_char = data().listToCharList( layer_list ) ;
 
-      info.setEnabledLayerCount      ( layer_list.size() ) ;
-      info.setPpEnabledLayerNames    ( layer_list.data() ) ;
-      info.setEnabledExtensionCount  ( ext_list.size()   ) ;
-      info.setPpEnabledExtensionNames( ext_list.data()   ) ;
-      info.setPApplicationInfo       ( &app_info         ) ;
+      info.setEnabledLayerCount      ( layer_list.size()      ) ;
+      info.setPpEnabledLayerNames    ( layer_list_char.data() ) ;
+      info.setEnabledExtensionCount  ( ext_list.size()        ) ;
+      info.setPpEnabledExtensionNames( ext_list_char.data()   ) ;
+      info.setPApplicationInfo       ( &app_info              ) ;
       
       data().instance     = ::vk::createInstance( info )               ;
       data().physical_dev = data().instance.enumeratePhysicalDevices() ;

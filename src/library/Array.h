@@ -196,21 +196,23 @@ namespace kgl
   template<typename IMPL, class TYPE>
   void Array<IMPL, TYPE>::copy( const Array<IMPL, TYPE>& src, typename IMPL::CommandRecord& record, unsigned amount, unsigned srcoffset, unsigned dstoffset )
   {
-    this->arr_buffer.copy( src.arr_buffer, record, amount, srcoffset, dstoffset ) ;
+    if( amount == 0 ) amount = sizeof( TYPE ) * this->count ;
+    else              amount *= sizeof( TYPE ) ;
+    this->arr_buffer.copy( src.arr_buffer, amount, record, srcoffset, dstoffset ) ;
   }
 
   
   template<typename IMPL, class TYPE>
   void Array<IMPL, TYPE>::copyToDevice( const TYPE* src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
   {
-    this->arr_buffer.copy( src, amount, srcoffset, dstoffset ) ;
+    this->arr_buffer.copyToDevice( static_cast<const void*>( src ), sizeof( TYPE ) * amount, srcoffset, dstoffset ) ;
   }
 
   
   template<typename IMPL, class TYPE>
   void Array<IMPL, TYPE>::copyToHost( const TYPE* src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
   {
-    this->arr_buffer.copyToHost( static_cast<const unsigned char*>( src ), amount * sizeof( TYPE ), srcoffset, dstoffset ) ;
+    this->arr_buffer.copyToHost( static_cast<const void*>( src ), amount * sizeof( TYPE ), srcoffset, dstoffset ) ;
   }
 
   
@@ -277,7 +279,8 @@ namespace kgl
   template<typename IMPL, class TYPE>
   void Array<IMPL, TYPE>::initialize( const typename IMPL::Device& device, unsigned size, bool host_alloc )
   {
-    this->arr_buffer.initialize( device, size, host_alloc ) ;
+    this->count = size ;
+    this->arr_buffer.initialize( device, size * sizeof( TYPE ), host_alloc ) ;
   }
 
 
@@ -285,7 +288,8 @@ namespace kgl
   template<typename ... BUFFER_FLAGS>
   void Array<IMPL, TYPE>::initialize( const typename IMPL::Device& device, unsigned size, bool host_alloc, BUFFER_FLAGS... buffer_flags )
   {
-    this->arr_buffer.initialize( device, size, host_alloc, buffer_flags... ) ;
+    this->count = size ;
+    this->arr_buffer.initialize( device, size * sizeof( TYPE ), host_alloc, buffer_flags... ) ;
   }
 
 
@@ -299,7 +303,7 @@ namespace kgl
   template<typename IMPL, class TYPE>
   const typename IMPL::Device& Array<IMPL, TYPE>::device() const
   {
-    return this->arr_memory.device() ;
+    return this->arr_buffer.device() ;
   }
 }
 

@@ -27,16 +27,18 @@
 
 namespace vk
 {
-  class Queue      ;
-  class Device     ;
-  class SubmitInfo ;
-  class Queue      ;
+  class Queue         ;
+  class Device        ;
+  class SubmitInfo    ;
+  class Queue         ;
+  class CommandBuffer ;
 }
 namespace kgl
 {
   namespace vkg
   {
     class Synchronization ;
+    class CommandBuffer   ;
     class Device          ;
     
     /** Class for managing a vulkan queue. 
@@ -87,9 +89,29 @@ namespace kgl
         
         /** Method to submit a command to a queue.
          * @note This object handles concurrent CPU-side access to vulkan queues.
-         * @param info The vulkan info object describing the submition.
+         * @param cmd_buff The command buffer to submit.
          */
-        void submit( const vk::SubmitInfo& info ) ;
+        void submit( const kgl::vkg::CommandBuffer& cmd_buff ) ;
+        
+        /** Method to submit a command to a queue.
+         * @note This object handles concurrent CPU-side access to vulkan queues.
+         * @param cmd_buff The command buffer to submit.
+         * @param sync The library synchronization object to synchronize this submition.
+         */
+        void submit( const kgl::vkg::CommandBuffer& cmd_buff, const kgl::vkg::Synchronization& sync ) ;
+
+        /** Method to submit a command to a queue.
+         * @note This object handles concurrent CPU-side access to vulkan queues.
+         * @param cmd_buff The command buffer to submit.
+         */
+        void submit( const vk::CommandBuffer& cmd_buff ) ;
+
+        /** Method to submit a command to a queue.
+         * @note This object handles concurrent CPU-side access to vulkan queues.
+         * @param cmd_buff The command buffer to submit.
+         * @param sync The library synchronization object to synchronize this submition.
+         */
+        void submit( const vk::CommandBuffer& cmd_buff, const kgl::vkg::Synchronization& sync ) ;
         
       private:
         

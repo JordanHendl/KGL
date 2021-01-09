@@ -36,11 +36,19 @@ OPTION( BUILD_LINUX  "Whether or not the KGL::LINUX library will be built, if av
 OPTION( BUILD_CUDA   "Whether or not the KGL::CUDA library will be built, if available"  ON )
 OPTION( BUILD_VULKAN "Whether or not the KGL::VKG library will be built, if available"   ON )
 OPTION( RUN_TESTS    "Whether or not the KGL tests should be run"                        ON )
-
+OPTION( BUILD_RELEASE "Whether or not the to build for release."                         ON )
 PROJECT( KGL CXX )
 
 MESSAGE( INFO "KGL Library Prebuild" ) 
 MESSAGE( INFO " " ) 
+
+IF( BUILD_RELEASE  )
+    MESSAGE( INFO "Building for release" )
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3" )
+ELSE()
+    MESSAGE( INFO "Building for debug" )
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g" )
+ENDIF()
 
 # Print build options
 MESSAGE( STATUS "" ) 

@@ -29,6 +29,7 @@
 #include "Image.h"
 #include "Queue.h"
 #include "CommandBuffer.h"
+#include "Synchronization.h"
 #include <library/Array.h>
 #include <library/Memory.h>
 #include <library/Image.h>
@@ -47,6 +48,8 @@ static kgl::vkg::Device     device         ;
 static kgl::vkg::Queue      graphics_queue ;
 static kgl::Window<Impl>    window         ;
 static karma::test::Manager manager        ;
+
+static std::vector<unsigned> test_array ;
 
 bool testMemoryHostGPUCopy()
 {
@@ -102,7 +105,7 @@ bool testBufferPreallocatedSingle()
   binded = 0 ;
   
             memory.initialize( device, sizeof( unsigned ) * 1000 ) ;
-  binded += buffer.initialize( memory, buffer_size                       ) ;
+  binded += buffer.initialize( memory, buffer_size               ) ;
   
   buffer.reset()      ;
   memory.deallocate() ;
@@ -127,7 +130,7 @@ bool testBufferPreallocatedMultiple()
   binded = 0 ;
   
             memory_one.initialize( device, sizeof( unsigned ) * 1000 ) ;
-  binded += buffer_one.initialize( memory_one, buffer_size                   ) ;
+  binded += buffer_one.initialize( memory_one, buffer_size           ) ;
   
   memory_two = memory_one + buffer_one.size() ;
 
@@ -167,28 +170,82 @@ bool simpleImageTest()
   return false ;
 }
 
-bool queueTest()
+bool arrayCopyTest()
 {
-  graphics_queue = device.graphicsQueue() ;
+  kgl::vkg::CommandBuffer     cmd      ;
+  kgl::vkg::VkArray<unsigned> buffer_1 ;
+  kgl::vkg::VkArray<unsigned> buffer_2 ; 
   
-  if( graphics_queue ) return true ;
-  return false ;
+  test_array.resize( 500 ) ;
+  std::fill( test_array.begin(), test_array.end(), 76006 ) ;
+
+  buffer_1.initialize( device, 500, true  ) ;
+  buffer_2.initialize( device, 500, false ) ;
+  cmd     .initialize( graphics_queue, 1  ) ;
+  if( cmd.size() != 1 ) return false ;
+  
+  // Record copy command.
+  cmd.record() ;
+  buffer_1.copyToDevice( test_array.data(), 500 ) ;
+  buffer_2.copy( buffer_1, cmd.buffer( 0 ) ) ;
+  cmd.stop() ;
+  
+  // Submit & Sync.
+  graphics_queue.submit( cmd ) ;
+  cmd.reset() ;
+  
+  return true ;
 }
+
+bool arrayCopyNonSyncedTest()
+{
+  kgl::vkg::CommandBuffer     cmd      ;
+  kgl::vkg::VkArray<unsigned> buffer_1 ;
+  kgl::vkg::VkArray<unsigned> buffer_2 ; 
+  kgl::vkg::Synchronization   sync     ;
+  
+  test_array.resize( 500 ) ;
+  std::fill( test_array.begin(), test_array.end(), 76006 ) ;
+
+  buffer_1.initialize( device, 500, true  ) ;
+  buffer_2.initialize( device, 500, false ) ;
+  cmd     .initialize( graphics_queue, 1  ) ;
+  sync    .initialize( device             ) ;
+  if( cmd.size() != 1 ) return false ;
+  
+  // Record copy command.
+  cmd.record() ;
+  buffer_1.copyToDevice( test_array.data(), 500 ) ;
+  buffer_2.copy( buffer_1, cmd.buffer( 0 ) ) ;
+  cmd.stop() ;
+  
+  // Submit & Sync.
+  graphics_queue.submit( cmd, sync ) ;
+  return true ;
+}
+
 int main()
 {
-  instance.setApplicationName( "KGL-VKG Test App" ) ;
-  
+  // Initialize Instance.
+  instance.setApplicationName( "KGL-VKG Test App"                        ) ;
+  instance.addExtension      ( Impl::platformSurfaceInstanceExtensions() ) ;
+  instance.addExtension      ( "VK_KHR_surface"                          ) ;
+  instance.addValidationLayer( "VK_LAYER_KHRONOS_validation"             ) ;
+  instance.addValidationLayer( "VK_LAYER_LUNARG_standard_validation"     ) ;
   instance.initialize() ;
+
   window.initialize( "Test", 1024, 720 ) ;
-  
   device.initialize( instance.device( 0 ), window.context() ) ;
-  manager.add( "Buffer Creation & Allocation"         , &testBufferSingleAllocation     ) ;
-  manager.add( "Preallocated Buffer Creation"         , &testBufferPreallocatedSingle   ) ;
-  manager.add( "Multiple Preallocated Buffer Creation", &testBufferPreallocatedMultiple ) ;
-  manager.add( "Memory Host-GPU Copy"                 , &testMemoryHostGPUCopy          ) ;
-  manager.add( "Array Test"                           , &simpleArrayTest                ) ;
-  manager.add( "Image Test"                           , &simpleImageTest                ) ;
-  manager.add( "Queue Test"                           , &queueTest                      ) ;
+  graphics_queue = device.graphicsQueue() ;
+
+  manager.add( "1) Array Test"                           , &simpleArrayTest                ) ;
+  manager.add( "2) Array Copy & Synced Submit Test"      , &arrayCopyTest                  ) ;
+  manager.add( "3) Array Copy & Non-Synced Submit Test"  , &arrayCopyNonSyncedTest         ) ;
+  manager.add( "4) Buffer Creation & Allocation"         , &testBufferSingleAllocation     ) ;
+  manager.add( "5) Preallocated Buffer Creation"         , &testBufferPreallocatedSingle   ) ;
+  manager.add( "6) Multiple Preallocated Buffer Creation", &testBufferPreallocatedMultiple ) ;
+  manager.add( "7) Memory Host-GPU Copy"                 , &testMemoryHostGPUCopy          ) ;
+  manager.add( "8) Image Test"                           , &simpleImageTest                ) ;
   
   std::cout << "\nTesting VKG Library" << std::endl ;
   

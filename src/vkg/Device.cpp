@@ -62,6 +62,12 @@ namespace kgl
       /** Default constructor.
        */
       QueueFamilies() = default ;
+      
+      /** Assignment operator.
+       * @param family The object to assign to this one.
+       * @return Reference after assignment.
+       */
+      QueueFamilies& operator=( const QueueFamilies& family ) ;
     };
 
     struct DeviceData
@@ -87,11 +93,12 @@ namespace kgl
       /** Default Constructor
        */
       DeviceData() ;
-
-      /** Copy operator
+      
+      /** Assignment operator.
+       * @return Reference to this object after assignment.
        */
       DeviceData& operator=( const DeviceData& data ) ;
-      
+
       /** Method to generate the virtual Vulkan device.
        */
       void generateDevice() ;
@@ -132,6 +139,19 @@ namespace kgl
 
       return UINT32_MAX ;
     }
+    
+    QueueFamilies& QueueFamilies::operator=( const QueueFamilies& family )
+    {
+      this->total_families = family.total_families ;
+      this->graphics       = family.graphics       ;
+      this->compute        = family.compute        ;
+      this->present        = family.present        ;
+      this->transfer       = family.transfer       ;
+      this->priority_map   = family.priority_map   ;
+      
+      return *this ;
+    }
+
     DeviceData::DeviceData()
     {
       this->graphics_priorities = { 1.0f } ;
@@ -140,13 +160,15 @@ namespace kgl
       this->present_priorities  = { 1.0f } ;
     }
     
-    DeviceData& DeviceData::operator=(const DeviceData& data) 
+    DeviceData& DeviceData::operator=( const DeviceData& data )
     {
       this->gpu                 = data.gpu                 ;
       this->physical_device     = data.physical_device     ;
       this->surface             = data.surface             ;
       this->features            = data.features            ;
+      this->properties          = data.properties          ;
       this->extension_list      = data.extension_list      ;
+      this->queues              = data.queues              ;
       this->queue_families      = data.queue_families      ;
       this->graphics_priorities = data.graphics_priorities ;
       this->compute_priorities  = data.compute_priorities  ;
@@ -155,6 +177,7 @@ namespace kgl
       
       return *this ;
     }
+
 
     void DeviceData::generateDevice()
     {

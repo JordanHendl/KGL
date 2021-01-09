@@ -11,6 +11,7 @@ IF( ${Vulkan_FOUND} )
          Image.cpp
          RenderPass.cpp
          Queue.cpp
+         Synchronization.cpp
          Pipeline.cpp
          CommandBuffer.cpp
          KgShader.cpp
@@ -23,6 +24,7 @@ IF( ${Vulkan_FOUND} )
          Instance.h
          Image.h
          RenderPass.h
+         Synchronization.h
          Queue.h
          Pipeline.h
          CommandBuffer.h

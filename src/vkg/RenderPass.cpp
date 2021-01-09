@@ -46,8 +46,9 @@ namespace kgl
       unsigned               height              ;
       unsigned               layers              ;
       kgl::vkg::Device       device              ;
-      ::vk::ClearValue       clear_color         ;
-      ::vk::RenderPass       render_pass         ;
+      vk::ClearValue         clear_color         ;
+      vk::RenderPass         render_pass         ;
+      vk::Rect2D             area                ;
       Framebuffers           framebuffers        ;
       FramebufferImages      images              ;
       AttachmentDescriptions attach_descriptions ;
@@ -180,6 +181,11 @@ namespace kgl
       data().makeFramebuffers() ;
     }
     
+    const vk::Rect2D& RenderPass::area() const
+    {
+      return data().area ;
+    }
+
     const vk::ClearValue& RenderPass::clearColors() const
     {
       return data().clear_color ;
@@ -229,11 +235,13 @@ namespace kgl
 
     void RenderPass::setFramebufferWidth( unsigned width )
     {
+      data().area.extent.width = width ;
       data().width = width ;
     }
 
     void RenderPass::setFramebufferHeight( unsigned height )
     {
+      data().area.extent.height = height ;
       data().height = height ;
     }
 

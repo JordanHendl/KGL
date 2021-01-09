@@ -152,7 +152,7 @@ namespace kgl
 
     void Cuda::initialize()
     {
-
+      cudaDeviceSynchronize() ;
     }
 
     unsigned Cuda::convertError( unsigned error )
@@ -170,6 +170,7 @@ namespace kgl
     {
       cg::handleError( cudaSetDevice( gpu )                                ) ;
       cg::handleError( cudaMemcpy( dst, src, amt, cudaMemcpyDeviceToHost ) ) ;
+      cg::handleError( cudaDeviceSynchronize()                             ) ;
     }
     
     void Cuda::free( Cuda::Memory& mem, Cuda::Device& gpu )

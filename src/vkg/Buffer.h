@@ -37,8 +37,10 @@ namespace kgl
   
   namespace vkg
   {
-    class Vulkan ;
-    class Device ;
+    class Vulkan        ;
+    class Device        ;
+    class CommandBuffer ;
+
     class Buffer
     {
       public:
@@ -65,13 +67,21 @@ namespace kgl
         Buffer& operator=( const Buffer& src ) ;
         
         /** Method to copy an input buffer into this object's data.
-         * @param size The size in bytes to copy.
          * @param buffer The buffer to copy from.
+         * @param byte_size The size in bytes to copy.
          * @param cmd_buff The command buffer to record the copy operation to.
          * @param srcoffset The offset of the input buffer to start at.
          * @param dstoffset The offset of this buffer to start at.
          */
-        void copy( const Buffer& buffer, unsigned size, ::vk::CommandBuffer cmd_buff, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+        void copy( const Buffer& buffer, unsigned byte_size, ::vk::CommandBuffer cmd_buff, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+        
+        /** Method to copy an input buffer into this object's data.
+         * @param src Host pointer to copy data from.
+         * @param byte_size The size in bytes to copy.
+         * @param srcoffset The offset of the input buffer to start at.
+         * @param dstoffset The offset of this buffer to start at.
+         */
+        void copyToDevice( const void* src, unsigned byte_size, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
         
         /** Method to copy an input buffer into this object's data.
          * @param size The size in bytes to copy.
@@ -80,7 +90,7 @@ namespace kgl
          * @param srcoffset The offset of the input buffer to start at.
          * @param dstoffset The offset of this buffer to start at.
          */
-        void copyToHost( const unsigned char* src, unsigned size, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+        void copyToHost( const void* src, unsigned size, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
 
         /** Method to copy an input buffer into this object's data.
          * @param size The size in bytes to copy.
@@ -89,7 +99,7 @@ namespace kgl
          * @param srcoffset The offset of the input buffer to start at.
          * @param dstoffset The offset of this buffer to start at.
          */
-        void copyToHost( const unsigned char* src, unsigned size, ::vk::CommandBuffer cmd_buff, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+        void copyToHost( const void* src, unsigned size, ::vk::CommandBuffer cmd_buff, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
         
         /** Method to initialize this object using the input pre-allocated memory object. Does not allocate any extra data.
          * @param prealloc The pre-allocated memory object to use for this object's internal memory.
@@ -129,6 +139,11 @@ namespace kgl
          */
         void syncToHost() ;
         
+        /** Method to reitreve the device used for this buffer.
+         * @return Const-reference to the device used for this buffer.
+         */
+        const kgl::vkg::Device& device() ;
+
         /** Method to sync this buffer to the device.
          */
         void syncToDevice() ;

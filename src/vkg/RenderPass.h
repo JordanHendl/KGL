@@ -25,8 +25,6 @@
 #ifndef KGL_VKG_RENDERPASS_H
 #define KGL_VKG_RENDERPASS_H
 
-#include "Device.h"
-
 typedef unsigned VkFlags ;
 
 /** Vulkan forward declares.
@@ -35,7 +33,8 @@ namespace vk
 {
   template <typename BitType>
   class Flags ;
-
+      
+       struct Rect2D                         ;
        class Framebuffer                     ;
        class RenderPass                      ;
        union ClearValue                      ;
@@ -91,6 +90,11 @@ namespace kgl
          */
         void initialize( const kgl::vkg::Device& device ) ;
         
+        /** Method to retrieve the area of this renderpass.
+         * @return The vulkan Rect2D area of this render pass.
+         */
+        const vk::Rect2D& area() const ;
+
         /** Method to retrieve the clear colors associated with this render pass.
          * @return The clear colors associated with this render pass.
          */
