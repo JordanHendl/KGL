@@ -85,7 +85,7 @@ bool testWindowCreation()
   
   return false ;
 }
-int main(int argc, char** argv) 
+int main() 
 {
   event.enroll( &obj, &Object::inputB, kgl::Key::B, "OnlyBMethod" ) ;
   event.enroll( &onlyKeyUp, kgl::Key::A, "OnlyA" ) ;

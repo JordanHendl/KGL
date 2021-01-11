@@ -336,11 +336,11 @@ namespace kgl
 
   template<typename IMPL>
   template<typename TYPE>
-  void Memory<IMPL>::copyToDevice( const TYPE* src, unsigned byte_amt, unsigned src_offset, unsigned dstoffset )
+  void Memory<IMPL>::copyToDevice( const TYPE* src, unsigned byte_amt, unsigned src_offset, unsigned dst_offset )
   {
     auto amt = byte_amt > this->byte_size ? this->byte_size : byte_amt ;
     
-    this->impl.copyToDevice( static_cast<const void*>( src ), this->memory_ptr, this->gpu, amt ) ;
+    this->impl.copyToDevice( static_cast<const void*>( src ), this->memory_ptr, this->gpu, amt, src_offset, dst_offset ) ;
   }
 
   template<typename IMPL>

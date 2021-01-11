@@ -172,20 +172,20 @@ namespace kgl
       return data().cmd_buffers.data() ;
     }
 
-    void CommandBuffer::draw( const kgl::vkg::Buffer& buffer, unsigned offset )
-    {
-    
-    }
-
-    void CommandBuffer::drawInstanced( const kgl::vkg::Buffer& buffer, unsigned instance_count, unsigned offset, unsigned first )
-    {
-    
-    }
-
-    void CommandBuffer::drawIndexed( const kgl::vkg::Buffer& indices, const kgl::vkg::Buffer& vertices )
-    {
-    
-    }
+//    void CommandBuffer::draw( const kgl::vkg::Buffer& buffer, unsigned offset )
+//    {
+//    
+//    }
+//
+//    void CommandBuffer::drawInstanced( const kgl::vkg::Buffer& buffer, unsigned instance_count, unsigned offset, unsigned first )
+//    {
+//    
+//    }
+//
+//    void CommandBuffer::drawIndexed( const kgl::vkg::Buffer& indices, const kgl::vkg::Buffer& vertices )
+//    {
+//    
+//    }
 
     void CommandBuffer::record( const kgl::vkg::RenderPass& render_pass )
     {

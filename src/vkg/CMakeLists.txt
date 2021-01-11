@@ -51,6 +51,8 @@ IF( ${Vulkan_FOUND} )
     TARGET_LINK_LIBRARIES     ( kgl_vkg PUBLIC  ${KGL_VULKAN_LIBRARIES}                     )
     TARGET_INCLUDE_DIRECTORIES( kgl_vkg PRIVATE ${KGL_VULKAN_INCLUDE_DIRS}                  )
     
+    INCLUDE_DIRECTORIES( ${KGL_VULKAN_INCLUDE_DIRS} )
+
     # If running tests, make and run them.
     IF( RUN_TESTS )
       BUILD_TEST( TARGET kgl_vkg )
@@ -58,6 +60,7 @@ IF( ${Vulkan_FOUND} )
 
     INSTALL( FILES  ${KGL_VULKAN_HEADERS} DESTINATION ${INCLUDE_DIR}/vkg )
     INSTALL( TARGETS kgl_vkg EXPORT kgl   
+             RUNTIME  DESTINATION ${EXPORT_LIB_DIR}/vkg
              LIBRARY  DESTINATION ${EXPORT_LIB_DIR}/vkg
              INCLUDES DESTINATION ${EXPORT_INCLUDE_DIR} )
 

@@ -35,6 +35,7 @@ namespace vk
   enum class MemoryPropertyFlagBits : VkFlags ;
   enum class ImageLayout                      ;
   enum class Format                           ;
+  enum class Result                           ;
 }
 
 /** Operator definition for OR'ing a memory property flag bit and an unsigned integer.
@@ -88,6 +89,67 @@ namespace kgl
      */
     class Image ;
     
+    /** Reflective enumeration for a library error.
+     */
+    class Error
+    {
+      public:
+        
+        /** The type of error.
+         */
+        enum
+        {
+          None,
+          Success,
+          Not_Ready,
+          Incomplete,
+          OutOfHostMemory,
+          DeviceLost,
+          ExtensionNotPresent,
+          LayerNotPresent,
+          Unknown,
+          SuboptimalSwapchain,
+          Fragmentation,
+          InvalidExternalHandle,
+          SurfaceLost,
+          NativeWindowInUse,
+          SuboptimalKHR,
+          MemoryMapFailed,
+          ValidationFailed,
+          InvalidDevice,
+        };
+        
+        /** Default constructor.
+         */
+        Error() ;
+        
+        /** Copy constructor. Copies the input.
+         * @param error The input to copy.
+         */
+        Error( const Error& error ) ;
+        
+        /** Copy constructor. Copies the input.
+         * @param error The input to copy.
+         */
+        Error( unsigned error ) ;
+        
+        /** Method to retrieve the error associated with this object.
+         * @return The error associated with this object.
+         */
+        unsigned error() const ;
+        
+        /** Conversion operator of this object to an unsigned integer representing the error.
+         * @return The error of this object.
+         */
+        operator unsigned() const ;
+
+      private:
+        
+        /** Underlying variable holding the error of this object.
+         */
+        unsigned err ; 
+    };
+
     /** Class that implements Vulkan functionality.
      */
     class Vulkan
@@ -112,7 +174,7 @@ namespace kgl
          * @param error An error defined by vulkan.
          * @return An error defined by the library.
          */
-        static unsigned convertError( unsigned error ) ;
+        static Error convertError( vk::Result error ) ;
 
         /** Static method for retrieving a vulkan surface from a window's window.
          * @param window The Win32 window to get a surface from.
@@ -120,16 +182,17 @@ namespace kgl
          */
         static Vulkan::Context contextFromBaseWindow( const kgl::win32::Window& window ) ;
         
-        /** Method to retrieve the platform-specific instance extension names for the surface of this system.
-         * @return String names of the platform-specific extensions needed by this system for a vulkan surface.
-         */
-        static const char* platformSurfaceInstanceExtensions() ;
-
         /** Static method for retrieving a vulkan surface from a linux window.
          * @param window The Linux window to get a surface from.
          * @return A Valid vulkan surface.
          */
         static Vulkan::Context contextFromBaseWindow( const kgl::lx::Window& window ) ;
+
+        /** Method to retrieve the platform-specific instance extension names for the surface of this system.
+         * @return String names of the platform-specific extensions needed by this system for a vulkan surface.
+         */
+        static const char* platformSurfaceInstanceExtensions() ;
+        
 
       private:
         
@@ -196,7 +259,7 @@ namespace kgl
          * @param gpu The device to use for this operation.
          * @param amt The amount of data to copy.
          */
-        void copyToDevice( const void* src, Memory& dst, Vulkan::Device& gpu, unsigned amt ) ;
+        void copyToDevice( const void* src, Memory& dst, Vulkan::Device& gpu, unsigned amt, unsigned src_offset = 0, unsigned dst_offset = 0 ) ;
   
         /** Method to copy data from the GPU ( VRAM ) to the host ( RAM ).
          * @param src The source memory handle on the GPU.
@@ -204,7 +267,7 @@ namespace kgl
          * @param gpu The device to use for this operation.
          * @param amt The amount of data to copy.
          */
-        void copyToHost( const Memory& src, Data dst, Vulkan::Device& gpu, unsigned amt ) ;
+        void copyToHost( const Memory& src, Data dst, Vulkan::Device& gpu, unsigned amt, unsigned src_offset = 0, unsigned dst_offset = 0 ) ;
   
         /** Method to release the input memory handle.
          * @param mem The memory object to release.

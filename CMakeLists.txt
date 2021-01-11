@@ -44,10 +44,18 @@ MESSAGE( INFO " " )
 
 IF( BUILD_RELEASE  )
     MESSAGE( INFO "Building for release" )
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3" )
+    IF( MSVC )
+      ADD_COMPILE_OPTIONS( /W4 /WX /fPIC )
+    ELSEIF( UNIX AND NOT APPLE )
+      ADD_COMPILE_OPTIONS( -Wall -Wextra -pedantic -Werror -fPIC -O3 )
+    ENDIF()
 ELSE()
     MESSAGE( INFO "Building for debug" )
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g" )
+    IF( MSVC )
+      ADD_COMPILE_OPTIONS( /W4 /WX /fPIC )
+    ELSEIF( UNIX AND NOT APPLE )
+      ADD_COMPILE_OPTIONS( -Wall -Wextra -pedantic -Werror -fPIC -g )
+    ENDIF()
 ENDIF()
 
 # Print build options
@@ -67,6 +75,9 @@ SET( MAJOR        "0"     CACHE STRING "The major version of this build."      )
 SET( MINOR        "1"     CACHE STRING "The minor version of this build."      )
 SET( BRANCH       "0"     CACHE STRING "The branch version of this build."     )
 SET( REVISION     "0"     CACHE STRING "The revision of this build."           )
+
+SET(CMAKE_CXX_STANDARD          17 )
+SET(CMAKE_CXX_STANDARD_REQUIRED ON )
 
 SET( PROJECT_VERSION "${MAJOR}.${MINOR}.${BRANCH}" )
 
@@ -131,8 +142,11 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib64 )
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin   )
 set(DOCUMENTATION_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/doc   )
 
-MESSAGE ( INFO ${CMAKE_BINARY_DIR} )
-MESSAGE ( INFO ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} )
+IF( MSVC )
+    ADD_COMPILE_OPTIONS( "/std:c11" ) 
+    SET( CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE )
+    SET( BUILD_SHARED_LIBS TRUE                )
+ENDIF()
 
 INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR}/src ) 
 

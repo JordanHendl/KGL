@@ -313,14 +313,12 @@ namespace kgl
     
     void Window::handleEvents()
     {
-      xcb_atom_t wmProtocols ;
       xcb_atom_t wmDeleteWin ;
 
       xcb_generic_event_t        *event          ;
       xcb_client_message_event_t *client_message ;
-      xcb_button_press_event_t   *button         ;
 
-      while( event = xcb_poll_for_event( data().connection ) )
+      while( ( event = xcb_poll_for_event( data().connection ) ) )
       {
         switch( event->response_type & ~0x80 )
         {
@@ -355,7 +353,7 @@ namespace kgl
           }
           case XCB_MOTION_NOTIFY:
           {
-            auto motion = reinterpret_cast<xcb_enter_notify_event_t*>( event ) ;
+//            auto motion = reinterpret_cast<xcb_enter_notify_event_t*>( event ) ;
             std::cout << "Motion Notify" << std::endl ;
             break ;
           }

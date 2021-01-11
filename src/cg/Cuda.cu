@@ -160,14 +160,20 @@ namespace kgl
       return 0 ;
     }
 
-    void Cuda::copyToDevice( const void* src, Cuda::Memory& dst, Cuda::Device& gpu, unsigned amt )
+    void Cuda::copyToDevice( const void* src, Cuda::Memory& dst, Cuda::Device& gpu, unsigned amt, unsigned src_offset, unsigned dst_offset )
     {
+      dst = static_cast<Cuda::Memory>( static_cast<unsigned char*>      ( dst ) + dst_offset ) ;
+      src = static_cast<const void* >( static_cast<const unsigned char*>( src ) + src_offset ) ;
+      
       cg::handleError( cudaSetDevice( gpu )                                ) ;
       cg::handleError( cudaMemcpy( dst, src, amt, cudaMemcpyHostToDevice ) ) ;
     }
     
-    void Cuda::copyToHost( const Cuda::Memory& src, Cuda::Data dst, Cuda::Device& gpu, unsigned amt )
+    void Cuda::copyToHost( const void* src, Cuda::Data dst, Cuda::Device& gpu, unsigned amt, unsigned src_offset, unsigned dst_offset )
     {
+      dst = static_cast<Cuda::Memory>( static_cast<unsigned char*>      ( dst ) + dst_offset ) ;
+      src = static_cast<const void* >( static_cast<const unsigned char*>( src ) + src_offset ) ;
+
       cg::handleError( cudaSetDevice( gpu )                                ) ;
       cg::handleError( cudaMemcpy( dst, src, amt, cudaMemcpyDeviceToHost ) ) ;
       cg::handleError( cudaDeviceSynchronize()                             ) ;

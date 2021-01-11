@@ -26,8 +26,8 @@
 #define KGL_WINDOW_H
 
 #ifdef _WIN32
-  #include "./windows/Win32.h"
-  #include "./windows/Window.h"
+  #include "./win32/Win32.h"
+  #include "./win32/Window.h"
 #elif __linux__ 
   #include "./linux/Linux.h"
   #include "./linux/Window.h"
@@ -174,7 +174,8 @@ namespace kgl
   {
     this->os_window.handleEvents() ;
   }
-  #ifdef _WIN32
+
+  #ifdef WIN32
     template<typename API>
     using Window = kgl::BaseWindow<kgl::win32::Win32, API> ;
   #elif __linux__ 

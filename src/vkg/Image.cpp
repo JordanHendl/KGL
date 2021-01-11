@@ -108,20 +108,18 @@ namespace kgl
       return *this ;
     }
 
-    void Image::copy( const Image& src, vk::CommandBuffer& buffer )
-    {
-    
-    }
-
-    void Image::copy( const unsigned char* src, unsigned element_size, vk::CommandBuffer& cmd_buff )
-    {
-      
-    }
+//    void Image::copy( const Image& src, vk::CommandBuffer& buffer )
+//    {
+//    
+//    }
+//
+//    void Image::copy( const unsigned char* src, unsigned element_size, vk::CommandBuffer& cmd_buff )
+//    {
+//      
+//    }
 
     bool Image::initialize( const vkg::Device& device, unsigned width, unsigned height, unsigned num_layers )
     {
-      unsigned needed_size ;
-      
       data().device = device     ;
       data().width  = width      ;
       data().height = height     ;

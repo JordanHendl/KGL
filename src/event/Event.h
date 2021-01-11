@@ -65,6 +65,7 @@ namespace kgl
     F8,
     F9,
     F10,
+    F11,
     F12,
     Backtick,
     One,
@@ -370,9 +371,9 @@ namespace kgl
   };
   
   template<class Object>
-  EventManager::MethodSubscriber<Object>::MethodSubscriber(Object* obj, Callback callback)
+  EventManager::MethodSubscriber<Object>::MethodSubscriber( Object* obj, Callback callback )
   {
-    this->object   = object   ;
+    this->object   = obj      ;
     this->callback = callback ;
   }
   

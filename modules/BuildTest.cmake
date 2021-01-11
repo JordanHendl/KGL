@@ -34,12 +34,12 @@ FUNCTION( BUILD_TEST )
     ENDIF()
     
     IF( TARGET )
-        FIND_PACKAGE( KT )
+        FIND_PACKAGE( KT REQUIRED )
         
         # Add Test executable.
         ADD_EXECUTABLE       ( ${TARGET}_test Test.cpp             )
         TARGET_LINK_LIBRARIES( ${TARGET}_test ${TARGET} karma_test )
-    
+
           # If we should run tests, add custom command to run them after the fact.
           ADD_CUSTOM_COMMAND(
             POST_BUILD

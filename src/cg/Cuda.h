@@ -43,7 +43,7 @@ namespace kgl
         using Buffer         = ::kgl::Memory<Cuda>   ;
         using ImageFormat    = cudaChannelFormatDesc ;
         using ImageLayout    = int                   ;
-        using Memory         = unsigned char*        ;
+        using Memory         = void*                 ;
         using CommandRecord  = unsigned              ;
         using MemoryFlags    = unsigned              ;
         
@@ -82,7 +82,7 @@ namespace kgl
          * @param gpu The device to use for this operation.
          * @param amt The amount of data to copy.
          */
-        void copyToDevice( const void* src, Memory& dst, Cuda::Device& gpu, unsigned amt ) ;
+        void copyToDevice( const void* src, Memory& dst, Cuda::Device& gpu, unsigned amt, unsigned src_offset = 0, unsigned dst_offset = 0 ) ;
   
         /** Method to copy data from the GPU ( VRAM ) to the host ( RAM ).
          * @param src The source memory handle on the GPU.
@@ -90,7 +90,7 @@ namespace kgl
          * @param gpu The device to use for this operation.
          * @param amt The amount of data to copy.
          */
-        void copyToHost( const Memory& src, Data dst, Cuda::Device& gpu, unsigned amt ) ;
+        void copyToHost( const void* src, Data dst, Cuda::Device& gpu, unsigned amt, unsigned src_offset = 0, unsigned dst_offset = 0  ) ;
   
         /** Method to release the input memory handle.
          * @param mem The memory object to release.

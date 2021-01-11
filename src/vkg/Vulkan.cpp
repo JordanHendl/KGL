@@ -18,11 +18,13 @@
 #include "Vulkan.h"
 #include "Device.h"
 #include <algorithm>
+#include <iostream>
+
 #define VULKAN_HPP_NO_EXCEPTIONS
 
-#ifdef __WIN32__
+#ifdef WIN32
 #define VK_USE_PLATFORM_WIN32_KHR
-#include <windows/Window.h>
+#include <win32/Window.h>
 #elif __linux__
 #define VK_USE_PLATFORM_XCB_KHR
 #include <linux/Window.h>
@@ -57,7 +59,33 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        }
        return 0 ;
      }
-         
+     
+     
+     Error::Error()
+     {
+       this->err = Error::None ;
+     }
+     
+     Error::Error( const Error& error )
+     {
+       this->err = error.err ;
+     }
+     
+     Error::Error( unsigned error )
+     {
+       this->err = error ;
+     }
+     
+     unsigned Error::error() const
+     {
+       return *this ;
+     }
+     
+     Error::operator unsigned() const
+     {
+       return this->err ;
+     }
+
      kgl::vkg::Vulkan::MemoryFlags::MemoryFlags()
      {
        using Flags = ::vk::MemoryPropertyFlagBits ;
@@ -96,12 +124,16 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        ::kgl::vkg::vk_instance = instance ;
      }
 
-     unsigned Vulkan::convertError( unsigned error )
+     vkg::Error Vulkan::convertError( vk::Result error )
      {
-       return 0 ;
+       switch( error )
+       {
+         case vk::Result::eErrorDeviceLost : return kgl::vkg::Error( vkg::Error::DeviceLost  ) ;
+         default : return kgl::vkg::Error( vkg::Error::None ) ;
+       }
      }
 
-     void Vulkan::copyToDevice( const void* src, Vulkan::Memory& dst, Vulkan::Device& gpu, unsigned amt )
+     void Vulkan::copyToDevice( const void* src, Vulkan::Memory& dst, Vulkan::Device& gpu, unsigned amt, unsigned src_offset, unsigned dst_offset )
      {
        const auto device = gpu.device() ;
 
@@ -110,15 +142,22 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        ::vk::MemoryMapFlags flag   ;
        void*                mem    ;
        
-       offset = 0   ;
-       amount = amt ;
-       
-       device.mapMemory  ( dst, offset, amount, flag, &mem      ) ;
-       std::memcpy       ( mem, src, static_cast<size_t>( amt ) ) ;
-       device.unmapMemory( dst                                  ) ;
+       offset = dst_offset       ;
+       amount = amt              ;
+
+       src    = static_cast<const void*>( reinterpret_cast<const unsigned char*>( src ) + src_offset ) ;
+
+       auto result = ( device.mapMemory  ( dst, offset, amount, flag, &mem  ) ) ;
+                     std::memcpy       ( mem, src, static_cast<size_t>( amt ) ) ;
+                     device.unmapMemory( dst                                  ) ;
+                     
+       if( result != vk::Result::eSuccess )
+       {
+         std::cout << "Error: " << vk::to_string( result ) << "\n" ;
+       }
      }
      
-     void Vulkan::copyToHost( const Vulkan::Memory& src, Vulkan::Data dst, Vulkan::Device& gpu, unsigned amt )
+     void Vulkan::copyToHost( const Vulkan::Memory& src, Vulkan::Data dst, Vulkan::Device& gpu, unsigned amt, unsigned src_offset, unsigned dst_offset )
      {
        const auto device = gpu.device() ;
        ::vk::DeviceSize     offset ;
@@ -126,12 +165,19 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        ::vk::MemoryMapFlags flag   ;
        void*                mem    ;
        
-       offset = 0   ;
-       amount = amt ;
+       offset = src_offset       ;
+       amount = amt              ;
+
+       dst    = static_cast<void*>( reinterpret_cast<unsigned char*>( dst ) + dst_offset ) ;
        
-       device.mapMemory  ( src, offset, amount, flag, &mem      ) ;
-       std::memcpy       ( dst, mem, static_cast<size_t>( amt ) ) ;
-       device.unmapMemory( src                                  ) ;
+       auto result = device.mapMemory  ( src, offset, amount, flag, &mem      ) ;
+                     std::memcpy       ( dst, mem, static_cast<size_t>( amt ) ) ;
+                     device.unmapMemory( src                                  ) ;
+                     
+       if( result != vk::Result::eSuccess )
+       {
+         std::cout << "Error: " << vk::to_string( result ) << "\n" ;
+       }
      }
      
      void Vulkan::free( Vulkan::Memory& mem, Vulkan::Device& gpu )
@@ -169,26 +215,47 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
      
      const char* Vulkan::platformSurfaceInstanceExtensions()
      {
-       #ifdef __WIN32__
-//       return VK_KHR_WIN ;
-       return "" ;
+       #ifdef WIN32
+       return VK_KHR_WIN32_SURFACE_EXTENSION_NAME ;
        #elif __linux__
        return VK_KHR_XCB_SURFACE_EXTENSION_NAME ;
        #endif 
      }
 
-     #ifdef __WIN32__
+     #ifdef WIN32
      Vulkan::Context Vulkan::contextFromBaseWindow( const kgl::win32::Window& window )
      {
+       VkWin32SurfaceCreateInfoKHR info       ;
+       VkSurfaceKHR                surface    ;
+       vk::SurfaceKHR              vk_surface ;
+       vk::Result                  result     ;
+
+       info.sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR ;
+       info.pNext     = nullptr                                         ;
+       info.flags     = 0                                               ;
+       info.hinstance = window.instance()                               ;
+       info.hwnd      = window.handle()                                 ;
+
+       if( kgl::vkg::vk_instance )
+       {
+         result = static_cast<vk::Result>( vkCreateWin32SurfaceKHR( kgl::vkg::vk_instance, &info, nullptr, &surface ) ) ;
+         if( result != vk::Result::eSuccess )
+         {
+           std::cout << "Error creating surface: " << vk::to_string( result ) << "\n" ;
+         }
+         vk_surface = surface ;
+       }
        
+       return vk_surface ;
      }
+
      #elif __linux__
      Vulkan::Context Vulkan::contextFromBaseWindow( const kgl::lx::Window& window )
      {
        VkXcbSurfaceCreateInfoKHR info         ;
-       vk::SurfaceKHR            vk_surface   ;
        VkSurfaceKHR              surface      ;
-       VkResult                  result       ;
+       vk::SurfaceKHR            vk_surface   ;
+       vk::Result                result       ;
        
        info.sType      = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR ;
        info.pNext      = nullptr                                       ;
@@ -196,13 +263,18 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        info.connection = window.connection()                           ;
        info.window     = window.window()                               ;
        
-       
        if( kgl::vkg::vk_instance )
        {
-         result = vkCreateXcbSurfaceKHR( kgl::vkg::vk_instance, &info, nullptr, &surface ) ;
+         result = static_cast<vk::Result>( vkCreateXcbSurfaceKHR( kgl::vkg::vk_instance, &info, nullptr, &surface ) ) ;
+         
+         if( result != vk::Result::eSuccess )
+         {
+           std::cout << "Error creating surface: " << vk::to_string( result ) << "\n" ;
+         }
+
          vk_surface = surface ;
        }
-
+       
        return vk_surface ;
      }
      #endif  

@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #define KGL_MAJOR_VERSION 0 
 #define KGL_MINOR_VERSION 2 
@@ -12,18 +13,45 @@ namespace kgl
 {
   namespace vkg
   {
-    static  VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-            VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-            VkDebugUtilsMessageTypeFlagsEXT messageType,
+    /** Static variables for debug output.
+     */
+    static Instance::DebugOutputLevel output_level    = Instance::DebugOutputLevel::Normal ;
+    static Instance::DebugSeverity    output_severity = Instance::DebugSeverity::WError    ;
+
+    /** Method to convert a instance debug flag to vulkan flag.
+     * @param level The flag to convert.
+     * @return The Vulkan severity flag.
+     */
+    static vk::DebugUtilsMessageSeverityFlagsEXT toFlags( Instance::DebugSeverity level ) ;
+    
+    /** Method to convert a instance debug flag to vulkan flag.
+     * @param level The flag to convert.
+     * @return The Vulkan type flag.
+     */
+    static vk::DebugUtilsMessageTypeFlagsEXT toFlags( Instance::DebugOutputLevel type ) ;
+    
+    static  VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,
             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
             void* pUserData )
     {
+      const vk::DebugUtilsMessageSeverityFlagsEXT severity = static_cast<vk::DebugUtilsMessageSeverityFlagsEXT>( messageSeverity ) ;
+      const vk::DebugUtilsMessageTypeFlagsEXT     type     = static_cast<vk::DebugUtilsMessageTypeFlagsEXT>    ( messageType     ) ;
       
-      // TODO log
-              
+      if( output_severity != Instance::DebugSeverity::None && output_level != Instance::DebugOutputLevel::Quiet )
+      {
+        if( toFlags( output_level ) & type && toFlags( output_severity ) & severity ) 
+        {
+          std::cout << "\n" ;
+          std::cout << "--  KGL::VKG Instance Debug"                  << "\n" ;
+          std::cout << "--  Type    : "  << vk::to_string( type     ) << "\n" ;
+          std::cout << "--  Severity: "  << vk::to_string( severity ) << "\n" ;
+          std::cout << "---> Message: " << pCallbackData->pMessage    << "\n" ;
+        }
+      }
+      pUserData = pUserData ;
       return VK_FALSE;
     }
-
+    
     struct Version
     {
       unsigned major    ;
@@ -84,6 +112,28 @@ namespace kgl
       api_version = { 1, 2, 0 }        ;
       app_name    = "KGL_DEFAULT_NAME" ;
       debug       = true               ;
+    }
+    
+    vk::DebugUtilsMessageSeverityFlagsEXT toFlags( Instance::DebugSeverity level )
+    {
+      using flag = vk::DebugUtilsMessageSeverityFlagBitsEXT ;
+      switch( level )
+      {
+        case Instance::DebugSeverity::ErrorsOnly : return flag::eError                  ;
+        case Instance::DebugSeverity::WError     : return flag::eWarning | flag::eError ;
+        default : return flag::eInfo ;
+      }
+    }
+    
+    vk::DebugUtilsMessageTypeFlagsEXT toFlags( Instance::DebugOutputLevel type )
+    {
+      using flag = vk::DebugUtilsMessageTypeFlagBitsEXT ;
+      switch( type )
+      {
+        case Instance::DebugOutputLevel::Normal  : return flag::eGeneral                                      ;
+        case Instance::DebugOutputLevel::Verbose : return flag::eValidation | flag::eGeneral | flag::eGeneral ;
+        default : return flag::eGeneral ;
+      }
     }
     
     ::vk::ApplicationInfo InstanceData::makeAppInfo() const
@@ -225,6 +275,16 @@ namespace kgl
       return data().instance ;
     }
     
+    void Instance::setDebugOutputLevel( Instance::DebugOutputLevel level )
+    {
+      kgl::vkg::output_level = level ;
+    }
+    
+    void Instance::setDebugOutputType( Instance::DebugSeverity severity )
+    {
+      kgl::vkg::output_severity = severity ;
+    }
+        
     void Instance::setApplicationName( const char* app_name )
     {
       data().app_name = app_name ;

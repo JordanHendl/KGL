@@ -1,7 +1,8 @@
 IF( WIN32 )
- SET( CPACK_GENRATOR          "NSIS"                        )
- SET( CPACK_NSIS_PACKAGE_NAME install_${CMAKE_PROJECT_NAME} )
- SET( CPACK_PACKAGING_INSTALL_PREFIX "c:/Program Files"     )
+ SET( CPACK_GENRATOR          "NSIS"                                            )
+ SET( CPACK_NSIS_PACKAGE_NAME install_${CMAKE_PROJECT_NAME}                     )
+ SET( CPACK_PACKAGING_INSTALL_PREFIX "C:\\Program Files\\${CMAKE_PROJECT_NAME}" )
+
 ENDIF() 
 
 IF( UNIX )

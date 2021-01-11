@@ -1,0 +1,18 @@
+SET( KARMA_GPU_FILE_SOURCES 
+     KgFile.cpp
+   )
+     
+SET( KARMA_GPU_FILE_HEADERS
+     KgFile.h
+   )
+
+SET( KARMA_GPU_FILE_INCLUDE_DIRS
+   )
+
+SET( KARMA_GPU_FILE_LIBRARIES
+     stdc++fs
+    )
+
+ADD_LIBRARY               ( kgfile SHARED   ${KARMA_GPU_FILE_SOURCES} ${KARMA_GPU_FILE_HEADERS} )
+TARGET_INCLUDE_DIRECTORIES( kgfile PRIVATE  ${KARMA_GPU_FILE_INCLUDE_DIRS}                      )
+TARGET_LINK_LIBRARIES     ( kgfile PUBLIC   ${KARMA_GPU_FILE_LIBRARIES}                         )

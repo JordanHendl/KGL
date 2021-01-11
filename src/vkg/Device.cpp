@@ -120,7 +120,11 @@ namespace kgl
 
     unsigned QueueCount::index( unsigned family )
     {
-      return this->count++ ;
+      if( family != UINT32_MAX )
+      {
+        return this->count++ ;
+      }
+      return 0 ;
     }
 
     unsigned QueueCount::getQueue()
@@ -214,8 +218,6 @@ namespace kgl
     
     void DeviceData::findQueueFamilies()
     {
-      typedef std::vector<::vk::QueueFamilyProperties> FamilyPropList ;
-
       unsigned       id      ;
       ::vk::Bool32   support ;
 

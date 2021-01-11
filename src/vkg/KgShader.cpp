@@ -23,5 +23,107 @@
  */
 
 #include "KgShader.h"
+#include "Device.h"
 
+namespace kgl
+{
+  namespace vkg
+  {
+    struct KgShaderData
+    {
+      kgl::vkg::Device device ;
+      
+      /** Default constructor.
+       */
+      KgShaderData() ;
+    };
+    
+    KgShaderData::KgShaderData()
+    {
+      
+    }
+
+    KgShader::KgShader()
+    {
+      this->shader_data = new KgShaderData() ;
+    }
+
+    KgShader::KgShader( const KgShader& shader )
+    {
+      this->shader_data = new KgShaderData() ;
+      
+      *this->shader_data = *shader.shader_data ;
+    }
+
+    KgShader::~KgShader()
+    {
+      delete this->shader_data ;
+    }
+
+    KgShader& KgShader::operator=( const KgShader& shader )
+    {
+      *this->shader_data = *shader.shader_data ;
+      
+      return *this ;
+    }
+
+    void KgShader::initialize( const kgl::vkg::Device& device, const char* kg_path )
+    {
+      data().device = device ;
+      kg_path += 1 ;
+    }
+
+    void KgShader::initializePreloaded( const kgl::vkg::Device& device, const char* kg_data )
+    {
+      data().device = device ;
+      
+      kg_data += 1 ;
+    }
+
+    unsigned KgShader::numStages() const
+    {
+      return 1 ;
+    }
+
+    unsigned KgShader::numVertexAttributes() const
+    {
+      return 1 ;
+    }
+
+    unsigned KgShader::numVertexBindings() const
+    {
+      return 1 ;
+    }
+
+//    const vk::VertexInputAttributeDescription* KgShader::attributes() const
+//    {
+//      
+//    }
+//
+//    const vk::VertexInputBindingDescription* KgShader::bindings() const
+//    {
+//    
+//    }
+//
+//    const vk::PipelineShaderStageCreateInfo* KgShader::infos() const
+//    {
+//    
+//    }
+
+    void KgShader::reset()
+    {
+    
+    }
+
+    KgShaderData& KgShader::data()
+    {
+      return *this->shader_data ;
+    }
+
+    const KgShaderData& KgShader::data() const
+    {
+      return *this->shader_data ;
+    }
+  }
+}
 

@@ -19,6 +19,25 @@ namespace kgl
     {
       public:
         
+        /** Enum of the type of output levels.
+         */
+        enum class DebugOutputLevel
+        {
+          Quiet,
+          Normal,
+          Verbose,
+        };
+        
+        /** The severity of vulkan instance debug events to output.
+         */
+        enum class DebugSeverity
+        {
+          None,
+          All,
+          WError,
+          ErrorsOnly,
+        };
+
         /** Default constructor.
          */
         Instance() ;
@@ -61,6 +80,16 @@ namespace kgl
          * @param application_name The name of this application.
          */
         void setApplicationName( const char* app_name ) ;
+
+        /** Method to set the level of debug output for this instance.
+         * @param level The level of debug output to use for outputting info.
+         */
+        void setDebugOutputLevel( Instance::DebugOutputLevel level ) ;
+        
+        /** Method to set the severity of errors allowed to be outputted by this instance.
+         * @param severity The severity of errors allowed by this instance.
+         */
+        void setDebugOutputType( Instance::DebugSeverity severity ) ;
 
         /** Method to set the application version.
          * @param major The major version number.
