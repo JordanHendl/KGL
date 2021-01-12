@@ -11,15 +11,23 @@
   make 
   ```
   
-  If on Windows, I recommend using the CMake GUI tool & MinGW-w64 for this.
+  For Windows, do 
+  
+  ```
+  mkdir build
+  cd build
+  cmake ..
+  ```
+  
+  And then simply open the generated .sln with whatever editor of your preference and build.
 
-  Generated RPM's install to /usr/local/KGL on UNIX, and C:\Program Files\KGL on Windows, and provides a KGLConfig.cmake there to use in any project you make.
+  Generated RPM's default install to /usr/local/KGL on UNIX, and C:\Program Files\KGL on Windows.
 
-  Simply: 
-  1) Add the path to KGLConfig.cmake to your *CMAKE_PREFIX_PATH* ( I recommend putting it in your project directory ).
+  Using with CMake: 
+  1) Add the path to the install path to your *CMAKE_PREFIX_PATH*.
   2) ```FIND_PACKAGE( KGL ) ```
   3) Link against any KGL library ( kgl, kgl_vkg, kgl_linux, etc. ) you need!
-
+  
 ## How to use
   The core library is intended to be a templated GPGPU library that enables development using whatever platform and API.
 
@@ -95,7 +103,7 @@
  
   E.g. If vulkan is found, KGL Vulkan libs will be build.
 
-  XCB is used for Linux windowing.
+  XCB is used for Linux windowing, however it should be already installed on mosts systems.
 
   Karma Test ( KT ) is used for testing. To output tests, install the KT library. ( See https://github.com/JordanHendl/KT )
 
@@ -103,4 +111,4 @@
   For usages of each specific API, I suggest checking out the Test.cpp in each one!
 
   If you have any questions or suggestions shoot me an email at jordiehendl@gmail.com
-  or hit me up on twitter (@jajajordie)
+  or hit me up on twitter ( @jajajordie )
