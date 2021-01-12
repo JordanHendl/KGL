@@ -28,6 +28,7 @@
 #include <string>
 #include <iostream>
 #include <event/Event.h>
+#include <thread>
 
 static HMODULE win_module ;
 
@@ -141,7 +142,12 @@ namespace kgl
        */
       void createWindow() ;
     };
-                
+    
+    void readMessages()
+    {
+
+    }
+
     LRESULT CALLBACK processWindow( HWND handle, UINT message, WPARAM wParam, LPARAM lParam )
     {
       static kgl::EventManager manager ;
@@ -263,6 +269,9 @@ namespace kgl
       {
         ShowWindow( this->handle, SW_SHOW ) ;
       }
+
+      std::thread independant_thread( &kgl::win32::readMessages ) ;
+      independant_thread.detach() ;
     }
     
     Window::Window()
@@ -316,14 +325,15 @@ namespace kgl
 
     void Window::handleEvents()
     {
-      MSG message ;
-      
-      message = {} ;
+      MSG  message        ;
+      BOOL exit_condition ;
 
-      while( GetMessage(&message, nullptr, 0, 0 ) )
+      message = {};
+
+      while ( ( exit_condition = PeekMessage( &message, data().handle, 0, 0, PM_REMOVE ) ) != 0 )
       {
-        TranslateMessage( &message ) ;
-        DispatchMessage ( &message ) ;
+        TranslateMessage(&message);
+        DispatchMessage(&message);
       }
     }
     
