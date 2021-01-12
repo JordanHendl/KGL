@@ -24,7 +24,7 @@
   Generated RPM's default install to /usr/local/KGL on UNIX, and C:\Program Files\KGL on Windows.
 
   Using with CMake: 
-  1) Add the path to the install path to your *CMAKE_PREFIX_PATH*.
+  1) Add the path to the install to your *CMAKE_PREFIX_PATH*.
   2) ```FIND_PACKAGE( KGL ) ```
   3) Link against any KGL library ( kgl, kgl_vkg, kgl_linux, etc. ) you need!
   
