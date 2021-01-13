@@ -181,6 +181,10 @@ namespace kgl
       data().makeFramebuffers() ;
     }
     
+    bool RenderPass::initialized() const
+    {
+      return data().render_pass ;
+    }
     const vk::Rect2D& RenderPass::area() const
     {
       return data().area ;
@@ -336,7 +340,12 @@ namespace kgl
       
       data().clear_color.setColor( static_cast<vk::ClearColorValue>( clear_colors ) ) ;
     }
-
+    
+    void RenderPass::reset()
+    {
+      data().device.device().destroy( data().render_pass, nullptr ) ;
+    }
+    
     RenderPassData& RenderPass::data()
     {
       return *this->pass_data ;

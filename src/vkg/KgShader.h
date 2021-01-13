@@ -25,6 +25,9 @@
 #ifndef KGL_VKG_KGSHADER_H
 #define KGL_VKG_KGSHADER_H
 
+#include "Device.h"
+
+
 /** Vulkan C typedefs for forward decleration.
  */
 typedef unsigned VkFlags            ;
@@ -40,6 +43,7 @@ namespace vk
   class VertexInputAttributeDescription               ;
   class VertexInputBindingDescription                 ;
   class PipelineShaderStageCreateInfo                 ;
+  class DescriptorSetLayout                           ;
   enum class Format                                   ;
   enum class VertexInputRate                          ;
   enum class DescriptorType                           ;
@@ -59,7 +63,22 @@ namespace kgl
     class KgShader
     {
       public:
-        
+        enum class Format
+        {
+          mat4,
+          vec4,
+          ivec4,
+          uvec4,
+          mat3,
+          vec3,
+          ivec3,
+          uvec3,
+          mat2,
+          vec2,
+          ivec2,
+          uvec2
+        };
+
         /** Default constructor.
          */
         KgShader() ;
@@ -113,7 +132,7 @@ namespace kgl
          * @param format The vulkan format of the attribute.
          * @param offset The offset of the attribute.
          */
-        void addAttribute( unsigned location, unsigned binding, const vk::Format& format, unsigned offset ) ;
+        void addAttribute( unsigned location, unsigned binding, const KgShader::Format& format, unsigned offset ) ;
         
         /** Method to manually add a descriptor to this shader.
          * @param binding The binding number of the entry, corresponds to a resource of the same binding in the shader stages.
@@ -135,6 +154,16 @@ namespace kgl
          * @param size The size in of the SPIRV byte code in elements.
          */
         void addShaderModule( const vk::ShaderStageFlagBits& flags, const unsigned* spirv, unsigned size ) ;
+        
+        /** Method to retrieve the device used for this object's creation.
+         * @return Const reference to the device used for this object's creation.
+         */
+        const kgl::vkg::Device& device() const ;
+
+        /** Method to retrieve the descriptor set layout of this vulkan shader.
+         * @return The descriptor set layout of this vulkan shader.
+         */
+        const vk::DescriptorSetLayout& layout() const ;
 
         /** Method to retrieve a const pointer to the start of this object's generated attribute data.
          * @return Const-pointer to the start of this object's generated attribute data.

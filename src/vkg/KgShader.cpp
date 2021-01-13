@@ -59,6 +59,12 @@ namespace kgl
     static inline ::vk::Format formatFromAttributeType( const char* type ) ;
     
     /**
+     * @param format
+     * @return 
+     */
+    static inline vk::Format formatFromShaderFormat( kgl::vkg::KgShader::Format format ) ;
+
+    /**
      * @param flag
      * @return 
      */
@@ -147,6 +153,26 @@ namespace kgl
       return ::vk::Format::eR32Sfloat ;
     }
 
+    vk::Format formatFromShaderFormat( kgl::vkg::KgShader::Format format )
+    {
+      switch( format )
+      {
+        case kgl::vkg::KgShader::Format::mat4  : return ::vk::Format::eR32G32B32A32Sfloat ;
+        case kgl::vkg::KgShader::Format::vec4  : return ::vk::Format::eR32G32B32A32Sfloat ;
+        case kgl::vkg::KgShader::Format::ivec4 : return ::vk::Format::eR32G32B32A32Sint   ;
+        case kgl::vkg::KgShader::Format::uvec4 : return ::vk::Format::eR32G32B32A32Uint   ;
+        case kgl::vkg::KgShader::Format::mat3  : return ::vk::Format::eR32G32B32A32Sfloat ;
+        case kgl::vkg::KgShader::Format::vec3  : return ::vk::Format::eR32G32B32A32Sfloat ;
+        case kgl::vkg::KgShader::Format::ivec3 : return ::vk::Format::eR32G32B32A32Sint   ;
+        case kgl::vkg::KgShader::Format::uvec3 : return ::vk::Format::eR32G32B32A32Uint   ;
+        case kgl::vkg::KgShader::Format::mat2  : return ::vk::Format::eR32G32Sfloat       ;
+        case kgl::vkg::KgShader::Format::vec2  : return ::vk::Format::eR32G32Sfloat       ;
+        case kgl::vkg::KgShader::Format::ivec2 : return ::vk::Format::eR32G32Sint         ;
+        case kgl::vkg::KgShader::Format::uvec2 : return ::vk::Format::eR32G32Uint         ;
+        default : return ::vk::Format::eR32Sfloat ;
+      }
+    }
+                
     ::vk::ShaderStageFlagBits vulkanBitFromStage( const kgl::ShaderStage& stage )
     {
       switch( stage )
@@ -278,14 +304,13 @@ namespace kgl
     
     void KgShaderData::makeShaderModules()
     {
-      vk::ShaderModuleCreateInfo info ;
-      vk::ShaderModule           mod  ;
+      vk::ShaderModule mod ;
       
       this->modules.clear() ;
       
       for( auto shader : this->spirv_map )
       {
-        mod = this->device.device().createShaderModule( info, nullptr ) ;
+        mod = this->device.device().createShaderModule( shader.second, nullptr ) ;
         
         this->modules[ kglStageFromVulkan( shader.first ) ] = mod ;
       }
@@ -369,14 +394,14 @@ namespace kgl
       return data().bindings.size() ;
     }
 
-    void KgShader::addAttribute( unsigned location, unsigned binding, const vk::Format& format, unsigned offset )
+    void KgShader::addAttribute( unsigned location, unsigned binding, const KgShader::Format& format, unsigned offset )
     {
       vk::VertexInputAttributeDescription attr ;
       
-      attr.setLocation( location ) ;
-      attr.setBinding ( binding  ) ;
-      attr.setFormat  ( format   ) ;
-      attr.setOffset  ( offset   ) ;
+      attr.setLocation( location                         ) ;
+      attr.setBinding ( binding                          ) ;
+      attr.setFormat  ( formatFromShaderFormat( format ) ) ;
+      attr.setOffset  ( offset                           ) ;
       
       data().attributes.push_back( attr ) ;
     }
@@ -412,6 +437,16 @@ namespace kgl
       
       data().spirv_map[ flags ] = info ;
     }
+    
+    const kgl::vkg::Device& KgShader::device() const
+    {
+      return data().device ;
+    }
+    
+    const vk::DescriptorSetLayout& KgShader::layout() const
+    {
+      return data().layout ;
+    }
 
     const vk::VertexInputAttributeDescription* KgShader::attributes() const
     {
@@ -430,6 +465,13 @@ namespace kgl
 
     void KgShader::reset()
     {
+      for( auto module : data().modules )
+      {
+        data().device.device().destroy( module.second, nullptr ) ;
+      }
+      
+      data().device.device().destroy( data().layout, nullptr ) ;
+
       data().modules    .clear() ;
       data().attributes .clear() ;
       data().descriptors.clear() ;

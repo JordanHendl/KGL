@@ -191,6 +191,12 @@ namespace kgl
       /** Default deconstructor.
        */
       ~KgFile() ;
+      
+      /** Assignment operator. Assigns the input to this object.
+       * @param file The object to assign this one to.
+       * @return Reference to this object after assignment.
+       */
+      KgFile& operator=( const KgFile& file ) ;
 
       /** Method to load the specified .kg file at the input path.
        * @param The C-string path of the file on the filesystem to load.

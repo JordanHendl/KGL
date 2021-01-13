@@ -25,6 +25,10 @@
 #ifndef KGL_VKG_PIPELINE_H
 #define KGL_VKG_PIPELINE_H
 
+#include "RenderPass.h"
+#include "Device.h"
+
+
 namespace vk
 {
   class PipelineLayout ;
@@ -73,6 +77,12 @@ namespace kgl
          */
         operator const ::vk::Pipeline&() ;
         
+        /** Method to initialize this compute pipeline with the input shader.
+         * @param device The device to use for generating this compute pipeline.
+         * @param kg_path The path to the KgShader file on disk to use for this pipeline.
+         */
+        void initialize( const kgl::vkg::Device& device, const char* kg_path ) ;
+
         /** Method to initialize this graphics pipeline with the input renderpass and shader.
          * @param pass The render pass to use for this pipeline creation.
          * @param kg_path The path to the KgShader file on disk to use for this pipeline.
@@ -80,21 +90,26 @@ namespace kgl
         void initialize( const kgl::vkg::RenderPass& pass, const char* kg_path ) ;
         
         /** Method to initialize this compute pipeline with the input shader.
-         * @param kg_path The path to the KgShader file on disk to use for this pipeline.
+         * @param shader The shader to use to describe this pipeline.
          */
-        void initialize( const char* kg_path ) ;
+        void initialize( const KgShader& shader ) ;
         
-        /** Method to initialize this graphics pipeline with the input renderpass and shader.
+        /** Method to initialize this render pipeline with the inpuit render pass and shader.
          * @param pass The render pass to use for this pipeline creation.
-         * @param kg_bytes The pre-loaded data of a KgShader to use for this object's shader creation
-         */        
-        void initializePreloaded( const kgl::vkg::RenderPass& pass, const char* kg_bytes ) ;
-        
-        /** Method to initialize this compute pipeline with the input shader.
-         * @param kg_bytes The pre-loaded data of a KgShader to use for this object's shader creation
+         * @param shader The KgShader to describe this pipeline.
          */
-        void initializePreloaded( const char* kg_bytes ) ;
+        void initialize( const kgl::vkg::RenderPass& pass, const KgShader& shader ) ;
         
+        /** Method to set the push constant size in bytes for this pipeline.
+         * @return The push constant size in bytes.
+         */
+        void setPushConstanceByteSize( unsigned size ) ;
+        
+        /** Method to set the push constant pipeline bitflag.
+         * @param stage The stages the push constant is accessed from.
+         */
+        void setPushConstantStageFlag( unsigned stage ) ;
+
         /** Method to release all allocation by this object.
          */
         void reset() ;

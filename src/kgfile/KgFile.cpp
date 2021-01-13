@@ -76,7 +76,7 @@ namespace kgl
     unsigned    location ;
   };
 
-  /** TODO
+  /** Structure to encompass a shader.
    */
   struct Shader
   {
@@ -300,6 +300,13 @@ namespace kgl
   {
     delete this->compiler_data ;
   }
+  
+  KgFile& KgFile::operator =( const KgFile& file )
+  {
+    *this->compiler_data = *file.compiler_data ;
+    
+    return *this ;
+  }
 
   void KgFile::load( const char* path )
   {
@@ -342,10 +349,10 @@ namespace kgl
            const unsigned uniform_binding = data().readUnsigned( stream ) ;
            const unsigned uniform_size    = data().readUnsigned( stream ) ;
 
-           uniform.name    = name                                                    ;
+           uniform.name    = name                                            ;
            uniform.type    = static_cast<::kgl::UniformType>( uniform_type ) ;
-           uniform.binding = uniform_binding                                         ;
-           uniform.size    = uniform_size                                            ;
+           uniform.binding = uniform_binding                                 ;
+           uniform.size    = uniform_size                                    ;
 
            shader.uniforms[ index ] = uniform ;
         }

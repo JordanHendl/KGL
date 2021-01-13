@@ -90,6 +90,11 @@ namespace kgl
          */
         void initialize( const kgl::vkg::Device& device ) ;
         
+        /** Method to return whether or not this object is initialized.
+         * @return Whether or not this object is initialized.
+         */
+        bool initialized() const ;
+
         /** Method to retrieve the area of this renderpass.
          * @return The vulkan Rect2D area of this render pass.
          */
@@ -259,7 +264,10 @@ namespace kgl
          * @param alpha The Alpha component of the clear color that is between 0.0f-1.0f.
          */
         void setClearColor( float red, float green, float blue, float alpha ) ;
-
+        
+        /** Method to reset this object and free all GPU data allocated.
+         */
+        void reset() ;
       private:
         
         /** Forward declared structure to contain this object's internal data.
