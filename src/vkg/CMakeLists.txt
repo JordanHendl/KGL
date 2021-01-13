@@ -37,6 +37,7 @@ IF( ${Vulkan_FOUND} )
 
     SET( KGL_VULKAN_LIBRARIES
          ${Vulkan_LIBRARIES}
+         kgfile 
         )
     
     # Add the appropriate OS library to link depending on platform being built.

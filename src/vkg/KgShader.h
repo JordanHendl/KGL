@@ -25,11 +25,27 @@
 #ifndef KGL_VKG_KGSHADER_H
 #define KGL_VKG_KGSHADER_H
 
+/** Vulkan C typedefs for forward decleration.
+ */
+typedef unsigned VkFlags            ;
+typedef VkFlags  VkShaderStageFlags ;
+
+/** Vulkan C++ forward declerations.
+ */
 namespace vk
 {
-  class VertexInputAttributeDescription ;
-  class VertexInputBindingDescription   ;
-  class PipelineShaderStageCreateInfo   ;
+   template <typename BitType>
+   class Flags ;
+
+  class VertexInputAttributeDescription               ;
+  class VertexInputBindingDescription                 ;
+  class PipelineShaderStageCreateInfo                 ;
+  enum class Format                                   ;
+  enum class VertexInputRate                          ;
+  enum class DescriptorType                           ;
+  enum class ShaderStageFlagBits : VkShaderStageFlags ;
+  
+  using ShaderStageFlags = ::vk::Flags<::vk::ShaderStageFlagBits> ;
 }
 
 namespace kgl
@@ -70,10 +86,11 @@ namespace kgl
         void initialize( const kgl::vkg::Device& device, const char* kg_path ) ;
         
         /** Method to initialize this shader with the provided input.
+         * @note Initializes all data set manually.
          * @param device The library device to use for all vulkan operations.
-         * @param kg_data The binrary data of the .kg file to use for this shader.
+         * @param spirv The SPIR-V byte code to use for shader module creation.
          */
-        void initializePreloaded( const kgl::vkg::Device& device, const char* kg_data ) ;
+        void initialize( const kgl::vkg::Device& device ) ;
         
         /** Method to retrieve the number of shader stages this shader contains.
          * @return The number of shader stages this shader contains.
@@ -90,6 +107,35 @@ namespace kgl
          */
         unsigned numVertexBindings() const ;
         
+        /** Method to manually add an attribute to this shader.
+         * @param location The location of the attribute.
+         * @param binding The binding of the attribute.
+         * @param format The vulkan format of the attribute.
+         * @param offset The offset of the attribute.
+         */
+        void addAttribute( unsigned location, unsigned binding, const vk::Format& format, unsigned offset ) ;
+        
+        /** Method to manually add a descriptor to this shader.
+         * @param binding The binding number of the entry, corresponds to a resource of the same binding in the shader stages.
+         * @param type  Which type of resources are used for this binding.
+         * @param count The number of descriptors contained in the binding ( e.g. an array in the shader ).
+         * @param flags The bitmask of shader flags specifying which pipeline shader stage can access this resource.
+         */
+        void addDescriptor( unsigned binding, const vk::DescriptorType& type, unsigned count, const vk::ShaderStageFlags flags ) ;
+
+        /** Method to manually add an input binding to the shader.
+         * @param binding The binding number of the input.
+         * @param stride The stride distance in bytes between elements.
+         * @param rate Whether it is verted index or instance index addressed.
+         */
+        void addInputBinding( unsigned binding, unsigned stride, const vk::VertexInputRate& rate ) ;
+        
+        /** Method to manually add a SPIRV shader module to this object.
+         * @param spirv const pointer to the start of the SPIRV byte code.
+         * @param size The size in of the SPIRV byte code in elements.
+         */
+        void addShaderModule( const vk::ShaderStageFlagBits& flags, const unsigned* spirv, unsigned size ) ;
+
         /** Method to retrieve a const pointer to the start of this object's generated attribute data.
          * @return Const-pointer to the start of this object's generated attribute data.
          */
