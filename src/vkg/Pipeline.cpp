@@ -27,7 +27,6 @@
 #include "KgShader.h"
 #include "RenderPass.h"
 #include <vulkan/vulkan.hpp>
-#include <assert.h>
 
 namespace kgl
 {
@@ -99,20 +98,23 @@ namespace kgl
       this->scissor.offset.setX( 0 ) ;
       this->scissor.offset.setY( 0 ) ;
       
-      this->color_blend_attachment.setColorWriteMask     ( color_blend_mask                      ) ;
-      this->color_blend_attachment.setBlendEnable        ( false                                 ) ;
-      this->color_blend_attachment.setSrcColorBlendFactor( ::vk::BlendFactor::eSrcAlpha          ) ;
-      this->color_blend_attachment.setDstColorBlendFactor( ::vk::BlendFactor::eOneMinusSrc1Alpha ) ;
-      this->color_blend_attachment.setColorBlendOp       ( ::vk::BlendOp::eAdd                   ) ;
-      this->color_blend_attachment.setSrcAlphaBlendFactor( ::vk::BlendFactor::eOne               ) ;
-      this->color_blend_attachment.setDstAlphaBlendFactor( ::vk::BlendFactor::eZero              ) ;
-      this->color_blend_attachment.setAlphaBlendOp       ( ::vk::BlendOp::eAdd                   ) ;
+      this->color_blend_attachment.setColorWriteMask     ( color_blend_mask             ) ;
+      this->color_blend_attachment.setBlendEnable        ( false                        ) ;
+      this->color_blend_attachment.setSrcColorBlendFactor( ::vk::BlendFactor::eSrcAlpha ) ;
+      this->color_blend_attachment.setDstColorBlendFactor( ::vk::BlendFactor::eOne      ) ;
+      this->color_blend_attachment.setColorBlendOp       ( ::vk::BlendOp::eAdd          ) ;
+      this->color_blend_attachment.setSrcAlphaBlendFactor( ::vk::BlendFactor::eOne      ) ;
+      this->color_blend_attachment.setDstAlphaBlendFactor( ::vk::BlendFactor::eZero     ) ;
+      this->color_blend_attachment.setAlphaBlendOp       ( ::vk::BlendOp::eAdd          ) ;
       
       this->color_blend_info.setLogicOpEnable    ( false                         ) ;
       this->color_blend_info.setLogicOp          ( ::vk::LogicOp::eCopy          ) ;
       this->color_blend_info.setAttachmentCount  ( 1                             ) ;
       this->color_blend_info.setPAttachments     ( &this->color_blend_attachment ) ;
       
+      this->viewport_info.setViewportCount( 1 ) ;
+      this->viewport_info.setScissorCount ( 1 ) ;
+
       this->assembly_info.setTopology              ( ::vk::PrimitiveTopology::eTriangleList ) ;
       this->assembly_info.setPrimitiveRestartEnable( false                                  ) ;
     }
@@ -141,8 +143,6 @@ namespace kgl
       info.setPPushConstantRanges   ( &range                                ) ;
       
       this->layout = this->device.device().createPipelineLayout( info, nullptr ) ;
-      
-      assert( this->layout.operator VkPipelineLayout() ) ;
     }
     
     void PipelineData::createPipeline()
@@ -156,8 +156,12 @@ namespace kgl
       vertex_input.setVertexBindingDescriptionCount  ( this->shader.numVertexBindings()   ) ;
       vertex_input.setPVertexBindingDescriptions     ( this->shader.bindings()            ) ;
       
+
       if( this->render_pass.initialized() )
       {
+        this->config.viewport_info.setPViewports( this->render_pass.viewports() ) ;
+        this->config.viewport_info.setPScissors ( this->render_pass.scissors()  ) ;
+
         graphics_info.setPStages            ( this->shader.infos()             ) ;
         graphics_info.setStageCount         ( this->shader.numStages()         ) ;
         graphics_info.setLayout             ( this->layout                     ) ;
@@ -169,15 +173,14 @@ namespace kgl
         graphics_info.setPColorBlendState   ( &this->config.color_blend_info   ) ;
         graphics_info.setRenderPass         ( this->render_pass.pass()         ) ;
         
-//        this->pipeline = this->device.device().createGraphicsPipeline( this->cache, graphics_info ) ;
+        this->pipeline = this->device.device().createGraphicsPipeline( this->cache, graphics_info ) ;
       }
       else
       {
         compute_info.setLayout( this->layout              ) ;
         compute_info.setStage ( this->shader.infos()[ 0 ] ) ;
         
-        
-//        this->pipeline = this->device.device().createComputePipeline( this->cache, compute_info ) ;
+        this->pipeline = this->device.device().createComputePipeline( this->cache, compute_info ) ;
       }
     }
     
@@ -249,7 +252,7 @@ namespace kgl
       data().device      = pass.device() ;
       data().shader      = shader        ;
       
-//      data().config.viewport = pass.viewport() ;
+      data().config.viewport = pass.viewport() ;
 
       data().createLayout() ;
       data().createPipeline() ;

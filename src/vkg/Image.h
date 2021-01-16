@@ -27,6 +27,7 @@ namespace vk
        class CommandBuffer                 ;
        class Sampler                       ;
        class ImageView                     ;
+       class Image                         ;
   enum class ImageLayout                   ;
   enum class ImageType                     ;
   enum class Format                        ;
@@ -99,6 +100,14 @@ namespace kgl
          */
         bool initialize( const kgl::vkg::Device& gpu, unsigned width, unsigned height, unsigned num_layers = 1 ) ;
         
+        /** Method to initialize this object with the input parameters.
+         * @note Uses any set values from other setters in initialization.
+         * @param width The width of the image in pixels.
+         * @param height The height of the image in pixels.
+         * @param num_layers The number of layers of the image.
+         */
+        bool initialize( const kgl::vkg::Device& gpu, unsigned width, unsigned height, vk::Image prealloc, unsigned num_layers = 1 ) ;
+
         /** Method to initialize this object with the input parameters.
          * @note Uses any set values from other setters in initialization.
          * @param prealloc The pre-allocated memory to use for this object. This object will not allocate any more data.

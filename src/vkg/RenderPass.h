@@ -37,6 +37,7 @@ namespace vk
        struct Rect2D                         ;
        class Framebuffer                     ;
        class RenderPass                      ;
+       class Viewport                        ;
        union ClearValue                      ;
   enum class ImageLayout                     ;
   enum class AttachmentStoreOp               ;
@@ -109,6 +110,28 @@ namespace kgl
          * @return The library device used for this object.
          */
         const kgl::vkg::Device& device() const ;
+        
+        
+        /** Method to retrieve the viewport of this render pass.
+         * @return The viewport of this render pass at the specified index.
+         */
+        const vk::Viewport* viewports() const ;
+        
+        /** Method to retrieve the viewport of this render pass.
+         * @param idx The index of viewport to retrieve.
+         * @return The viewport of this render pass at the specified index.
+         */
+        const vk::Viewport& viewport( unsigned idx = 0 ) const ;
+
+        /** Method to retrieve the scissor of this render pass.
+         * @return The scissor of this render pass.
+         */
+        const vk::Rect2D* scissors() const ;
+
+        /** Method to retrieve the scissor of this render pass.
+         * @return The scissor of this render pass.
+         */
+        const vk::Rect2D& scissor() const ;
 
         /** Method to retrieve the const pointer to an array of framebuffers.
          * @see numFramebuffers for the amount of framebuffers are in this array.
@@ -126,6 +149,62 @@ namespace kgl
          */
         unsigned numFramebuffers() const ;
         
+        /** Method to set the scissor extent X position.
+         * @param param The x-position of the scissor extent to set.
+         */
+        void setScissorExtentX( unsigned param ) ;
+        
+        /** Method to set the scissor extent Y position.
+         * @param param The y-position of the scissor extent to set.
+         */
+        void setScissorExtentY( unsigned param ) ;
+        
+        /** Method to set the scissor extent X position offset.
+         * @param param The x-position of the scissor extent offset to set.
+         */
+        void setScissorOffsetX( float param ) ;
+        
+        /** Method to set the scissor extent Y position offset.
+         * @param param The y-position of the scissor extent offset to set.
+         */
+        void setScissorOffsetY( float param ) ;
+        
+        /** Method to set the viewport X-pos.
+         * @param id The id of viewport to set.
+         * @param param The x-position to set.
+         */
+        void setViewportX( unsigned id, float param ) ;
+        
+        /** Method to set the viewport Y-position.
+         * @param id The id of viewport to set.
+         * @param param The y-position to set.
+         */
+        void setViewportY( unsigned id, float param ) ;
+        
+        /** Method to set the viewport width.
+         * @param id The id of viewport to set.
+         * @param param The width to set.
+         */
+        void setViewportWidth( unsigned id, float param ) ;
+        
+        /** Method to set the viewport height.
+         * @param id The id of viewport to set.
+         * @param param The height to set.
+         */
+        void setViewportHeight( unsigned id, float param ) ;
+        
+        /** Method to set the viewport minimum depth.
+         * @param id The id of viewport to set.
+         * @param param The minimum depth to set.
+         */
+        void setViewportMinDepth( unsigned id, float param ) ;
+        
+        /** Method to set the viewport maximum depth.
+         * @param id The id of viewport to set.
+         * @param param The maximum depth to set.
+         */
+        void setViewportMaxDepth( unsigned id, float param ) ;
+
         /** Method to set the number of framebuffers for this object to generate on initialization.
          * @param count The number of framebuffers to create on initialization.
          */

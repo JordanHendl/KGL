@@ -33,6 +33,7 @@
 #include "KgShader.h"
 #include "RenderPass.h"
 #include "Pipeline.h"
+#include "Swapchain.h"
 #include <library/Array.h>
 #include <library/Memory.h>
 #include <library/Image.h>
@@ -49,9 +50,9 @@ using Impl = ::kgl::vkg::Vulkan ;
 static kgl::vkg::Instance   instance       ;
 static kgl::vkg::Device     device         ;
 static kgl::vkg::Queue      graphics_queue ;
+static kgl::vkg::Swapchain  swapchain      ;
 static kgl::Window<Impl>    window         ;
 static karma::test::Manager manager        ;
-
 static std::vector<unsigned> test_array ;
 
 
@@ -331,12 +332,16 @@ int main()
   instance.addExtension      ( "VK_KHR_surface"                          ) ;
   instance.addValidationLayer( "VK_LAYER_KHRONOS_validation"             ) ;
   instance.addValidationLayer( "VK_LAYER_LUNARG_standard_validation"     ) ;
+  device  .addValidationLayer( "VK_LAYER_KHRONOS_validation"             ) ;
+  device  .addValidationLayer( "VK_LAYER_LUNARG_standard_validation"     ) ;
+  device  .addExtension      ( "VK_KHR_swapchain"                        ) ;
   instance.initialize() ;
-
   window.initialize( "Test", 1024, 720 ) ;
   device.initialize( instance.device( 0 ), window.context() ) ;
-  graphics_queue = device.graphicsQueue() ;
 
+  graphics_queue = device.graphicsQueue() ;
+  
+  swapchain.initialize( graphics_queue, window.context() ) ;  
   manager.add( "1) Array Test"                           , &simpleArrayTest                ) ;
   manager.add( "2) Array Copy & Synced Submit Test"      , &arrayCopyTest                  ) ;
   manager.add( "3) Array Copy & Non-Synced Submit Test"  , &arrayCopyNonSyncedTest         ) ;

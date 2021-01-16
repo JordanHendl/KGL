@@ -33,6 +33,12 @@ namespace kgl
 {
   namespace vkg
   {
+    struct ViewportRatio
+    {
+      float width_ratio   = 1.0f ;
+      float height_ratio  = 1.0f ;
+    };
+
     struct RenderPassData
     {
       typedef std::vector<kgl::vkg::Image          > FramebufferImages      ;
@@ -41,6 +47,9 @@ namespace kgl
       typedef std::vector<vk::AttachmentReference  > AttachmentReferences   ;
       typedef std::vector<vk::SubpassDescription   > SubpassDescriptions    ;
       typedef std::vector<vk::SubpassDependency    > SubpassDependencies    ;
+      typedef std::vector<vk::Viewport             > Viewports              ;
+      typedef std::vector<ViewportRatio            > ViewportRatios         ;
+      typedef std::vector<vk::ImageView            > ImageViews             ;
       
       unsigned               width               ;
       unsigned               height              ;
@@ -49,12 +58,15 @@ namespace kgl
       vk::ClearValue         clear_color         ;
       vk::RenderPass         render_pass         ;
       vk::Rect2D             area                ;
+      vk::Rect2D             scissor             ;
       Framebuffers           framebuffers        ;
       FramebufferImages      images              ;
       AttachmentDescriptions attach_descriptions ;
       AttachmentReferences   attach_references   ;
       SubpassDescriptions    sub_descriptions    ;
       SubpassDependencies    sub_dependencies    ;
+      Viewports              viewports           ;
+      ViewportRatios         ratios              ;
 
       /** Default constructor.
        */
@@ -75,6 +87,14 @@ namespace kgl
       ::vk::AttachmentDescription attach_desc ;
       ::vk::AttachmentReference   attach_ref  ;
       ::vk::SubpassDescription    sub_desc    ;
+      ::vk::Viewport              viewport    ;
+      
+      viewport.setX       ( 0    ) ;
+      viewport.setY       ( 0    ) ;
+      viewport.setMinDepth( 0.f  ) ;
+      viewport.setMaxDepth( 1.f  ) ;
+      viewport.setWidth   ( 1240 ) ;
+      viewport.setHeight  ( 1024 ) ;
       
       attach_desc.setFormat        ( vk::Format::eR8G8B8A8Srgb                ) ;
       attach_desc.setSamples       ( vk::SampleCountFlagBits::e1              ) ;
@@ -88,18 +108,20 @@ namespace kgl
       attach_ref.setLayout    ( ::vk::ImageLayout::eGeneral ) ;
       attach_ref.setAttachment( 0                           ) ;
       
-      sub_desc.setPipelineBindPoint   ( ::vk::PipelineBindPoint::eGraphics ) ;
-      sub_desc.setColorAttachmentCount( 1                                  ) ;
-      sub_desc.setPColorAttachments   ( &attach_ref                        ) ;
-      
-      this->width  = 0 ;
-      this->height = 0 ;
-      this->layers = 0 ;
-      
       // Default to one set of descriptions for each. By default, this render pass describes a simple RGBA8 Render Pass with one color attachment.
       this->attach_descriptions.push_back( attach_desc ) ;
       this->attach_references  .push_back( attach_ref  ) ;
-      this->sub_descriptions   .push_back( sub_desc    ) ;
+      
+      sub_desc.setPipelineBindPoint   ( ::vk::PipelineBindPoint::eGraphics ) ;
+      sub_desc.setColorAttachmentCount( 1                                  ) ;
+      sub_desc.setPColorAttachments   ( &this->attach_references[ 0 ]      ) ;
+      
+      this->viewports.push_back( viewport ) ;
+      
+      this->sub_descriptions.push_back( sub_desc ) ;
+      this->width  = 0 ;
+      this->height = 0 ;
+      this->layers = 0 ;
     }
     
     ::vk::RenderPass RenderPassData::makeRenderPass()
@@ -113,7 +135,8 @@ namespace kgl
       info.setPAttachments   ( this->attach_descriptions.data() ) ;
       info.setPSubpasses     ( this->sub_descriptions.data()    ) ;
       info.setPDependencies  ( this->sub_dependencies.data()    ) ;
-
+      
+      render_pass = this->device.device().createRenderPass( info, nullptr ) ;
       return render_pass ;
     }
 
@@ -137,12 +160,12 @@ namespace kgl
          * Different image formats. Maybe RGBA32F framebuffer attachments?
          * More than one attachment per framebuffer. Maybe depth and color attachments?
          */
-        info.setAttachmentCount( 1            ) ; 
-        info.setPAttachments   ( view         ) ;
-        info.setWidth          ( this->width  ) ;
-        info.setHeight         ( this->height ) ;
-        info.setLayers         ( this->layers ) ;
-        
+        info.setAttachmentCount( 1                 ) ; 
+        info.setPAttachments   ( view              ) ;
+        info.setWidth          ( this->width       ) ;
+        info.setHeight         ( this->height      ) ;
+        info.setLayers         ( this->layers      ) ;
+        info.setRenderPass     ( this->render_pass ) ;
         this->device.device().createFramebuffer( &info, nullptr, &this->framebuffers[ index ] ) ;
         
         index++ ;
@@ -177,7 +200,7 @@ namespace kgl
     {
       data().device = device ;
       
-      data().makeRenderPass()   ;
+      data().render_pass = data().makeRenderPass() ;
       data().makeFramebuffers() ;
     }
     
@@ -189,7 +212,30 @@ namespace kgl
     {
       return data().area ;
     }
+    
+    const vk::Rect2D* RenderPass::scissors() const
+    {
+      return &data().scissor ;
+    }
 
+    const vk::Rect2D& RenderPass::scissor() const
+    {
+      return data().scissor ;
+    }
+    
+    const vk::Viewport* RenderPass::viewports() const
+    {
+      return data().viewports.data() ;
+    }
+
+    const vk::Viewport& RenderPass::viewport( unsigned idx ) const
+    {
+      static const vk::Viewport dummy ;
+      if( idx < data().viewports.size() ) return data().viewports[ idx ] ;
+      
+      return dummy ;
+    }
+    
     const vk::ClearValue& RenderPass::clearColors() const
     {
       return data().clear_color ;
@@ -213,6 +259,74 @@ namespace kgl
     unsigned RenderPass::numFramebuffers() const
     {
       return data().framebuffers.size() ;
+    }
+
+    void RenderPass::setScissorExtentX( unsigned param )
+    {
+      data().scissor.extent.width = param ;
+    }
+
+    void RenderPass::setScissorExtentY( unsigned param )
+    {
+      data().scissor.extent.height = param ;
+    }
+
+    void RenderPass::setScissorOffsetX( float param )
+    {
+      data().scissor.offset.x = param ;
+    }
+
+    void RenderPass::setScissorOffsetY( float param )
+    {
+      data().scissor.offset.y = param ;
+    }
+
+    void RenderPass::setViewportX( unsigned id, float param )
+    {
+      const unsigned sz = id + 1 ;
+      if( sz > data().viewports.size() ) { data().viewports.resize( sz ) ; data().ratios.resize( sz ) ; }
+      
+      data().viewports[ id ].x = param ;
+    }
+    
+    void RenderPass::setViewportY( unsigned id, float param )
+    {
+      const unsigned sz = id + 1 ;
+      if( sz > data().viewports.size() ) { data().viewports.resize( sz ) ; data().ratios.resize( sz ) ; }
+      
+      data().viewports[ id ].y = param ;
+    }
+
+    void RenderPass::setViewportWidth( unsigned id, float param )
+    {
+      const unsigned sz = id + 1 ;
+      if( sz > data().viewports.size() ) { data().viewports.resize( sz ) ; data().ratios.resize( sz ) ; }
+      
+      data().ratios[ id ].width_ratio = param ;
+    }
+
+    void RenderPass::setViewportHeight( unsigned id, float param )
+    {
+      const unsigned sz = id + 1 ;
+      if( sz > data().viewports.size() ) { data().viewports.resize( sz ) ; data().ratios.resize( sz ) ; }
+      
+      data().ratios[ id ].height_ratio = param ;
+    }
+
+    void RenderPass::setViewportMinDepth( unsigned id, float param )
+    {
+      const unsigned sz = id + 1 ;
+      if( sz > data().viewports.size() ) { data().viewports.resize( sz ) ; data().ratios.resize( sz ) ; }
+      
+      data().viewports[ id ].minDepth = param ;
+    }
+
+    void RenderPass::setViewportMaxDepth( unsigned id, float param )
+    {
+      const unsigned sz = id + 1 ;
+      if( sz > data().viewports.size() ) { data().viewports.resize( sz ) ; data().ratios.resize( sz ) ; }
+      
+      data().viewports[ id ].maxDepth = param ;
     }
 
     void RenderPass::setNumFramebuffers( unsigned count )

@@ -14,6 +14,7 @@ IF( ${Vulkan_FOUND} )
          Synchronization.cpp
          Pipeline.cpp
          CommandBuffer.cpp
+         Swapchain.cpp
          KgShader.cpp
        )
 
@@ -28,6 +29,7 @@ IF( ${Vulkan_FOUND} )
          Queue.h
          Pipeline.h
          CommandBuffer.h
+         Swapchain.h
          KgShader.h
        )
 

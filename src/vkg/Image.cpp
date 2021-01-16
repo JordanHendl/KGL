@@ -144,6 +144,18 @@ namespace kgl
       return false ;
     }
 
+    bool Image::initialize( const kgl::vkg::Device& gpu, unsigned width, unsigned height, vk::Image prealloc, unsigned num_layers )
+    {
+      data().device = gpu        ;
+      data().width  = width      ;
+      data().height = height     ;
+      data().layers = num_layers ;
+
+      data().image = prealloc ;
+      
+      return true ;
+    }
+    
     bool Image::initialize( kgl::Memory<kgl::vkg::Vulkan>& prealloc, unsigned width, unsigned height, unsigned num_layers )
     {
       data().memory       = prealloc ;

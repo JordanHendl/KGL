@@ -31,12 +31,12 @@ INCLUDE( Message   )
 INCLUDE( BuildTest )
 
 # Build options
-OPTION( BUILD_WIN32  "Whether or not the KGL::WIN32 library will be built, if available" ON )
-OPTION( BUILD_LINUX  "Whether or not the KGL::LINUX library will be built, if available" ON )
-OPTION( BUILD_CUDA   "Whether or not the KGL::CUDA library will be built, if available"  ON )
-OPTION( BUILD_VULKAN "Whether or not the KGL::VKG library will be built, if available"   ON )
-OPTION( RUN_TESTS    "Whether or not the KGL tests should be run"                        ON )
-OPTION( BUILD_RELEASE "Whether or not the to build for release."                         ON )
+OPTION( BUILD_WIN32  "Whether or not the KGL::WIN32 library will be built, if available" ON  )
+OPTION( BUILD_LINUX  "Whether or not the KGL::LINUX library will be built, if available" ON  )
+OPTION( BUILD_CUDA   "Whether or not the KGL::CUDA library will be built, if available"  ON  )
+OPTION( BUILD_VULKAN "Whether or not the KGL::VKG library will be built, if available"   ON  )
+OPTION( RUN_TESTS    "Whether or not the KGL tests should be run"                        ON  )
+OPTION( BUILD_RELEASE "Whether or not the to build for release."                         OFF )
 
 PROJECT( KGL CXX )
 

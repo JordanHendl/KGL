@@ -131,6 +131,11 @@ namespace kgl
          */
         void initialize( const ::vk::PhysicalDevice& physical_device, const ::vk::SurfaceKHR& surface ) ;
         
+        /** Method to add a validation layer to this device upon it's creation.
+         * @param layer_name The name of the validation layer to use. If it is invalid, it is skipped.
+         */
+        void addValidationLayer( const char* layer_name ) ;
+
         /** Method to add an extension to be loaded when the device is loaded.
          * @param extension_name The name of the extension to be loaded, if available.
          */

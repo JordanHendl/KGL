@@ -72,17 +72,18 @@ namespace kgl
 
     struct DeviceData
     {
-      typedef std::vector<std::string    > ExtList        ;
-      typedef std::vector<kgl::vkg::Queue> QueueList      ;
-      typedef std::vector<const char*    > CharExtList    ;
-      typedef std::vector<float          > Priorities     ;
+      typedef std::vector<std::string    > List       ;
+      typedef std::vector<kgl::vkg::Queue> QueueList  ;
+      typedef std::vector<const char*    > CharList   ;
+      typedef std::vector<float          > Priorities ;
       
       ::vk::Device                           gpu                 ;
       ::vk::PhysicalDevice                   physical_device     ;
       ::vk::SurfaceKHR                       surface             ;
       ::vk::PhysicalDeviceFeatures           features            ;
       std::vector<vk::QueueFamilyProperties> properties          ;
-      ExtList                                extension_list      ;
+      List                                   extension_list      ;
+      List                                   layer_list          ;
       QueueList                              queues              ;
       QueueFamilies                          queue_families      ;
       Priorities                             graphics_priorities ;
@@ -110,7 +111,18 @@ namespace kgl
       /** Method to filter out extensions requested to only ones provided by the system.
        * @return The list of extensions requested that are present on the system.
        */
-      CharExtList filterExtensions() const ;
+      List filterExtensions() const ;
+      
+      /** Method to filter out layers requested to only ones provided by the system.
+       * @return The list of layers requested that are present on the system.
+       */
+      List filterLayers() const ;
+      
+      /** Method to convert a list of strings to list of char* for vulkan objects.
+       * @param list The list to convert.
+       * @return A List of const char* pointing to string list's strings.
+       */
+      CharList listToCharList( List& list ) ;
     };
     
     QueueCount::QueueCount()
@@ -182,18 +194,56 @@ namespace kgl
       return *this ;
     }
 
+    DeviceData::List DeviceData::filterLayers() const
+    {
+      List                               list             ;
+      std::vector<::vk::LayerProperties> available_layers ;
+      
+      available_layers = this->physical_device.enumerateDeviceLayerProperties() ;
+        
+      for( const auto& prop : available_layers )
+      {
+        for( const auto& requested : this->layer_list )
+        {
+          if( std::string( prop.layerName.data() ) == std::string( requested ) )
+          {
+            list.push_back( std::string( prop.layerName.data() ) ) ;
+          }
+        }
+      }
+      return list ;
+    }
 
+    DeviceData::CharList DeviceData::listToCharList( List& list )
+    {
+      DeviceData::CharList char_list ;
+      
+      for( auto &str : list )
+      {
+        char_list.push_back( str.c_str() ) ;
+      }
+      
+      return char_list ;
+    }
+        
     void DeviceData::generateDevice()
     {
       typedef std::vector<::vk::DeviceQueueCreateInfo> CreateInfos ;
       
-      ::vk::DeviceCreateInfo       info        ;
-      DeviceData::CharExtList      ext_list    ;
-      CreateInfos                  queue_infos ;
-      unsigned                     queue_id    ;
-      unsigned                     num_queues  ;
+      ::vk::DeviceCreateInfo info            ;
+      DeviceData::List       ext_list        ;
+      DeviceData::List       layer_list      ;
+      DeviceData::CharList   ext_list_char   ;
+      DeviceData::CharList   layer_list_char ;
+      CreateInfos            queue_infos     ;
+      unsigned               queue_id        ;
+      unsigned               num_queues      ;
       
-      ext_list = this->filterExtensions() ;
+      ext_list        = this->filterExtensions()           ;
+      layer_list      = this->filterLayers()               ;
+      ext_list_char   = this->listToCharList( ext_list )   ;
+      layer_list_char = this->listToCharList( layer_list ) ;
+
       queue_infos.resize( this->queue_families.total_families.size() ) ;
 
       for( unsigned i = 0; i < this->queue_families.total_families.size(); i++ )
@@ -207,12 +257,14 @@ namespace kgl
         queue_infos[ i ].setPQueuePriorities( priorities.data() ) ;
       }
       
-      info.setQueueCreateInfoCount   ( queue_infos.size() ) ;
-      info.setPQueueCreateInfos      ( queue_infos.data() ) ;
-      info.setEnabledExtensionCount  ( ext_list.size()    ) ;
-      info.setPpEnabledExtensionNames( ext_list.data()    ) ;
-      info.setPEnabledFeatures       ( &this->features    ) ;
-
+      info.setQueueCreateInfoCount   ( queue_infos.size()     ) ;
+      info.setPQueueCreateInfos      ( queue_infos.data()     ) ;
+      info.setEnabledExtensionCount  ( ext_list_char.size()   ) ;
+      info.setPpEnabledExtensionNames( ext_list_char.data()   ) ;
+      info.setEnabledLayerCount      ( layer_list_char.size() ) ;
+      info.setPEnabledLayerNames     ( layer_list_char        ) ;
+      info.setPEnabledFeatures       ( &this->features        ) ;
+      
       this->physical_device.createDevice( &info, nullptr, &this->gpu ) ;
     }
     
@@ -269,9 +321,9 @@ namespace kgl
       }
     }
 
-    DeviceData::CharExtList DeviceData::filterExtensions() const
+    DeviceData::List DeviceData::filterExtensions() const
     {
-      CharExtList                            list                 ;
+      List                                   list                 ;
       std::vector<::vk::ExtensionProperties> available_extentions ;
       
       available_extentions = this->physical_device.enumerateDeviceExtensionProperties() ;
@@ -282,7 +334,7 @@ namespace kgl
         {
           if( std::string( ext.extensionName.data() ) == std::string( requested ) )
           {
-            list.push_back( ext.extensionName.data() ) ;
+            list.push_back( std::string( ext.extensionName ) ) ;
           }
         }
       }
@@ -375,6 +427,11 @@ namespace kgl
       data().extension_list.push_back( extension_name ) ;
     }
     
+    void Device::addValidationLayer( const char* layer_name )
+    {
+      data().layer_list.push_back( layer_name ) ;
+    }
+
     //TODO These getters for queues are very bad. Do better eventually.
     const kgl::vkg::Queue& Device::graphicsQueue()
     {
