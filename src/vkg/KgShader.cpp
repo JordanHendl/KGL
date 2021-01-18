@@ -72,24 +72,24 @@ namespace kgl
 
     struct KgShaderData
     {
-      using SPIRVMap      = std::map<vk::ShaderStageFlagBits, vk::ShaderModuleCreateInfo> ;
-      using ShaderModules = std::map<kgl::ShaderStage, vk::ShaderModule>               ;
-      using Attributes    = std::vector<vk::VertexInputAttributeDescription>           ;
-      using Bindings      = std::vector<vk::VertexInputBindingDescription>             ;
-      using Infos         = std::vector<vk::PipelineShaderStageCreateInfo>             ;
-      using Descriptors   = std::vector<vk::DescriptorSetLayoutBinding>                ;
+      using SPIRVMap      = std::map<vk::ShaderStageFlagBits, vk::ShaderModuleCreateInfo> ; ///< TODO
+      using ShaderModules = std::map<kgl::ShaderStage, vk::ShaderModule>                  ; ///< TODO
+      using Attributes    = std::vector<vk::VertexInputAttributeDescription>              ; ///< TODO
+      using Bindings      = std::vector<vk::VertexInputBindingDescription>                ; ///< TODO
+      using Infos         = std::vector<vk::PipelineShaderStageCreateInfo>                ; ///< TODO
+      using Descriptors   = std::vector<vk::DescriptorSetLayoutBinding>                   ; ///< TODO
 
-      ShaderModules                          modules     ;
-      Descriptors                            descriptors ;
-      SPIRVMap                               spirv_map   ;
-      Attributes                             attributes  ;
-      Bindings                               bindings    ;
-      Infos                                  infos       ;
-      kgl::KgFile                            kgfile      ;
-      kgl::vkg::Device                       device      ;
-      vk::DescriptorSetLayout                layout      ;
-      vk::PipelineVertexInputStateCreateInfo info        ;
-      vk::VertexInputRate                    rate        ;
+      ShaderModules                          modules     ; ///< TODO
+      Descriptors                            descriptors ; ///< TODO
+      SPIRVMap                               spirv_map   ; ///< TODO
+      Attributes                             attributes  ; ///< TODO
+      Bindings                               bindings    ; ///< TODO
+      Infos                                  infos       ; ///< TODO
+      kgl::KgFile                            kgfile      ; ///< TODO
+      kgl::vkg::Device                       device      ; ///< TODO
+      vk::DescriptorSetLayout                layout      ; ///< TODO
+      vk::PipelineVertexInputStateCreateInfo info        ; ///< TODO
+      vk::VertexInputRate                    rate        ; ///< TODO
       
       /** Method to parse the loaded KgFile for its shader information.
        */

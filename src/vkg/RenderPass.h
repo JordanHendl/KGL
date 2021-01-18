@@ -54,8 +54,9 @@ namespace kgl
 {
   namespace vkg
   {
-    class Device ;
-    
+    class Device    ;
+    class Swapchain ;
+
     /** Class to abstract a vulkan render pass.
      *  By default, this render pass describes a simple RGBA8 Render Pass with one color attachment.
      */
@@ -90,6 +91,11 @@ namespace kgl
          * @param device The Library device to use for the operation.
          */
         void initialize( const kgl::vkg::Device& device ) ;
+
+        /** Method to initialize this object & Generate a vulkan render pass.
+         * @param swapchain The swapchain to use as a target for this tenderpass.
+         */
+        void initialize( const kgl::vkg::Swapchain& swapchain ) ;
         
         /** Method to return whether or not this object is initialized.
          * @return Whether or not this object is initialized.
@@ -306,8 +312,8 @@ namespace kgl
          */
         void setDependancySrc( unsigned src, unsigned idx = 0 ) ;
         
-        /** Method to set the source for the specified dependency.
-         * @param src The source index to use for the dependency.
+        /** Method to set the destination for the specified dependency.
+         * @param dst The destination index to use for the dependency.
          * @param idx The index of dependency to apply this to.
          */
         void setDependancyDst( unsigned dst, unsigned idx = 0 ) ;
@@ -331,11 +337,17 @@ namespace kgl
         void setDependancySrcAccess( const ::vk::AccessFlagBits& src, unsigned idx = 0 ) ;
         
         /** Method to set the destination access flag for the specified dependency.
-         * @param src The destination access flag to use for the dependency.
+         * @param dst The destination access flag to use for the dependency.
          * @param idx The index of dependency to apply the flag to.
          */
         void setDependancyDstAccess( const ::vk::AccessFlagBits& dst, unsigned idx = 0 ) ;
         
+        /** Method to set the final layout of this renderpass.
+         * @param layout The layout to set.
+         * @param idx The index of attachment to apply the layout to.
+         */
+        void setFinalLayout( const vk::ImageLayout& layout, unsigned idx = 0 ) ;
+
         /** Method to set the RGBA float values for this render pass' clear color.
          * @param red   The Red component of the clear color that is between 0.0f-1.0f.
          * @param green The Green component of the clear color that is between 0.0f-1.0f.
@@ -344,6 +356,11 @@ namespace kgl
          */
         void setClearColor( float red, float green, float blue, float alpha ) ;
         
+        /** Method to retrieve the next framebuffer in this object, and increment the framebuffer counter.
+         * @return The next framebuffer in this object.
+         */
+        const vk::Framebuffer& next() const ;
+
         /** Method to reset this object and free all GPU data allocated.
          */
         void reset() ;

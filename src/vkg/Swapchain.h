@@ -25,7 +25,6 @@
 #ifndef KGL_VKG_SWAPCHAIN_H
 #define KGL_VKG_SWAPCHAIN_H
 
-#include "Vulkan.h"
 
 namespace vk
 {
@@ -39,8 +38,12 @@ namespace kgl
 {
   namespace vkg
   {
-    class Queue ;
-    
+    class Device          ;
+    class Queue           ;
+    class Synchronization ;
+    class Image           ;
+    class RenderPass      ;
+
     /** Class for managing a Vulkan Swapchain.
      */
     class Swapchain
@@ -77,7 +80,7 @@ namespace kgl
         operator vk::SwapchainKHR&() ;
         
         /** Method to initialize this object and create the Vullkan Swapchain.
-         * @param device The device to use for Vulkan calls.
+         * @param present_queue The present queue to use for this object's initialization.
          * @param surface The Vulkan Surface for the window to create a swapchain of.
          */
         void initialize( const kgl::vkg::Queue& present_queue, const vk::SurfaceKHR& surface ) ;
@@ -86,6 +89,11 @@ namespace kgl
          * @return Whether or not this object is initialized.
          */
         bool initialized() const ;
+        
+        /** Method to retrieve the library device used for this object.
+         * @return The device used to initialize this object.
+         */
+        const kgl::vkg::Device& device() const ;
 
         /** Method to set the vulkan format to use for the swapchain creation.
          * @param format The format of the swapchain's images.
@@ -115,7 +123,17 @@ namespace kgl
         /** Method to retrieve the internal Vulkan Swapchain of this object.
          * @return The internal Vulkan Swapchain of this object.
          */
-        const vk::SwapchainKHR swapchain() const ;
+        const vk::SwapchainKHR& swapchain() const ;
+        
+        /** Method to tell this swapchain to acquire the next image in it's frambuffers.
+         * @return The synchronization object used for syncing this acquire with other GPU operations.
+         */
+        const kgl::vkg::Synchronization& acquire() ;
+        
+        /** Method to submit this swapchain's presentation to the queue used for it's initialization.
+         * @param sync The synchronization object used to sync this operation so that it occurs after other GPU events.
+         */
+        void submit( const kgl::vkg::Synchronization& sync ) ;
         
         /** Method to reset this object and deallocate all data.
          */
@@ -123,6 +141,14 @@ namespace kgl
 
       private:
         
+        friend class RenderPassData ;
+
+        /** Method to retrieve a const pointer to the start of this object's image list.
+         * @see Swapchain::count() for the amount of images in the list.
+         * @return Const pointer to the start of the image list.
+         */
+        const kgl::vkg::Image* images() const ;
+
         /** Forward declared structure to contain this object's internal data.
          */
         struct SwapchainData *swap_data ;

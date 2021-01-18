@@ -32,6 +32,11 @@
 
 static HMODULE win_module ;
 
+/** Standard windows entry.
+ * @param hModule the program module.
+ * @param ul_reason_for_call No clue
+ * @param lpReserved No clue.
+ */
 BOOL APIENTRY DllMain( HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved )
 {
   win_module = hModule;
@@ -42,9 +47,40 @@ namespace kgl
 {
   namespace win32
   {
+    /** Function to process the input window.
+     * @param handle The window handle
+     * @param message The message event.
+     * @param wParam the wparam to process.
+     * @param lParam the lparam to process.
+     */
     LRESULT CALLBACK processWindow( HWND handle, UINT message, WPARAM wParam, LPARAM lParam ) ;
     
-    kgl::Key keyFromWin32Key(WPARAM param)
+    /** Function to convert a win32 key param to a library key.
+     * @param param The Window Wparam to convert.
+     */
+    static kgl::Key keyFromWin32Key( WPARAM param ) ;
+    
+    /** Structure to contain a WIN32 Window's data.
+     */
+    struct WindowData
+    {
+      HWND        handle       ; ///< TEST
+      HINSTANCE   instance     ; ///< TEST
+      WNDCLASSEX  window_class ; ///< TEST
+      std::string title        ; ///< TEST
+      unsigned    width        ; ///< TEST
+      unsigned    height       ; ///< TEST
+      
+      /** Default constructor.
+       */
+      WindowData() ;
+      
+      /** Method to create a win32 window.
+       */
+      void createWindow() ;
+    };
+
+     kgl::Key keyFromWin32Key( WPARAM param )
     {
       switch (param)
       {
@@ -124,30 +160,7 @@ namespace kgl
         default : return kgl::Key::None ;
       } ;
     }
-
-    struct WindowData
-    {
-      HWND        handle       ;
-      HINSTANCE   instance     ;
-      WNDCLASSEX  window_class ;
-      std::string title        ;
-      unsigned    width        ;
-      unsigned    height       ;
-      
-      /** Default constructor.
-       */
-      WindowData() ;
-      
-      /** Method to create a win32 window.
-       */
-      void createWindow() ;
-    };
-    
-    void readMessages()
-    {
-
-    }
-
+       
     LRESULT CALLBACK processWindow( HWND handle, UINT message, WPARAM wParam, LPARAM lParam )
     {
       static kgl::EventManager manager ;
@@ -269,9 +282,6 @@ namespace kgl
       {
         ShowWindow( this->handle, SW_SHOW ) ;
       }
-
-      std::thread independant_thread( &kgl::win32::readMessages ) ;
-      independant_thread.detach() ;
     }
     
     Window::Window()

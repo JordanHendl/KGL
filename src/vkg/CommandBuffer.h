@@ -139,6 +139,16 @@ namespace kgl
         
         /** Method to begin all this object's command buffers record using input render pass.
          * @param render_pass Method to begin the render pass & all this object's command buffers record as well.
+         * @param index The index of command buffer to start recording.
+         */
+        void record( const kgl::vkg::RenderPass& render_pass, unsigned index ) ;
+        
+        /** Method to begin all of this object's command buffers recording.
+         */
+        void record( unsigned index ) ;
+        
+        /** Method to begin all this object's command buffers record using input render pass.
+         * @param render_pass Method to begin the render pass & all this object's command buffers record as well.
          */
         void record( const kgl::vkg::RenderPass& render_pass ) ;
         
@@ -147,8 +157,14 @@ namespace kgl
         void record() ;
         
         /** Method to stop all recording of this object's command buffers. If started a render pass, stops as well.
+         * @param index The index of command buffer to stop.
+         */
+        void stop( unsigned index ) ;
+
+        /** Method to stop all recording of this object's command buffers. If started a render pass, stops as well.
          */
         void stop() ;
+        
         
         /** Method to release all of this object's allocated data.
          */

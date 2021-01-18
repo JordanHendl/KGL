@@ -31,12 +31,14 @@ INCLUDE( Message   )
 INCLUDE( BuildTest )
 
 # Build options
-OPTION( BUILD_WIN32  "Whether or not the KGL::WIN32 library will be built, if available" ON  )
-OPTION( BUILD_LINUX  "Whether or not the KGL::LINUX library will be built, if available" ON  )
-OPTION( BUILD_CUDA   "Whether or not the KGL::CUDA library will be built, if available"  ON  )
-OPTION( BUILD_VULKAN "Whether or not the KGL::VKG library will be built, if available"   ON  )
-OPTION( RUN_TESTS    "Whether or not the KGL tests should be run"                        ON  )
-OPTION( BUILD_RELEASE "Whether or not the to build for release."                         OFF )
+OPTION( BUILD_WIN32   "Whether or not the KGL::WIN32 library will be built, if available" ON  )
+OPTION( BUILD_LINUX   "Whether or not the KGL::LINUX library will be built, if available" ON  )
+OPTION( BUILD_CUDA    "Whether or not the KGL::CUDA library will be built, if available"  ON  )
+OPTION( BUILD_VULKAN  "Whether or not the KGL::VKG library will be built, if available"   ON  )
+OPTION( BUILD_TESTS   "Whether or not the KGL tests should be built"                      ON  )
+OPTION( BUILD_DOCS    "Whether or not to generate documentation of KGL"                   OFF )
+OPTION( BUILD_RELEASE "Whether or not the to build for release."                          OFF )
+OPTION( RUN_TESTS     "Whether or not the KGL tests should be run"                        OFF )
 
 PROJECT( KGL CXX )
 
@@ -125,11 +127,12 @@ MESSAGE( INFO " " )
 
 INCLUDE( KPackage ) 
 
-SET( BIN_DIR     "bin"                           )
-SET( INCLUDE_DIR "include/${CMAKE_PROJECT_NAME}" )
-SET( LIB_DIR     "lib64"                         )
-SET( DOC_DIR     "doc"                           )
-SET( CONFIG_DIR   ${CMAKE_PROJECT_NAME}          )
+SET( BIN_DIR     "bin"                            )
+SET( INCLUDE_DIR "include/${CMAKE_PROJECT_NAME}"  )
+SET( LIB_DIR     "lib64"                          )
+SET( DOC_DIR     "doc"                            )
+SET( CONFIG_DIR   ${CMAKE_PROJECT_NAME}           )
+SET( DOXYGEN_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/doc )
 
 SET( EXPORT_BIN_DIR     "${BIN_DIR}"     )
 SET( EXPORT_INCLUDE_DIR "${INCLUDE_DIR}" )
@@ -138,10 +141,10 @@ SET( EXPORT_DOC_DIR     "${DOC_DIR}"     )
 SET( EXPORT_CONFIG_DIR  "${CONFIG_DIR}"  )
 
 # Set output directories.
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib64 )
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib64 )
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin   )
-set(DOCUMENTATION_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/doc   )
+SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib64 )
+SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib64 )
+SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin   )
+SET(DOCUMENTATION_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/doc   )
 
 IF( MSVC )
     SET( WINDOWS_EXPORT_ALL_SYMBOLS       TRUE )
@@ -150,6 +153,8 @@ IF( MSVC )
 ENDIF()
 
 INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR}/src ) 
+
+INCLUDE ( BuildDocs )
 
 ADD_SUBDIRECTORY( src )
 

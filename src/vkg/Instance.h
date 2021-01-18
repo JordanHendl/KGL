@@ -72,12 +72,11 @@ namespace kgl
         operator ::vk::Instance() ;
 
         /** Method to initialize this Vulkan instance using the input application name.
-         * @param application_name The name of this application.
          */
         void initialize() ;
         
         /** Method to set the application name.
-         * @param application_name The name of this application.
+         * @param app_name The name of this application.
          */
         void setApplicationName( const char* app_name ) ;
 

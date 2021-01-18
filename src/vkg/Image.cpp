@@ -10,32 +10,42 @@ namespace kgl
   {
     struct ImageData
     {
-      vkg::Device               device       ;
-      kgl::vkg::VkMemory        memory       ;
-      vk::MemoryRequirements    requirements ;
-      bool                      preallocated ;
-      unsigned                  width        ;
-      unsigned                  height       ;
-      unsigned                  layers       ;
-      unsigned                  num_mip      ;
-      ::vk::Image               image        ;
-      ::vk::ImageView           view         ;
-      ::vk::Sampler             sampler      ;
-      ::vk::ImageLayout         layout       ;
-      ::vk::ImageLayout         old_layout   ;
-      ::vk::Format              format       ;
-      ::vk::ImageType           type         ;
-      ::vk::SampleCountFlagBits num_samples  ;
-      ::vk::ImageUsageFlags     usage_flags  ;
+      vkg::Device               device       ; ///< TODO
+      kgl::vkg::VkMemory        memory       ; ///< TODO
+      vk::MemoryRequirements    requirements ; ///< TODO
+      bool                      preallocated ; ///< TODO
+      unsigned                  width        ; ///< TODO
+      unsigned                  height       ; ///< TODO
+      unsigned                  layers       ; ///< TODO
+      unsigned                  num_mip      ; ///< TODO
+      ::vk::Image               image        ; ///< TODO
+      ::vk::ImageView           view         ; ///< TODO
+      ::vk::Sampler             sampler      ; ///< TODO
+      ::vk::ImageLayout         layout       ; ///< TODO
+      ::vk::ImageLayout         old_layout   ; ///< TODO
+      ::vk::Format              format       ; ///< TODO
+      ::vk::ImageType           type         ; ///< TODO
+      ::vk::SampleCountFlagBits num_samples  ; ///< TODO
+      ::vk::ImageUsageFlags     usage_flags  ; ///< TODO
 
       /** Default constructor.
        */
       ImageData() ;      
       
+      /** Helper method to create a vulkan image view.
+       * @return A Valid vulkan image view.
+       */
+      vk::ImageView createView() ;
+      
+      /** Method to create a vulkan sampler.
+       * @return A Valid vulkan sampler.
+       */
+      vk::Sampler createSampler() ;
+
       /** Method to create a vulkan image.
        * @return A Made vulkan image.
        */
-      ::vk::Image createImage() ;
+      vk::Image createImage() ;
     };
     
     ImageData::ImageData()
@@ -62,8 +72,52 @@ namespace kgl
       this->img_data = new ImageData() ;
     }
     
+    vk::ImageView ImageData::createView()
+    {
+      vk::ImageViewCreateInfo   info  ;
+      vk::ImageSubresourceRange range ;
+
+      range.setAspectMask    ( vk::ImageAspectFlagBits::eColor ) ; // @TODO: Make configurable.
+      range.setBaseArrayLayer( 0                               ) ;
+      range.setBaseMipLevel  ( 0                               ) ;
+      range.setLayerCount    ( this->layers                    ) ;
+      range.setLevelCount    ( this->num_mip                   ) ;
+      
+      info.setImage           ( this->image            ) ;
+      info.setViewType        ( vk::ImageViewType::e2D ) ; // @TODO Make configurable.
+      info.setFormat          ( this->format           ) ;
+      info.setSubresourceRange( range                  ) ;
+      
+      return this->device.device().createImageView( info, nullptr ) ;
+    }
     
-    ::vk::Image ImageData::createImage()
+    vk::Sampler ImageData::createSampler()
+    {
+      const auto max_anisotropy = 16.0f ;
+      
+      vk::SamplerCreateInfo info ;
+      
+      // @TODO make this configurable.
+      info.setMagFilter              ( ::vk::Filter::eNearest                   ) ;
+      info.setMinFilter              ( ::vk::Filter::eNearest                   ) ;
+      info.setAddressModeU           ( ::vk::SamplerAddressMode::eClampToBorder ) ;
+      info.setAddressModeV           ( ::vk::SamplerAddressMode::eClampToBorder ) ;
+      info.setAddressModeW           ( ::vk::SamplerAddressMode::eClampToBorder ) ;
+      info.setBorderColor            ( ::vk::BorderColor::eIntTransparentBlack  ) ;
+      info.setCompareOp              ( ::vk::CompareOp::eNever                  ) ;
+      info.setMipmapMode             ( ::vk::SamplerMipmapMode::eNearest        ) ;
+      info.setAnisotropyEnable       ( ::vk::Bool32( false )                    ) ;
+      info.setUnnormalizedCoordinates( ::vk::Bool32( false )                    ) ;
+      info.setCompareEnable          ( ::vk::Bool32( false )                    ) ;
+      info.setMaxAnisotropy          ( max_anisotropy                           ) ;
+      info.setMipLodBias             ( 0.0f                                     ) ;
+      info.setMinLod                 ( 0.0f                                     ) ;
+      info.setMaxLod                 ( 0.0f                                     ) ;
+      
+      return this->device.device().createSampler( info, nullptr ) ;
+    }
+
+    vk::Image ImageData::createImage()
     {
       ::vk::ImageCreateInfo info   ;
       ::vk::Image           image  ;
@@ -125,8 +179,8 @@ namespace kgl
       data().height = height     ;
       data().layers = num_layers ;
       
-      data().image = data().createImage() ;
-      
+      data().image   = data().createImage()   ;
+
       data().requirements = device.device().getImageMemoryRequirements( data().image ) ;
       
       if( !data().preallocated )
@@ -138,6 +192,8 @@ namespace kgl
       {
         device.device().bindImageMemory( data().image, data().memory.memory(), data().memory.offset() ) ;
         
+        data().view    = data().createView ()   ;
+        data().sampler = data().createSampler() ;
         return true ;
       }
       
@@ -151,8 +207,10 @@ namespace kgl
       data().height = height     ;
       data().layers = num_layers ;
 
-      data().image = prealloc ;
-      
+      data().image   = prealloc               ;
+      data().view    = data().createView ()   ;
+      data().sampler = data().createSampler() ;
+
       return true ;
     }
     

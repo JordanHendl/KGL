@@ -49,7 +49,7 @@ namespace vk
   enum class DescriptorType                           ;
   enum class ShaderStageFlagBits : VkShaderStageFlags ;
   
-  using ShaderStageFlags = ::vk::Flags<::vk::ShaderStageFlagBits> ;
+  using ShaderStageFlags = ::vk::Flags<::vk::ShaderStageFlagBits> ; ///< Forward declared vulkan.hpp flags.
 }
 
 namespace kgl
@@ -63,6 +63,9 @@ namespace kgl
     class KgShader
     {
       public:
+        
+        /** The format of variable allowed.
+         */
         enum class Format
         {
           mat4,
@@ -107,7 +110,6 @@ namespace kgl
         /** Method to initialize this shader with the provided input.
          * @note Initializes all data set manually.
          * @param device The library device to use for all vulkan operations.
-         * @param spirv The SPIR-V byte code to use for shader module creation.
          */
         void initialize( const kgl::vkg::Device& device ) ;
         
@@ -150,6 +152,7 @@ namespace kgl
         void addInputBinding( unsigned binding, unsigned stride, const vk::VertexInputRate& rate ) ;
         
         /** Method to manually add a SPIRV shader module to this object.
+         * @param flags The shader flags to associated with this shader.
          * @param spirv const pointer to the start of the SPIRV byte code.
          * @param size The size in of the SPIRV byte code in elements.
          */

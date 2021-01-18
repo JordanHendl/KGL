@@ -301,26 +301,44 @@ bool arrayCopyNonSyncedTest()
 
 bool shaderTest()
 {
-  kgl::vkg::KgShader   shader   ;
-  kgl::vkg::RenderPass pass     ;
-  kgl::vkg::Pipeline   pipeline ;
-
-  pass.setFramebufferWidth ( 1240 ) ;
-  pass.setFramebufferHeight( 1024 ) ;
+  kgl::vkg::KgShader        shader   ;
+  kgl::vkg::RenderPass      pass     ;
+  kgl::vkg::Pipeline        pipeline ;
+  kgl::vkg::CommandBuffer   buffer   ;
+  kgl::vkg::Synchronization sync     ;
+  
+  // Add shaders.
   shader.addAttribute   ( 0, 0, kgl::vkg::KgShader::Format::vec4, 0                                    ) ;
   shader.addInputBinding( 0, sizeof( float ) * 3, vk::VertexInputRate::eVertex                         ) ;
   shader.addDescriptor  ( 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eFragment ) ;
   shader.addShaderModule( vk::ShaderStageFlagBits::eVertex  , test_vert, sizeof( test_vert )           ) ;
   shader.addShaderModule( vk::ShaderStageFlagBits::eFragment, test_frag, sizeof( test_frag )           ) ;
   
-  pass    .initialize( device       ) ;
-  shader  .initialize( device       ) ;
-  pipeline.initialize( pass, shader ) ;
+  // Initialize vulkan objects.
+  pass.setFinalLayout( vk::ImageLayout::ePresentSrcKHR ) ;
+  pass    .initialize( swapchain                              ) ;
+  shader  .initialize( device                                 ) ;
+  pipeline.initialize( pass, shader                           ) ;
+  buffer  .initialize( graphics_queue, 20                     ) ;
+  sync    .initialize( device, 0                              ) ;
+
+  for( unsigned index = 0; index < 20; index++ )
+  {
+    sync.waitOn( swapchain.acquire() ) ;
   
+    buffer.record( pass, index ) ;
+    buffer.stop( index ) ;
+    graphics_queue.submit( buffer.buffer( index ), sync ) ;
+  
+    swapchain.submit( sync ) ;
+    sync.clear() ;
+  }
+  
+  device.wait() ;
   pipeline.reset() ;
   shader  .reset() ;
   pass    .reset() ;
-
+  
   return true ;
 }
 
@@ -335,13 +353,15 @@ int main()
   device  .addValidationLayer( "VK_LAYER_KHRONOS_validation"             ) ;
   device  .addValidationLayer( "VK_LAYER_LUNARG_standard_validation"     ) ;
   device  .addExtension      ( "VK_KHR_swapchain"                        ) ;
+  
   instance.initialize() ;
-  window.initialize( "Test", 1024, 720 ) ;
+  window.initialize( "Test", 1240, 1024 ) ;
   device.initialize( instance.device( 0 ), window.context() ) ;
 
   graphics_queue = device.graphicsQueue() ;
   
-  swapchain.initialize( graphics_queue, window.context() ) ;  
+  swapchain.initialize( graphics_queue, window.context() ) ; 
+
   manager.add( "1) Array Test"                           , &simpleArrayTest                ) ;
   manager.add( "2) Array Copy & Synced Submit Test"      , &arrayCopyTest                  ) ;
   manager.add( "3) Array Copy & Non-Synced Submit Test"  , &arrayCopyNonSyncedTest         ) ;

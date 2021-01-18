@@ -91,25 +91,25 @@ namespace kgl
   
   struct StaticEventManagerData
   {
-    typedef std::multimap<kgl::Key        , std::tuple<std::string, EventManager::Subscriber*>> KeyCallbackMap  ;
-    typedef std::multimap<kgl::Event::Type, std::tuple<std::string, EventManager::Subscriber*>> TypeCallbackMap ;
-    typedef std::multimap<std::string,                              EventManager::Subscriber*>  CallbackMap     ;
+    typedef std::multimap<kgl::Key        , std::tuple<std::string, EventManager::Subscriber*>> KeyCallbackMap  ; ///< TODO
+    typedef std::multimap<kgl::Event::Type, std::tuple<std::string, EventManager::Subscriber*>> TypeCallbackMap ; ///< TODO
+    typedef std::multimap<std::string,                              EventManager::Subscriber*>  CallbackMap     ; ///< TODO
     
     
-    CallbackMap     callbacks      ;
-    KeyCallbackMap  key_callbacks  ;
-    TypeCallbackMap type_callbacks ;
+    CallbackMap     callbacks      ; ///< TODO
+    KeyCallbackMap  key_callbacks  ; ///< TODO
+    TypeCallbackMap type_callbacks ; ///< TODO
   };
   
   struct EventManagerData
   {
-    std::vector<StaticEventManagerData::CallbackMap::iterator    > local_callbacks      ;
-    std::vector<StaticEventManagerData::KeyCallbackMap::iterator > local_key_callbacks  ;
-    std::vector<StaticEventManagerData::TypeCallbackMap::iterator> local_type_callbacks ;
+    std::vector<StaticEventManagerData::CallbackMap::iterator    > local_callbacks      ; ///< TODO
+    std::vector<StaticEventManagerData::KeyCallbackMap::iterator > local_key_callbacks  ; ///< TODO
+    std::vector<StaticEventManagerData::TypeCallbackMap::iterator> local_type_callbacks ; ///< TODO
   };
 
 
-  static StaticEventManagerData man_data ;
+  static StaticEventManagerData man_data ; ///< TODO
 
   Event makeKeyEvent( Event::Type type, kgl::Key key )
   {

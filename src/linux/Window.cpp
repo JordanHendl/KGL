@@ -175,22 +175,22 @@ namespace kgl
     
     struct WindowData
     {
-      xcb_connection_t *connection  ;
-      xcb_screen_t     *screen      ;
-      xcb_window_t      window      ;
-      std::string       title       ;
-      unsigned          xpos        ;
-      unsigned          ypos        ;
-      unsigned          width       ;
-      unsigned          height      ;
-      unsigned          depth       ;
-      unsigned          monitor     ;
-      bool              fullscreen  ;
-      bool              borderless  ;
-      bool              minimized   ;
-      bool              maximized   ;
-      bool              resizable   ;
-      bool              has_mouse   ;
+      xcb_connection_t *connection  ; ///< TODO
+      xcb_screen_t     *screen      ; ///< TODO
+      xcb_window_t      window      ; ///< TODO
+      std::string       title       ; ///< TODO
+      unsigned          xpos        ; ///< TODO
+      unsigned          ypos        ; ///< TODO
+      unsigned          width       ; ///< TODO
+      unsigned          height      ; ///< TODO
+      unsigned          depth       ; ///< TODO
+      unsigned          monitor     ; ///< TODO
+      bool              fullscreen  ; ///< TODO
+      bool              borderless  ; ///< TODO
+      bool              minimized   ; ///< TODO
+      bool              maximized   ; ///< TODO
+      bool              resizable   ; ///< TODO
+      bool              has_mouse   ; ///< TODO
 
       /** Default constructor.
        */

@@ -38,26 +38,44 @@ namespace kgl
   {
     struct QueueCount
     {
+      /** The vector of queues associated with this object.
+       */
       std::vector<std::tuple<unsigned, vk::QueueFamilyProperties*>> queues ;
+      
+      /** The amount of queues allowed.
+       */
       unsigned count ;
       
+      /** Default constreuctor.
+       */
       QueueCount() ;
+      
+      /** Method to retrieve a queue.
+       * @return The family of the queue gotten.
+       */
       unsigned getQueue() ;
+      
+      /** Method to retrieve the index of the input family.
+       * @param family The family to retrieve an index of.
+       * @return The index of the specified family.
+       */
       unsigned index( unsigned family )    ;
     };
     
+    /** Structure to manage vulkan queue families.
+     */
     struct QueueFamilies
     {
-      typedef unsigned                            Queue       ;
-      typedef unsigned                            MaxCount    ;
-      typedef std::map<Queue, std::vector<float>> PriorityMap ;
+      typedef unsigned                            Queue       ; ///< TODO
+      typedef unsigned                            MaxCount    ; ///< TODO
+      typedef std::map<Queue, std::vector<float>> PriorityMap ; ///< TODO
       
-      std::vector<unsigned>                  total_families ;
-      QueueCount                             graphics       ;
-      QueueCount                             compute        ;
-      QueueCount                             present        ;
-      QueueCount                             transfer       ;
-      PriorityMap                            priority_map   ;
+      std::vector<unsigned>                  total_families ; ///< TODO
+      QueueCount                             graphics       ; ///< TODO
+      QueueCount                             compute        ; ///< TODO
+      QueueCount                             present        ; ///< TODO
+      QueueCount                             transfer       ; ///< TODO
+      PriorityMap                            priority_map   ; ///< TODO
       
       /** Default constructor.
        */
@@ -72,24 +90,24 @@ namespace kgl
 
     struct DeviceData
     {
-      typedef std::vector<std::string    > List       ;
-      typedef std::vector<kgl::vkg::Queue> QueueList  ;
-      typedef std::vector<const char*    > CharList   ;
-      typedef std::vector<float          > Priorities ;
+      typedef std::vector<std::string    > List       ; ///< TODO
+      typedef std::vector<kgl::vkg::Queue> QueueList  ; ///< TODO
+      typedef std::vector<const char*    > CharList   ; ///< TODO
+      typedef std::vector<float          > Priorities ; ///< TODO
       
-      ::vk::Device                           gpu                 ;
-      ::vk::PhysicalDevice                   physical_device     ;
-      ::vk::SurfaceKHR                       surface             ;
-      ::vk::PhysicalDeviceFeatures           features            ;
-      std::vector<vk::QueueFamilyProperties> properties          ;
-      List                                   extension_list      ;
-      List                                   layer_list          ;
-      QueueList                              queues              ;
-      QueueFamilies                          queue_families      ;
-      Priorities                             graphics_priorities ;
-      Priorities                             compute_priorities  ;
-      Priorities                             present_priorities  ;
-      Priorities                             transfer_priorities ;
+      ::vk::Device                           gpu                 ; ///< TODO
+      ::vk::PhysicalDevice                   physical_device     ; ///< TODO
+      ::vk::SurfaceKHR                       surface             ; ///< TODO
+      ::vk::PhysicalDeviceFeatures           features            ; ///< TODO
+      std::vector<vk::QueueFamilyProperties> properties          ; ///< TODO
+      List                                   extension_list      ; ///< TODO
+      List                                   layer_list          ; ///< TODO
+      QueueList                              queues              ; ///< TODO
+      QueueFamilies                          queue_families      ; ///< TODO
+      Priorities                             graphics_priorities ; ///< TODO
+      Priorities                             compute_priorities  ; ///< TODO
+      Priorities                             present_priorities  ; ///< TODO
+      Priorities                             transfer_priorities ; ///< TODO
 
       /** Default Constructor
        */
@@ -536,6 +554,11 @@ namespace kgl
     const ::vk::PhysicalDevice& Device::physicalDevice() const
     {
       return data().physical_device ;
+    }
+    
+    void Device::wait() const
+    {
+      data().gpu.waitIdle() ;
     }
 
     DeviceData& Device::data()

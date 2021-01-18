@@ -70,7 +70,7 @@ namespace kgl
     vk::CommandPool& CommandBufferData::pool( QueueFamily queue_family )
     {
       const PoolMap::iterator          iter = pool_map.find( queue_family ) ;
-      const vk::CommandPoolCreateFlags flags ; //= vk::CommandPoolCreateFlagBits::eResetCommandBuffer ; // TODO make this configurable.
+      const vk::CommandPoolCreateFlags flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer ; // TODO make this configurable.
       const vk::Device                 device = this->queue.device().device() ;
 
       vk::CommandPoolCreateInfo info ;
@@ -187,6 +187,25 @@ namespace kgl
 //    
 //    }
 
+    void CommandBuffer::record( const kgl::vkg::RenderPass& render_pass, unsigned index )
+    {
+      const vk::SubpassContents flags = vk::SubpassContents::eInline ;
+
+      vk::RenderPassBeginInfo info ;
+      info.setClearValueCount( 1                          ) ;
+      info.setPClearValues   ( &render_pass.clearColors() ) ;
+      info.setRenderArea     ( render_pass.area()         ) ;
+      info.setRenderPass     ( render_pass.pass()         ) ;
+      info.setFramebuffer    ( render_pass.next()         ) ;
+      
+      if( index < data().cmd_buffers.size() )
+      {
+        data().cmd_buffers[ index ].begin          ( &data().begin_info ) ;
+        data().cmd_buffers[ index ].beginRenderPass( &info, flags       ) ;
+        data().started_render_pass = true ;
+      }
+    }
+
     void CommandBuffer::record( const kgl::vkg::RenderPass& render_pass )
     {
       const vk::SubpassContents flags = vk::SubpassContents::eInline ;
@@ -196,7 +215,7 @@ namespace kgl
       info.setPClearValues   ( &render_pass.clearColors() ) ;
       info.setRenderArea     ( render_pass.area()         ) ;
       info.setRenderPass     ( render_pass.pass()         ) ;
-      
+      info.setFramebuffer    ( render_pass.next()         ) ;
       
       for( auto &cmd_buff : data().cmd_buffers )
       {
@@ -205,6 +224,11 @@ namespace kgl
       }
       
       data().started_render_pass = true ;
+    }
+
+    void CommandBuffer::record( unsigned index )
+    {
+      if( index < data().cmd_buffers.size() ) data().cmd_buffers[ index ].begin( &data().begin_info ) ;
     }
 
     void CommandBuffer::record()
@@ -219,12 +243,25 @@ namespace kgl
     {
       for( auto &cmd_buff : data().cmd_buffers )
       {
-        cmd_buff.end() ;
-        
         if( data().started_render_pass )
         {
           cmd_buff.endRenderPass() ;
         }
+        cmd_buff.end() ;
+      }
+      data().started_render_pass = false ;
+    }
+    
+    void CommandBuffer::stop( unsigned index )
+    {
+      if( index < data().cmd_buffers.size() )
+      {
+        if( data().started_render_pass )
+        {
+          data().cmd_buffers[ index ].endRenderPass() ;
+        }
+
+        data().cmd_buffers[ index ].end() ;
       }
       data().started_render_pass = false ;
     }

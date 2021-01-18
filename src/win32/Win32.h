@@ -36,7 +36,7 @@ namespace kgl
     class Win32
     {
       public:
-        using Window = kgl::win32::Window ;
+        using Window = kgl::win32::Window ; ///< The type of window to use.
     };
   }
 }

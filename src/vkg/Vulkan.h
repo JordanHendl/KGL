@@ -155,15 +155,15 @@ namespace kgl
     class Vulkan
     {
       public:
-        using Device         = ::kgl::vkg::Device                        ;
-        using Buffer         = ::kgl::vkg::Buffer                        ;
-        using Image          = ::kgl::vkg::Image                         ;
-        using Memory         = ::vk::DeviceMemory                        ;
-        using CommandRecord  = ::vk::CommandBuffer                       ;
-        using MemoryPropFlag = ::vk::Flags<::vk::MemoryPropertyFlagBits> ;
-        using ImageLayout    = ::vk::ImageLayout                         ;
-        using ImageFormat    = ::vk::Format                              ;
-        using Context        = ::vk::SurfaceKHR                          ;
+        using Device         = ::kgl::vkg::Device                        ; ///< TODO
+        using Buffer         = ::kgl::vkg::Buffer                        ; ///< TODO
+        using Image          = ::kgl::vkg::Image                         ; ///< TODO
+        using Memory         = ::vk::DeviceMemory                        ; ///< TODO
+        using CommandRecord  = ::vk::CommandBuffer                       ; ///< TODO
+        using MemoryPropFlag = ::vk::Flags<::vk::MemoryPropertyFlagBits> ; ///< TODO
+        using ImageLayout    = ::vk::ImageLayout                         ; ///< TODO
+        using ImageFormat    = ::vk::Format                              ; ///< TODO
+        using Context        = ::vk::SurfaceKHR                          ; ///< TODO
 
         /** Static method to initialize this implementation with a vulkan instance.
          * @param instance

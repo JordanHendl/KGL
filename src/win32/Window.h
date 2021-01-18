@@ -51,7 +51,7 @@ namespace kgl
         ~Window() ;
         
         /** Method to initialize this object.
-         * @param window_name The title of the window. 
+         * @param window_title The title of the window. 
          * @param width The width of the window in pixels.
          * @param height The height of the window in pixels.
          */

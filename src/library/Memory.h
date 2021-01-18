@@ -119,15 +119,16 @@ namespace kgl
       /** Method to copy the input memory object into this.
        * @param src The memory object of the same implementation to copy.
        * @param amt_to_copy The amount of memory, in bytes, to copy. Defaults to entire object.
-       * @param offset The offset into the input memory object to start copying at. Defaults to the start.
+       * @param srcoffset The offset into the input memory object to start copying at. Defaults to the start.
+       * @param dstoffset The offset into the output memory object to start copying at. Defaults to the start.
        */
       void copy( const Memory<IMPL>& src, unsigned amt_to_copy = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
       
       /** Method to copy the input host ( CPU-side ) data into this object's host & GPU copies.
        * @param src Pointer to the input data to copy from.
        * @param amt The amount of data to copy.
-       * @param offset The offset in indices of this object's memory to copy to.
-       * @param src_offset The offset in indices of the input data to copy from.
+       * @param src_offset The offset in indices of this object's memory to copy to.
+       * @param dst_offset The offset in indices of the input data to copy from.
        */
       template<typename TYPE>
       void copySynced( const TYPE* src, unsigned amt, unsigned offset = 0, unsigned src_offset = 0, unsigned dstoffset = 0 ) ;

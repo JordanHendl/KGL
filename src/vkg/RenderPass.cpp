@@ -25,6 +25,7 @@
 #include "RenderPass.h"
 #include "Device.h"
 #include "Image.h"
+#include "Swapchain.h"
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <array>
@@ -33,40 +34,46 @@ namespace kgl
 {
   namespace vkg
   {
+    /** Structure encompassing a viewport ration.
+     */
     struct ViewportRatio
     {
-      float width_ratio   = 1.0f ;
-      float height_ratio  = 1.0f ;
+      float width_ratio   = 1.0f ; ///< The viewport width ratio.
+      float height_ratio  = 1.0f ; ///< The viewport height ratio.
     };
 
+    /** Structure to encompass a render pass's internal data.
+     */
     struct RenderPassData
     {
-      typedef std::vector<kgl::vkg::Image          > FramebufferImages      ;
-      typedef std::vector<vk::Framebuffer          > Framebuffers           ;
-      typedef std::vector<vk::AttachmentDescription> AttachmentDescriptions ;
-      typedef std::vector<vk::AttachmentReference  > AttachmentReferences   ;
-      typedef std::vector<vk::SubpassDescription   > SubpassDescriptions    ;
-      typedef std::vector<vk::SubpassDependency    > SubpassDependencies    ;
-      typedef std::vector<vk::Viewport             > Viewports              ;
-      typedef std::vector<ViewportRatio            > ViewportRatios         ;
-      typedef std::vector<vk::ImageView            > ImageViews             ;
+      typedef std::vector<kgl::vkg::Image          > FramebufferImages      ; ///< TODO
+      typedef std::vector<vk::Framebuffer          > Framebuffers           ; ///< TODO
+      typedef std::vector<vk::AttachmentDescription> AttachmentDescriptions ; ///< TODO
+      typedef std::vector<vk::AttachmentReference  > AttachmentReferences   ; ///< TODO
+      typedef std::vector<vk::SubpassDescription   > SubpassDescriptions    ; ///< TODO
+      typedef std::vector<vk::SubpassDependency    > SubpassDependencies    ; ///< TODO
+      typedef std::vector<vk::Viewport             > Viewports              ; ///< TODO
+      typedef std::vector<ViewportRatio            > ViewportRatios         ; ///< TODO
+      typedef std::vector<vk::ImageView            > ImageViews             ; ///< TODO
       
-      unsigned               width               ;
-      unsigned               height              ;
-      unsigned               layers              ;
-      kgl::vkg::Device       device              ;
-      vk::ClearValue         clear_color         ;
-      vk::RenderPass         render_pass         ;
-      vk::Rect2D             area                ;
-      vk::Rect2D             scissor             ;
-      Framebuffers           framebuffers        ;
-      FramebufferImages      images              ;
-      AttachmentDescriptions attach_descriptions ;
-      AttachmentReferences   attach_references   ;
-      SubpassDescriptions    sub_descriptions    ;
-      SubpassDependencies    sub_dependencies    ;
-      Viewports              viewports           ;
-      ViewportRatios         ratios              ;
+      unsigned               width               ; ///< TODO
+      unsigned               height              ; ///< TODO
+      unsigned               layers              ; ///< TODO
+      mutable unsigned       current             ; ///< The current framebuffer to use for this pass.
+      kgl::vkg::Device       device              ; ///< TODO
+      vk::SwapchainKHR       swapchain           ; ///< TODO
+      vk::ClearValue         clear_color         ; ///< TODO
+      vk::RenderPass         render_pass         ; ///< TODO
+      vk::Rect2D             area                ; ///< TODO
+      vk::Rect2D             scissor             ; ///< TODO
+      Framebuffers           framebuffers        ; ///< TODO
+      FramebufferImages      images              ; ///< TODO
+      AttachmentDescriptions attach_descriptions ; ///< TODO
+      AttachmentReferences   attach_references   ; ///< TODO
+      SubpassDescriptions    sub_descriptions    ; ///< TODO
+      SubpassDependencies    sub_dependencies    ; ///< TODO
+      Viewports              viewports           ; ///< TODO
+      ViewportRatios         ratios              ; ///< TODO
 
       /** Default constructor.
        */
@@ -80,6 +87,10 @@ namespace kgl
       /** Helper Method to make the framebuffers specified by this render pass.
        */
       void makeFramebuffers() ;
+      
+      /** Helper Method to make the framebuffers specified by this render pass.
+       */
+      void makeFramebuffers( const kgl::vkg::Swapchain& chain ) ;
     };
     
     RenderPassData::RenderPassData()
@@ -119,9 +130,10 @@ namespace kgl
       this->viewports.push_back( viewport ) ;
       
       this->sub_descriptions.push_back( sub_desc ) ;
-      this->width  = 0 ;
-      this->height = 0 ;
-      this->layers = 0 ;
+      this->width   = 0 ;
+      this->height  = 0 ;
+      this->layers  = 0 ;
+      this->current = 0 ;
     }
     
     ::vk::RenderPass RenderPassData::makeRenderPass()
@@ -142,14 +154,13 @@ namespace kgl
 
     void RenderPassData::makeFramebuffers()
     {
-      ::vk::Rect2D              area      ;
       vk::FramebufferCreateInfo info      ;
       unsigned                  index     ;
       vk::ImageView             view[ 1 ] ;
 
       index = 0 ;
       info.setRenderPass( this->render_pass ) ;
-
+      
       for( auto& image : this->images )
       {
         image.initialize( this->device, this->width, this->height, this->layers ) ;
@@ -169,6 +180,34 @@ namespace kgl
         this->device.device().createFramebuffer( &info, nullptr, &this->framebuffers[ index ] ) ;
         
         index++ ;
+      }
+    }
+    
+    void RenderPassData::makeFramebuffers( const kgl::vkg::Swapchain& chain )
+    {
+      vk::FramebufferCreateInfo info      ;
+      vk::ImageView             view[ 1 ] ;
+
+      info.setRenderPass( this->render_pass ) ;
+
+      this->framebuffers.resize( chain.count() ) ;
+      this->images.resize      ( chain.count() ) ;
+      for( unsigned index = 0; index < chain.count(); index++ )
+      {
+        this->images[ index ] = chain.images()[ index ] ;
+        view[ 0 ] = chain.images()[ index ].view() ;
+        
+        /** TODO: Make this configurable. There are valid use cases for :
+         * Different image formats. Maybe RGBA32F framebuffer attachments?
+         * More than one attachment per framebuffer. Maybe depth and color attachments?
+         */
+        info.setAttachmentCount( 1                 ) ; 
+        info.setPAttachments   ( view              ) ;
+        info.setWidth          ( chain.width()     ) ;
+        info.setHeight         ( chain.height()    ) ;
+        info.setLayers         ( 1                 ) ;
+
+        this->device.device().createFramebuffer( &info, nullptr, &this->framebuffers[ index ] ) ;
       }
     }
 
@@ -202,6 +241,18 @@ namespace kgl
       
       data().render_pass = data().makeRenderPass() ;
       data().makeFramebuffers() ;
+    }
+    
+    void RenderPass::initialize( const kgl::vkg::Swapchain& swapchain )
+    {
+      data().device = swapchain.device() ;
+      data().width  = swapchain.width()  ;
+      data().height = swapchain.height() ; 
+
+      data().attach_descriptions[ 0 ].setFormat( swapchain.format() ) ;
+
+      data().render_pass = data().makeRenderPass() ;
+      data().makeFramebuffers( swapchain ) ;
     }
     
     bool RenderPass::initialized() const
@@ -448,11 +499,26 @@ namespace kgl
       if( idx < data().sub_dependencies.size() ) data().sub_dependencies[ idx ].setDstAccessMask( dst ) ;
     }
     
+    void RenderPass::setFinalLayout( const vk::ImageLayout& layout, unsigned idx )
+    {
+      if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setFinalLayout( layout ) ;
+    }
+    
     void RenderPass::setClearColor( float red, float green, float blue, float alpha )
     {
       std::array<float, 4> clear_colors = { red, green, blue, alpha } ;
       
       data().clear_color.setColor( static_cast<vk::ClearColorValue>( clear_colors ) ) ;
+    }
+    
+    const vk::Framebuffer& RenderPass::next() const
+    {
+      unsigned id = data().current ;
+      
+      data().current++ ;
+      if( data().current >= data().framebuffers.size() ) data().current = 0 ;
+      
+      return data().framebuffers[ id ] ;
     }
     
     void RenderPass::reset()

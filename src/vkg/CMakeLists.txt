@@ -56,10 +56,7 @@ IF( ${Vulkan_FOUND} )
     
     INCLUDE_DIRECTORIES( ${KGL_VULKAN_INCLUDE_DIRS} )
 
-    # If running tests, make and run them.
-    IF( RUN_TESTS )
-      BUILD_TEST( TARGET kgl_vkg )
-    ENDIF()
+    BUILD_TEST( TARGET kgl_vkg )
 
     INSTALL( FILES  ${KGL_VULKAN_HEADERS} DESTINATION ${INCLUDE_DIR}/vkg )
     INSTALL( TARGETS kgl_vkg EXPORT kgl   

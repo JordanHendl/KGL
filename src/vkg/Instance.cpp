@@ -30,6 +30,13 @@ namespace kgl
      */
     static vk::DebugUtilsMessageTypeFlagsEXT toFlags( Instance::DebugOutputLevel type ) ;
     
+    /** Static Vulkan debug callback for any vulkan instance errors. 
+     * @param messageSeverity The severity of the debug message.
+     * @param messageType The type of message.
+     * @param pCallbackData The data containing the callback information.
+     * @param pUserData The input user-specified data.
+     * @return Whether or not the error was handled.
+     */
     static  VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,
             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
             void* pUserData )
@@ -52,27 +59,31 @@ namespace kgl
       return VK_FALSE;
     }
     
+    /** Structure to contain a version in major.minor.revision format.
+     */
     struct Version
     {
-      unsigned major    ;
-      unsigned minor    ;
-      unsigned revision ;
+      unsigned major    ; ///< The major revision.
+      unsigned minor    ; ///< The minor revision.
+      unsigned revision ; ///< The revision.
     };
-
+    
+    /** Structure to contain a vulkan instance's data.
+     */
     struct InstanceData
     {
-      typedef std::vector<std::string>          List       ;
-      typedef std::vector<const char*>          CharList   ;
-      typedef std::vector<::vk::PhysicalDevice> DeviceList ;
+      typedef std::vector<std::string>          List       ; ///< A List of std::strings.
+      typedef std::vector<const char*>          CharList   ; ///< A List of C-Strings.
+      typedef std::vector<::vk::PhysicalDevice> DeviceList ; ///< A List of Vulkan Physical Devices.
       
-      ::vk::Instance instance     ;
-      Version        app_version  ;
-      Version        api_version  ;
-      std::string    app_name     ;
-      List           ext_list     ;
-      List           layer_list   ;
-      DeviceList     physical_dev ;
-      bool           debug        ;
+      ::vk::Instance instance     ; ///< The vulkan image.
+      Version        app_version  ; ///< The application version.
+      Version        api_version  ; ///< The API version.
+      std::string    app_name     ; ///< The name of the application.
+      List           ext_list     ; ///< The list of extensions to use for instance generation.
+      List           layer_list   ; ///< The list of validation layers to use for instance generation.
+      DeviceList     physical_dev ; ///< The list of physical devices found on the system.
+      bool           debug        ; ///< Whether or not to generate debug callbacks.
 
       /** Default constructor.
        */

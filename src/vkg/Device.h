@@ -186,6 +186,10 @@ namespace kgl
          */
         void setRobustBufferAccess( bool value ) ;
         
+        /** Method to wait for all operations on this device to finish.
+         */
+        void wait() const ;
+
       private:
         
         /** Forward declared structure containing this object's data.

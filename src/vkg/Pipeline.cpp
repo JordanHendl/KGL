@@ -32,33 +32,37 @@ namespace kgl
 {
   namespace vkg
   {
+    /** The structure to contain all pipeline configuration.
+     */
     struct PipelineConfig
     {
-      vk::Viewport                             viewport               ;
-      vk::Rect2D                               scissor                ;
-      vk::PipelineViewportStateCreateInfo      viewport_info          ;
-      vk::PipelineColorBlendStateCreateInfo    color_blend_info       ;
-      vk::PipelineRasterizationStateCreateInfo rasterization_info     ;
-      vk::PipelineInputAssemblyStateCreateInfo assembly_info          ;
-      vk::PipelineMultisampleStateCreateInfo   multisample_info       ;
-      vk::PipelineColorBlendAttachmentState    color_blend_attachment ;
+      vk::Viewport                             viewport               ; ///< TODO
+      vk::Rect2D                               scissor                ; ///< TODO
+      vk::PipelineViewportStateCreateInfo      viewport_info          ; ///< TODO
+      vk::PipelineColorBlendStateCreateInfo    color_blend_info       ; ///< TODO
+      vk::PipelineRasterizationStateCreateInfo rasterization_info     ; ///< TODO
+      vk::PipelineInputAssemblyStateCreateInfo assembly_info          ; ///< TODO
+      vk::PipelineMultisampleStateCreateInfo   multisample_info       ; ///< TODO
+      vk::PipelineColorBlendAttachmentState    color_blend_attachment ; ///< TODO
       
       /** Default constructor.
        */
       PipelineConfig() ;
     };
 
+    /** The structure to contain the underlying pipeline data.
+     */
     struct PipelineData
     {
-      PipelineConfig       config              ;
-      kgl::vkg::Device     device              ;
-      kgl::vkg::RenderPass render_pass         ;
-      kgl::vkg::KgShader   shader              ;
-      vk::Pipeline         pipeline            ;
-      vk::PipelineLayout   layout              ;
-      vk::PipelineCache    cache               ;
-      vk::ShaderStageFlags push_constant_flags ;
-      unsigned             push_constant_size  ;
+      PipelineConfig       config              ; ///< TODO
+      kgl::vkg::Device     device              ; ///< TODO
+      kgl::vkg::RenderPass render_pass         ; ///< TODO
+      kgl::vkg::KgShader   shader              ; ///< TODO
+      vk::Pipeline         pipeline            ; ///< TODO
+      vk::PipelineLayout   layout              ; ///< TODO
+      vk::PipelineCache    cache               ; ///< TODO
+      vk::ShaderStageFlags push_constant_flags ; ///< TODO
+      unsigned             push_constant_size  ; ///< TODO
       
       /** Default constructor.
        */

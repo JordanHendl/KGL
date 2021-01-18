@@ -233,6 +233,8 @@ namespace kgl
    */
   Event makeMouseButtonEvent( Event::Type type, kgl::MouseButton button ) ;
 
+  /** Class to manage library event handling.
+   */
   class EventManager
   {
     public:
@@ -294,7 +296,7 @@ namespace kgl
        * @param key The key to use to reference the callback.
        */
       template<class Object>
-      void enroll( Object* obj, void (Object::*setter)( const Event& ), const char* key ) ;
+      void enroll( Object* obj, void (Object::*callback)( const Event& ), const char* key ) ;
       
       /** Method to subscribe a callback with the manager.
        * @param obj The object to use for calling the callback.
@@ -303,7 +305,7 @@ namespace kgl
        * @param key The key to use to reference the callback.
        */
       template<class Object>
-      void enroll( Object* obj, void (Object::*setter)( const Event& ), kgl::Event::Type type, const char* key ) ;
+      void enroll( Object* obj, void (Object::*callback)( const Event& ), kgl::Event::Type type, const char* key ) ;
 
       /** Method to subscribe a callback with the manager.
        * @param obj The object to use for calling the callback.
@@ -312,7 +314,7 @@ namespace kgl
        * @param key The key to use to reference the callback.
        */
       template<class Object>
-      void enroll( Object* obj, void (Object::*setter)( const Event& ), kgl::Key keysym, const char* key ) ;
+      void enroll( Object* obj, void (Object::*callback)( const Event& ), kgl::Key keysym, const char* key ) ;
       
       /** Method to remove all callbacks from this object.
        */

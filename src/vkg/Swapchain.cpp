@@ -23,11 +23,14 @@
  */
 
 #include "Swapchain.h"
+#include "Synchronization.h"
 #include "Image.h"
 #include "Device.h"
 #include "Queue.h"
 #include <vulkan/vulkan.hpp>
 #include <vector>
+#include <queue>
+#include <limits.h>
 
 namespace kgl
 {
@@ -35,20 +38,30 @@ namespace kgl
   {
     struct SwapchainData
     {
-      using Formats = std::vector<vk::SurfaceFormatKHR> ;
-      using Modes   = std::vector<vk::PresentModeKHR>   ;
-      using Images  = std::vector<kgl::vkg::Image>      ;
+      using Formats = std::vector<vk::SurfaceFormatKHR>      ; ///< TODO
+      using Modes   = std::vector<vk::PresentModeKHR>        ; ///< TODO
+      using Images  = std::vector<kgl::vkg::Image>           ; ///< TODO
+      using Fences  = std::vector<vk::Fence>                 ; ///< TODO
+      using Syncs   = std::vector<kgl::vkg::Synchronization> ; ///< TODO
       
-      Formats                    formats        ;
-      Modes                      modes          ;
-      Images                     images         ;
-      kgl::vkg::Queue            present_queue  ;
-      vk::SwapchainKHR           swapchain      ;
-      vk::SurfaceCapabilitiesKHR capabilities   ;
-      vk::SurfaceFormatKHR       surface_format ;
-      vk::SurfaceKHR             surface        ;
-      vk::Extent2D               extent         ;
+      Syncs                      syncs          ; ///< The synchronizations of this object.
+      Fences                     fences         ; ///< The fences used for managing frames.
+      Formats                    formats        ; ///< TODO
+      Modes                      modes          ; ///< TODO
+      Images                     images         ; ///< TODO
+      kgl::vkg::Queue            present_queue  ; ///< TODO
+      vk::SwapchainKHR           swapchain      ; ///< TODO
+      vk::SurfaceCapabilitiesKHR capabilities   ; ///< TODO
+      vk::SurfaceFormatKHR       surface_format ; ///< TODO
+      vk::SurfaceKHR             surface        ; ///< TODO
+      vk::Extent2D               extent         ; ///< TODO
+      std::queue<unsigned>       acquired       ; ///< The images acquired from this swapchain.
+      unsigned                   current_frame  ; ///< The frame counter used to monitor swapchain presenting.
       
+      /** Default constructor.
+       */
+      SwapchainData() ;
+
       /** Method to return the mode for this swapchain, if it's available.
        * @param value The requested mode.
        * @return The mode selected by what was available.
@@ -76,6 +89,11 @@ namespace kgl
       void chooseExtent() ;
     };
     
+    SwapchainData::SwapchainData()
+    {
+      this->current_frame = 0 ;
+    }
+
     void SwapchainData::makeSwapchain()
     {
       vk::SwapchainCreateInfoKHR info ;
@@ -107,6 +125,7 @@ namespace kgl
       this->images.resize( imgs.size() ) ;
       for( unsigned index = 0; index < this->images.size(); index++ )
       {
+        this->images[ index ].setFormat( this->surface_format.format ) ;
         this->images[ index ].initialize( this->present_queue.device(), this->extent.width, this->extent.height, imgs[ index ] ) ;
       }
     }
@@ -190,11 +209,72 @@ namespace kgl
     {
       data().present_queue = present_queue ;
       data().surface       = surface       ;
-
+      
+      
+      data().fences.clear() ;
       data().findProperties() ;
       data().chooseExtent  () ;
       data().makeSwapchain () ;
-//      data().generateImages() ;
+      data().generateImages() ;
+      
+      data().syncs .resize( this->count() ) ;
+      data().fences.resize( this->count() ) ;
+      for( auto& sync : data().syncs ) sync.initialize( present_queue.device(), 1 ) ;
+    }
+
+    const kgl::vkg::Synchronization& Swapchain::acquire()
+    {
+      const auto device    = data().present_queue.device().device() ;
+      const unsigned index = data().current_frame                   ;
+      if( data().fences[ index ] ) 
+      {
+        device.waitForFences( 1, &data().fences[ index ], VK_TRUE, UINT64_MAX ) ;
+        device.resetFences( 1, &data().fences[ index ] ) ;
+      }
+      
+      auto result = device.acquireNextImageKHR( data().swapchain, UINT64_MAX, data().syncs[ index ].signal(), data().syncs[ index ].signalFence() ) ;
+      
+      if( result.result == vk::Result::eErrorOutOfDateKHR || result.result == vk::Result::eSuboptimalKHR )
+      {
+        device.waitIdle() ;
+        this->reset() ;
+        this->initialize( data().present_queue, data().surface ) ;
+      }
+      else
+      {
+        data().fences[ index ] = data().syncs[ index ].signalFence() ;
+        data().acquired.push( static_cast<unsigned>( result.value ) ) ;
+        
+        data().current_frame = ( index + 1 ) % data().syncs.size() ;
+      }
+      
+      return data().syncs[ index ] ;
+    }
+
+    void Swapchain::submit( const kgl::vkg::Synchronization& sync )
+    {
+      const unsigned index = data().acquired.front() ;
+      
+      data().syncs[ index ].waitOn( sync ) ;
+      data().present_queue.submit( *this, index, data().syncs[ index ] ) ;
+      data().acquired.pop() ;
+
+      data().syncs[ index ].clear() ;
+    }
+    
+    const kgl::vkg::Image* Swapchain::images() const
+    {
+      return data().images.data() ;
+    }
+    
+    const kgl::vkg::Device& Swapchain::device() const
+    {
+      return data().present_queue.device() ;
+    }
+    
+    const vk::Format& Swapchain::format() const
+    {
+      return data().surface_format.format ;
     }
 
     bool Swapchain::initialized() const
@@ -217,14 +297,24 @@ namespace kgl
       return data().images.size() ;
     }
 
-    const vk::SwapchainKHR Swapchain::swapchain() const
+    const vk::SwapchainKHR& Swapchain::swapchain() const
     {
       return data().swapchain ;
     }
 
     void Swapchain::reset()
     {
-    
+      if( data().swapchain )
+      {
+        
+        for( auto& image : data().images )
+        {
+          image.reset() ;
+        }
+        
+        data().images.clear() ;
+        data().present_queue.device().device().destroy( data().swapchain ) ;
+      }
     }
 
     SwapchainData& Swapchain::data()

@@ -21,7 +21,7 @@
   
   And then simply open the generated .sln with whatever editor of your preference and build.
 
-  Generated RPM's default install to /usr/local/KGL on UNIX, and C:\Program Files\KGL on Windows.
+  Generated RPM's default install to '/usr/local/KGL' on UNIX, and 'C:\Program Files\KGL' on Windows.
 
   Using with CMake: 
   1) Add the path to the install to your *CMAKE_PREFIX_PATH*.
@@ -111,4 +111,4 @@
   For usages of each specific API, I suggest checking out the Test.cpp in each one!
 
   If you have any questions or suggestions shoot me an email at jordiehendl@gmail.com
-  or hit me up on twitter ( @jajajordie )
+  or hit me up on twitter ( twitter.com/jajajordie )

@@ -38,6 +38,9 @@ namespace kgl
   namespace vkg
   {
     class Device ;
+
+    /** Object to manage Vulkan synchronization primitives.
+     */
     class Synchronization
     {
       public:
@@ -76,7 +79,7 @@ namespace kgl
          * @param num_sems The amount of signal semaphores to create.
          * @param num_fences The amount of fences to create.
          */
-        void initialize( const kgl::vkg::Device& device, unsigned num_sems = 1, unsigned num_fences = 1 ) ;
+        void initialize( const kgl::vkg::Device& device, unsigned num_sems = 1 ) ;
         
         /** Method to add the input synchronization object to be waited on by this one.
          * @param sync The synchronization object to wait on for this current object's operation.
@@ -114,7 +117,7 @@ namespace kgl
          * @param idx The index of fence to grab.
          * @return Const reference to the signal fence.
          */
-        const vk::Fence& signalFence( unsigned idx = 0 ) const ;
+        const vk::Fence& signalFence() const ;
         
         /** Method to retrieve the specified fence to be waited on.
          * @param idx The index of fence to grab.
@@ -144,7 +147,7 @@ namespace kgl
         
         /** Method to wait on the fences specfied wait fences of this object.
          */
-        void wait() ;
+        void waitOnFences() ;
 
         /** Method to clear all waiting objects of this object.
          */

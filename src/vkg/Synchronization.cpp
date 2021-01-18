@@ -31,18 +31,21 @@ namespace kgl
 {
   namespace vkg
   {
-    static const vk::Semaphore dummy ;
+    static const vk::Semaphore dummy ; ///< A Dummy semaphore to return on bad accesses.
+    
+    /** Structure containing a vkg::synchronization's internal data.
+     */
     struct SynchronizationData
     {
-      typedef std::vector<vk::Semaphore> SemList   ;
-      typedef std::vector<vk::Fence    > FenceList ;
+      typedef std::vector<vk::Semaphore> SemList   ; ///< TODO
+      typedef std::vector<vk::Fence    > FenceList ; ///< TODO
       
-      vk::Device         device        ;
-      vk::PhysicalDevice p_device      ;
-      FenceList          signal_fences ;
-      SemList            signal_sems   ;
-      FenceList          wait_fences   ;
-      SemList            wait_sems     ;
+      vk::Device         device        ; ///< TODO
+      vk::PhysicalDevice p_device      ; ///< TODO
+      vk::Fence          signal_fence  ; ///< TODO
+      SemList            signal_sems   ; ///< TODO
+      FenceList          wait_fences   ; ///< TODO
+      SemList            wait_sems     ; ///< TODO
       
       /** Default constructor.
        */
@@ -83,7 +86,7 @@ namespace kgl
       return data().p_device ;
     }
 
-    void Synchronization::initialize( const kgl::vkg::Device& device, unsigned num_sems, unsigned num_fences )
+    void Synchronization::initialize( const kgl::vkg::Device& device, unsigned num_sems )
     {
       vk::SemaphoreCreateInfo sem_info   ;
       vk::FenceCreateInfo     fence_info ;
@@ -92,7 +95,6 @@ namespace kgl
       data().p_device = device.physicalDevice() ;
       
       data().signal_sems  .resize( num_sems   ) ;
-      data().signal_fences.resize( num_fences ) ;
       
       fence_info.setFlags( vk::FenceCreateFlagBits::eSignaled ) ;
       
@@ -101,12 +103,9 @@ namespace kgl
         sem = data().device.createSemaphore( sem_info, nullptr ) ;
       }
       
-      for( auto &fence : data().signal_fences )
-      {
-        fence = data().device.createFence( fence_info, nullptr ) ;
-      }
+      data().signal_fence = data().device.createFence( fence_info, nullptr ) ;
       
-      data().device.resetFences( data().signal_fences.size(), data().signal_fences.data() ) ;
+      data().device.resetFences( 1, &data().signal_fence ) ;
     }
 
     void Synchronization::waitOn( const kgl::vkg::Synchronization& sync )
@@ -116,15 +115,12 @@ namespace kgl
         data().wait_sems.push_back( sem ) ;
       }
       
-      for( auto &fence : sync.data().signal_fences )
-      {
-        data().wait_fences.push_back( fence ) ;
-      }
+      if( sync.data().signal_fence ) data().wait_fences.push_back( sync.data().signal_fence ) ;
     }
 
     unsigned Synchronization::numFences() const
     {
-      return data().signal_fences.size() ;
+      return 1 ;
     }
 
     unsigned Synchronization::numSignals() const
@@ -151,12 +147,9 @@ namespace kgl
       return dummy ;
     }
 
-    const vk::Fence& Synchronization::signalFence( unsigned idx ) const
+    const vk::Fence& Synchronization::signalFence() const
     {
-      static const vk::Fence dummy ;
-      if( idx < data().signal_fences.size() ) return data().signal_fences[ idx ] ;
-      
-      return dummy ;
+      return data().signal_fence ;
     }
 
     const vk::Fence& Synchronization::waitFence( unsigned idx ) const
@@ -184,12 +177,13 @@ namespace kgl
 
     const vk::Fence* Synchronization::signalFences() const
     {
-      return data().signal_fences.data() ;
+      return &data().signal_fence ;
     }
     
-    void Synchronization::wait()
+    void Synchronization::waitOnFences()
     {
-      data().device.waitForFences( data().wait_fences.size(), data().wait_fences.data(), true, UINT64_MAX ) ;
+      data().device.waitForFences( 1, &data().signal_fence, true, UINT64_MAX ) ;
+      data().device.resetFences  ( 1, &data().signal_fence                   ) ;
     }
     
     void Synchronization::clear()

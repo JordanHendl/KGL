@@ -27,6 +27,8 @@ namespace kgl
   {
     using IMPL = kgl::vkg::Vulkan ;
     
+    /** Structure to encompass a vulkan buffer's internal data.
+     */
     struct BufferData
     {
       kgl::Memory<IMPL>      internal_memory ;

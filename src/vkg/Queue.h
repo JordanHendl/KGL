@@ -25,6 +25,10 @@
 #ifndef KGL_VKG_QUEUE_H
 #define KGL_VKG_QUEUE_H
 
+#include "Swapchain.h"
+#include "Synchronization.h"
+
+
 namespace vk
 {
   class Queue         ;
@@ -113,6 +117,13 @@ namespace kgl
          */
         void submit( const vk::CommandBuffer& cmd_buff, const kgl::vkg::Synchronization& sync ) ;
         
+        /** Method to submit a swapchain present operation to this queue.
+         * @param swapchain The swapchain to submit the present operation for.
+         * @param img_index The image index acquired by the swapchain.
+         * @param sync The synchronization object to use for syncing the GPU operation.
+         */
+        void submit( const kgl::vkg::Swapchain& swapchain, unsigned img_index, const kgl::vkg::Synchronization& sync ) ;
+
       private:
         
         /** Friend decleration. This object should only be initialized through a device.

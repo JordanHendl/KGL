@@ -57,23 +57,25 @@ namespace kgl
     else { std::cout << "Unknown type : " << type_name << std::endl ; exit( -1 ) ; } ;
   }
 
-  /**
+  /** Structure to encompass a shader uniform.
    */
   struct Uniform
   {
-    unsigned    binding ;
-    unsigned    size    ;
-    UniformType type    ;
-    std::string name    ;
+    unsigned    binding ; ///< TODO
+    unsigned    size    ; ///< TODO
+    UniformType type    ; ///< TODO
+    std::string name    ; ///< TODO
   };
 
+  /** Structure to encompass a shader attribute.
+   */
   struct Attribute
   {
-    bool        input    ;
-    std::string name     ;
-    std::string type     ;
-    unsigned    size     ;
-    unsigned    location ;
+    bool        input    ; ///< TOOD
+    std::string name     ; ///< TOOD
+    std::string type     ; ///< TOOD
+    unsigned    size     ; ///< TOOD
+    unsigned    location ; ///< TOOD
   };
 
   /** Structure to encompass a shader.
@@ -95,7 +97,9 @@ namespace kgl
   {
     ShaderMap::const_iterator it ;
   };
-
+  
+  /** Container for a KgFile's data.
+   */
   struct KgFileData
   {
       std::string include_directory ;

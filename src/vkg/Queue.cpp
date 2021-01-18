@@ -39,14 +39,18 @@ namespace kgl
      */
     static std::map<unsigned, std::mutex> mutex_map ;
     
+    /** Structure to encompass a Queue's internal data.
+     */
     struct QueueData
     {
-      vk::Queue        queue  ;
-      kgl::vkg::Device device ;
-      vk::SubmitInfo   submit ;
-      unsigned         family ;
-      unsigned         id     ;
+      vk::Queue        queue  ; ///< The underlying vulkan queue.
+      kgl::vkg::Device device ; ///< The device associated with this queue.
+      vk::SubmitInfo   submit ; ///< The submit structure created here for cacheing.
+      unsigned         family ; ///< The queue family associated with this queue.
+      unsigned         id     ; ///< The ID associated with this queue.
       
+      /** Default constructor.
+       */
       QueueData() ;
     };
 
@@ -127,6 +131,8 @@ namespace kgl
     
     void Queue::submit( const kgl::vkg::CommandBuffer& cmd_buff, const kgl::vkg::Synchronization& sync )
     {
+      static const std::vector<::vk::PipelineStageFlags> flags( 100, ::vk::PipelineStageFlagBits::eAllCommands ) ;
+
       data().submit = vk::SubmitInfo() ;
       
       data().submit.setCommandBufferCount  ( cmd_buff.size()    ) ;
@@ -135,6 +141,7 @@ namespace kgl
       data().submit.setSignalSemaphoreCount( sync.numSignals()  ) ;
       data().submit.setWaitSemaphoreCount  ( sync.numWaitSems() ) ;
       data().submit.setPWaitSemaphores     ( sync.waits()       ) ;
+      data().submit.setPWaitDstStageMask   ( flags.data()       ) ;
 
       if( cmd_buff.level() == kgl::vkg::CommandBuffer::Level::Primary )
       {
@@ -142,6 +149,21 @@ namespace kgl
         data().queue.submit( 1, &data().submit, sync.signalFence() ) ;
         mutex_map[ data().family ].unlock() ;
       }
+    }
+    
+    void Queue::submit( const kgl::vkg::Swapchain& swapchain, unsigned img_index, const kgl::vkg::Synchronization& sync )
+    {
+      vk::PresentInfoKHR info ;
+      
+      info.setPImageIndices     ( &img_index             ) ;
+      info.setSwapchainCount    ( 1                      ) ;
+      info.setPSwapchains       ( &swapchain.swapchain() ) ;
+      info.setWaitSemaphoreCount( sync.numWaitSems()     ) ;
+      info.setPWaitSemaphores   ( sync.waits()           ) ;
+      
+      mutex_map[ data().family ].lock() ;
+      data().queue.presentKHR( &info ) ;
+      mutex_map[ data().family ].unlock() ;
     }
     
     void Queue::submit( const vk::CommandBuffer& cmd_buff )
@@ -163,14 +185,16 @@ namespace kgl
     
     void Queue::submit( const vk::CommandBuffer& cmd_buff, const kgl::vkg::Synchronization& sync )
     {
-      data().submit = vk::SubmitInfo() ;
+      static constexpr vk::PipelineStageFlags flags = vk::PipelineStageFlagBits::eAllCommands ;
       
+      data().submit = vk::SubmitInfo() ;
       data().submit.setCommandBufferCount  ( 1                  ) ;
       data().submit.setPCommandBuffers     ( &cmd_buff          ) ;
       data().submit.setPSignalSemaphores   ( sync.signals()     ) ;
       data().submit.setSignalSemaphoreCount( sync.numSignals()  ) ;
       data().submit.setWaitSemaphoreCount  ( sync.numWaitSems() ) ;
       data().submit.setPWaitSemaphores     ( sync.waits()       ) ;
+      data().submit.setPWaitDstStageMask   ( &flags             ) ;
 
       mutex_map[ data().family ].lock() ;
       data().queue.submit( 1, &data().submit, sync.signalFence() ) ;
