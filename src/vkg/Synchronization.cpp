@@ -191,6 +191,11 @@ namespace kgl
       data().wait_fences.clear() ;
       data().wait_sems  .clear() ;
     }
+    
+    void Synchronization::reset()
+    {
+      
+    }
 
     SynchronizationData& Synchronization::data()
     {

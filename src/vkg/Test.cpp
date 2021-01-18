@@ -38,6 +38,7 @@
 #include <library/Memory.h>
 #include <library/Image.h>
 #include <library/Window.h>
+#include <template/List.h>
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <algorithm>
@@ -305,7 +306,8 @@ bool shaderTest()
   kgl::vkg::RenderPass      pass     ;
   kgl::vkg::Pipeline        pipeline ;
   kgl::vkg::CommandBuffer   buffer   ;
-  kgl::vkg::Synchronization sync     ;
+  
+  kgl::List<kgl::vkg::Synchronization> syncs ;
   
   // Add shaders.
   shader.addAttribute   ( 0, 0, kgl::vkg::KgShader::Format::vec4, 0                                    ) ;
@@ -316,25 +318,28 @@ bool shaderTest()
   
   // Initialize vulkan objects.
   pass.setFinalLayout( vk::ImageLayout::ePresentSrcKHR ) ;
-  pass    .initialize( swapchain                              ) ;
-  shader  .initialize( device                                 ) ;
-  pipeline.initialize( pass, shader                           ) ;
-  buffer  .initialize( graphics_queue, 20                     ) ;
-  sync    .initialize( device, 0                              ) ;
+  pass    .initialize( swapchain                       ) ;
+  shader  .initialize( device                          ) ;
+  pipeline.initialize( pass, shader                    ) ;
+  buffer  .initialize( graphics_queue, 20              ) ;
+  syncs   .initialize( swapchain.count(), device, 0    ) ;
 
   for( unsigned index = 0; index < 20; index++ )
   {
-    sync.waitOn( swapchain.acquire() ) ;
+    syncs.current().waitOn( swapchain.acquire() ) ;
   
     buffer.record( pass, index ) ;
     buffer.stop( index ) ;
-    graphics_queue.submit( buffer.buffer( index ), sync ) ;
+    graphics_queue.submit( buffer.buffer( index ), syncs ) ;
   
-    swapchain.submit( sync ) ;
-    sync.clear() ;
+    swapchain.submit( syncs ) ;
+    syncs.current().clear() ;
+    syncs.current().waitOnFences() ;
+    syncs.advance() ;
   }
   
   device.wait() ;
+  syncs   .reset() ;
   pipeline.reset() ;
   shader  .reset() ;
   pass    .reset() ;

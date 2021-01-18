@@ -152,6 +152,11 @@ namespace kgl
         /** Method to clear all waiting objects of this object.
          */
         void clear() ;
+        
+        /** Method to reset and deallocate all allocated data.
+         */
+        void reset() ;
+
       private:
         
         /** Forward declared structure to contain this object's internal data.
