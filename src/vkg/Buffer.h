@@ -28,7 +28,9 @@ namespace vk
        class Buffer                        ;
        class CommandBuffer                 ;
   enum class BufferUsageFlagBits : VkFlags ;
+  using VKGBufferFlags = ::vk::Flags<::vk::BufferUsageFlagBits> ;
 }
+
 
 namespace kgl
 {
@@ -40,6 +42,12 @@ namespace kgl
     class Vulkan        ;
     class Device        ;
     class CommandBuffer ;
+
+    template<typename T>
+    vk::VKGBufferFlags convert( T flag ) ;
+
+    template<typename T, typename... TYPES>
+    vk::VKGBufferFlags convert( T flag, TYPES... types ) ;
 
     class Buffer
     {
@@ -114,16 +122,15 @@ namespace kgl
          * @param host_local Whether to allocate a host-copy of this data.
          * @return Whether or not this buffer was successfully initialized.
          */
-        template<typename ... BUFFER_FLAGS>
-        bool initialize( const kgl::vkg::Device& gpu, unsigned size, bool host_local, BUFFER_FLAGS... buffer_flags ) ;
-
+        bool initialize( const kgl::vkg::Device& gpu, unsigned size, bool host_local = false ) ;
+        
         /** Method to initialize this object using the input parameters.
          * @param gpu The device to use for all GPU calls.
          * @param size The size in bytes to allocate for this object.
          * @param host_local Whether to allocate a host-copy of this data.
          * @return Whether or not this buffer was successfully initialized.
          */
-        bool initialize( const kgl::vkg::Device& gpu, unsigned size, bool host_local = false ) ;
+        bool initialize( const kgl::vkg::Device& gpu, unsigned size, bool host_local, UsageFlags flags ) ;
         
         /** Method to return the size of this object on the GPU.
          * @return The size in bytes of this object on the GPU.

@@ -113,6 +113,13 @@ namespace kgl
       
       return this->initialize( prealloc.device(), size == 0 ? prealloc.size() : size ) ;
     }
+    
+    bool Buffer::initialize( const kgl::vkg::Device& gpu, unsigned size, bool host_local, UsageFlags flags )
+    {
+      data().usage_flags = flags ;
+      
+      return this->initialize( gpu, size, host_local ) ;
+    }
 
     bool Buffer::initialize( const kgl::vkg::Device& gpu, unsigned size, bool host_local )
     {
@@ -122,12 +129,13 @@ namespace kgl
       data().buffer       = data().createBuffer( size )                               ;
       data().requirements = gpu.device().getBufferMemoryRequirements( data().buffer ) ; 
       data().host_local   = host_local                                                ;
+
       if( !data().preallocated )
       {
         if( host_local )
-        data().internal_memory.initialize( gpu, data().requirements.size, host_local, ::vk::MemoryPropertyFlagBits::eHostVisible | ::vk::MemoryPropertyFlagBits::eHostCoherent ) ;
+          data().internal_memory.initialize( gpu, data().requirements.size, data().requirements.memoryTypeBits, host_local, ::vk::MemoryPropertyFlagBits::eHostVisible | ::vk::MemoryPropertyFlagBits::eHostCoherent ) ;
         else
-        data().internal_memory.initialize( gpu, data().requirements.size, host_local ) ;
+          data().internal_memory.initialize( gpu, data().requirements.size, data().requirements.memoryTypeBits, host_local ) ;
       }
 
       needed_size = data().internal_memory.size() - data().internal_memory.offset() ;

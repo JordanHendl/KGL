@@ -86,6 +86,10 @@ namespace kgl
          */
         const vk::Queue& queue() const ;
         
+        /** Method to wait for all operations on this queue to complete.
+         */
+        void wait() const ;
+
         /** Method to retrive the library device used for this object's queue creation.
          * @return The library device used for this object's creation.
          */

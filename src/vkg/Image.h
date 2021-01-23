@@ -44,6 +44,8 @@ namespace kgl
   {
     class Vulkan ;
     class Device ;
+    class Buffer ;
+
     /** Abstraction of a Vulkan Image.
      */
     class Image 
@@ -84,14 +86,13 @@ namespace kgl
          * @param buffer Reference to a valid vulkan command buffer to record the copy operation to.
          */
         void copy( const Image& src, vk::CommandBuffer& buffer ) ;
-
-        /** Method to perform a deep copy on the input data.
-         * @param src The host-pointer to data from. Assumes data is size of image.
-         * @param buffer Reference to a valid Vulkan command buffer to record the copy operation to.
-         */
-        template<typename T>
-        void copy( const T* src, vk::CommandBuffer& buffer ) ;
         
+        /** Method to perform a deep copy on the input image.
+         * @param src The image to copy from.
+         * @param buffer Reference to a valid vulkan command buffer to record the copy operation to.
+         */
+        void copy( const kgl::vkg::Buffer& src, vk::CommandBuffer& buffer ) ;
+
         /** Method to initialize this object with the input parameters.
          * @note Uses any set values from other setters in initialization.
          * @param width The width of the image in pixels.
@@ -166,12 +167,12 @@ namespace kgl
          * @param layout The layout to transition this image to.
          * @param cmd_buff The Vulkan command buffer to record the transition operation to.
          */
-        void transition( const vk::ImageLayout& layout, vk::CommandBuffer& cmd_buff ) ;
+        void transition( const vk::ImageLayout& layout, vk::CommandBuffer& cmd_buff ) const ;
         
         /** Method to transition the image back to it's last known layout.
          * @param cmd_buff The Vulkan command buffer to record the transition operation to.
          */
-        void revertLayout( vk::CommandBuffer& cmd_buff ) ;
+        void revertLayout( vk::CommandBuffer& cmd_buff ) const ;
         
         /** Method to retrieve the vulkan image view associated with this image.
          * @return The vulkan image view associated with this image.
@@ -204,13 +205,6 @@ namespace kgl
         void reset() ;
         
       private:
-        
-        /** Base-case for the template copy function. Used to copy host-side data from pointers to this image.
-         * @param src The generic handle to the input data to copy.
-         * @param element_size The size of the input template element in bytes.
-         * @param cmd_buff the Vulkan Command Buffer to record the copy operation to.
-         */
-        void copy( const unsigned char* src, unsigned element_size, vk::CommandBuffer& cmd_buff ) ;
         
         /** Forward-declared structure containing this object's internal data.
          */

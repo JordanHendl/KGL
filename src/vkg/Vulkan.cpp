@@ -50,11 +50,11 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        ::vk::PhysicalDeviceMemoryProperties mem_prop ;
 
        mem_prop = device.getMemoryProperties() ;
-       for( unsigned i = 0; i < mem_prop.memoryTypeCount; i++ )
+       for( unsigned index = 0; index < mem_prop.memoryTypeCount; index++ )
        {
-         if( filter & ( 1 << i ) && ( mem_prop.memoryTypes[ i ].propertyFlags & flag ) == flag )
+         if( filter & ( 1 << index ) && ( mem_prop.memoryTypes[ index ].propertyFlags & flag ) == flag )
          {
-           return i ;
+           return index ;
          }
        }
        return 0 ;
@@ -142,8 +142,8 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        ::vk::MemoryMapFlags flag   ;
        void*                mem    ;
        
-       offset = dst_offset       ;
-       amount = amt              ;
+       offset = dst_offset ;
+       amount = amt        ;
 
        src    = static_cast<const void*>( reinterpret_cast<const unsigned char*>( src ) + src_offset ) ;
 
@@ -187,7 +187,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        device.free ( mem ) ;
      }
      
-     Vulkan::Memory Vulkan::createMemory( const Vulkan::Device& gpu, unsigned size, Vulkan::MemoryFlags flags )
+     Vulkan::Memory Vulkan::createMemory( const Vulkan::Device& gpu, unsigned size, Vulkan::MemoryFlags flags, unsigned filter )
      {
        const auto                      device   = gpu.device()         ;
        const auto                      p_device = gpu.physicalDevice() ;
@@ -196,20 +196,20 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        ::vk::MemoryAllocateInfo info   ;
 
        info.setAllocationSize ( size                                  ) ;
-       info.setMemoryTypeIndex( memType( 0xFFFFFFFF, flag, p_device ) ) ;
+       info.setMemoryTypeIndex( memType( filter, flag, p_device ) ) ;
        
        mem = device.allocateMemory( info, nullptr ).value ;
 
        return mem ;
      }
      
-     Vulkan::Memory Vulkan::createMemory( const Vulkan::Device& gpu, unsigned size )
+     Vulkan::Memory Vulkan::createMemory( const Vulkan::Device& gpu, unsigned size, unsigned filter )
      {
        Vulkan::MemoryFlags flags ;
        
        flags = static_cast<unsigned>( ::vk::MemoryPropertyFlagBits::eDeviceLocal ) ;
 
-       return this->createMemory( gpu, size, flags ) ;
+       return this->createMemory( gpu, size, flags, filter ) ;
      }
      
      

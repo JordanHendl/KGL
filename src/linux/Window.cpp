@@ -28,6 +28,7 @@
 #include <xcb/xcb.h>
 #include <iostream>
 #include <unordered_map>
+
 namespace kgl
 {
   namespace lx
@@ -159,7 +160,6 @@ namespace kgl
     void handleKeyPress( const xcb_key_press_event_t* press )
     {
       kgl::Event event = kgl::makeKeyEvent( Event::Type::KeyDown, keyFromXCB( press->detail ) ) ;
-//      std::cout << +press->detail << std::endl ;
       manager.pushEvent( event ) ;
     }
 
@@ -169,7 +169,6 @@ namespace kgl
     void handleKeyRelease( const xcb_key_release_event_t* press )
     {
       kgl::Event event = kgl::makeKeyEvent( Event::Type::KeyUp, keyFromXCB( press->detail )  ) ;
-//      std::cout << +press->detail << std::endl ;
       manager.pushEvent( event ) ;
     }
     
@@ -224,7 +223,7 @@ namespace kgl
       
       if( xcb_connection_has_error( this->connection ) )
       {
-        std::cout << "FUCK ERROR" << std::endl ;
+        std::cout << "Error" << std::endl ;
       }
       
       screen_iter = xcb_setup_roots_iterator( xcb_get_setup( this->connection ) ) ;

@@ -100,6 +100,22 @@ namespace kgl
        * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
        */      
       void initialize( const typename IMPL::Device& gpu, unsigned sz, bool host_alloc = true ) ;
+      
+      /** Method to initialize this memory object with the input parameters.
+       * @param sz The size in bytes to store in this object.
+       * @param gpu The implementation-specific GPU to use for all gpu operations.
+       * @param mem_flags The implementation-specific memory flags. OR'd together to get the flags to use.
+       * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
+       */
+      template<typename ... MEMORY_FLAGS>
+      void initialize( const typename IMPL::Device& gpu, unsigned sz, unsigned filter, bool host_alloc, MEMORY_FLAGS... mem_flags ) ;
+      
+      /** Method to initialize this memory object with the input parameters.
+       * @param sz The size in bytes to store in this object.
+       * @param gpu The implementation-specific GPU to use for all gpu operations.
+       * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
+       */      
+      void initialize( const typename IMPL::Device& gpu, unsigned sz, unsigned filter, bool host_alloc = true ) ;
         
       /** Method to retrieve the host buffer of this object's data.
        * @return The host-buffer containing this object's data.
@@ -313,6 +329,35 @@ namespace kgl
   }
 
   template<typename IMPL>
+  template< typename ... MEMORY_FLAGS>
+  void Memory<IMPL>::initialize( const typename IMPL::Device& gpu, unsigned sz, unsigned filter, bool host_alloc, MEMORY_FLAGS... mem_flags ) 
+  {
+    this->byte_size  = sz  ;
+    this->gpu        = gpu ;
+    
+    this->memory_ptr = impl.createMemory( gpu, sz, static_cast<typename IMPL::MemoryFlags>( ::kgl::combine( mem_flags... ) ), filter ) ;
+    
+    if( host_alloc )
+    {
+      this->data = new unsigned char[ sz ] ;
+    }
+  }
+
+  template<typename IMPL>
+  void Memory<IMPL>::initialize( const typename IMPL::Device& gpu, unsigned sz, unsigned filter, bool host_alloc ) 
+  {
+    this->byte_size  = sz  ;
+    this->gpu        = gpu ;
+    
+    this->memory_ptr = impl.createMemory( gpu, sz, filter ) ;
+    
+    if( host_alloc )
+    {
+      this->data = new unsigned char[ sz ] ;
+    }
+  }
+
+  template<typename IMPL>
   void Memory<IMPL>::copy( const Memory<IMPL>& src, unsigned amt_to_copy, unsigned srcoffset, unsigned dstoffset )
   {
     this->impl.copyTo( src.memory_ptr, this->memory_ptr, offset ) ;
@@ -340,7 +385,6 @@ namespace kgl
   void Memory<IMPL>::copyToDevice( const TYPE* src, unsigned byte_amt, unsigned src_offset, unsigned dst_offset )
   {
     auto amt = byte_amt > this->byte_size ? this->byte_size : byte_amt ;
-    
     this->impl.copyToDevice( static_cast<const void*>( src ), this->memory_ptr, this->gpu, amt, src_offset, dst_offset ) ;
   }
 

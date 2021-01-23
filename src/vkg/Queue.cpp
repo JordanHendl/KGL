@@ -98,6 +98,11 @@ namespace kgl
     {
       return data().family ;
     }
+    
+    void Queue::wait() const
+    {
+      data().queue.waitIdle() ;
+    }
 
     const vk::Queue& Queue::queue() const
     {
@@ -117,6 +122,8 @@ namespace kgl
       
       data().submit.setCommandBufferCount( cmd_buff.size()    ) ;
       data().submit.setPCommandBuffers   ( cmd_buff.pointer() ) ;
+      data().submit.setWaitSemaphoreCount( 0 ) ;
+      data().submit.setSignalSemaphoreCount( 0 ) ;
       
       if( cmd_buff.level() == kgl::vkg::CommandBuffer::Level::Primary )
       {

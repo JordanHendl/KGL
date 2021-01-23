@@ -280,7 +280,7 @@ namespace kgl
          * @param gpu The GPU to allocate data on.
          * @return Allocated memory on the GPU.
          */
-        Memory createMemory( const Vulkan::Device& gpu, unsigned size ) ;
+        Memory createMemory( const Vulkan::Device& gpu, unsigned size, unsigned filter = 0xFFFFFFF ) ;
         
         /** Method to create & allocate memory on the GPU.
          * @param size The size of the memory to allocate.
@@ -288,7 +288,7 @@ namespace kgl
          * @param mem_flags The memory property flags to use for creation of this memory object.
          * @return Allocated memory on the GPU.
          */
-        Memory createMemory( const Vulkan::Device& gpu, unsigned size, Vulkan::MemoryFlags mem_flags ) ;
+        Memory createMemory( const Vulkan::Device& gpu, unsigned size, Vulkan::MemoryFlags mem_flags, unsigned filter = 0xFFFFFFF ) ;
     };
 
     /** Aliases for parent types.

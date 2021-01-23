@@ -25,6 +25,9 @@
 #ifndef KGL_VKG_RENDERPASS_H
 #define KGL_VKG_RENDERPASS_H
 
+#include "Image.h"
+
+
 typedef unsigned VkFlags ;
 
 /** Vulkan forward declares.
@@ -117,7 +120,6 @@ namespace kgl
          */
         const kgl::vkg::Device& device() const ;
         
-        
         /** Method to retrieve the viewport of this render pass.
          * @return The viewport of this render pass at the specified index.
          */
@@ -149,6 +151,12 @@ namespace kgl
          * @return Const-reference to this object's internal vulkan handle.
          */
         const ::vk::RenderPass& pass() const ;
+        
+        /** Method to retrieve the an image of this render pass.
+         * @param idx The index of image of this render pass to grab. See @RenderPass::numFramebuffers for the size.
+         * @return Const refence to the image at the specified index.
+         */
+        const kgl::vkg::Image& image( unsigned idx = 0 ) const ;
 
         /** Method to retrieve the amount of framebuffers created by this renderpass.
          * @return The number of framebuffers created by this object.

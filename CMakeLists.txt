@@ -133,6 +133,7 @@ SET( LIB_DIR     "lib64"                          )
 SET( DOC_DIR     "doc"                            )
 SET( CONFIG_DIR   ${CMAKE_PROJECT_NAME}           )
 SET( DOXYGEN_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/doc )
+SET( BUILD_DIR    ${CMAKE_BINARY_DIR}             )
 
 SET( EXPORT_BIN_DIR     "${BIN_DIR}"     )
 SET( EXPORT_INCLUDE_DIR "${INCLUDE_DIR}" )
@@ -158,4 +159,4 @@ INCLUDE ( BuildDocs )
 
 ADD_SUBDIRECTORY( src )
 
-INSTALL( EXPORT kgl FILE KGLConfig.cmake DESTINATION ${LIB_DIR} COMPONENT dev )
+INSTALL( EXPORT kgl FILE KGLConfig.cmake DESTINATION ${CMAKE_PROJECT_NAME} COMPONENT dev )

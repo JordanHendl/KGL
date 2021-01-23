@@ -306,6 +306,15 @@ namespace kgl
     {
       return data().render_pass ;
     }
+    
+    const kgl::vkg::Image& RenderPass::image( unsigned idx ) const
+    {
+      static const kgl::vkg::Image dummy ;
+      
+      if( idx < data().images.size() ) return data().images[ idx ] ;
+      
+      return dummy ;
+    }
 
     unsigned RenderPass::numFramebuffers() const
     {

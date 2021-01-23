@@ -45,6 +45,8 @@
 #include <assert.h>
 #include <iostream>
 #include <KT/Manager.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 using Impl = ::kgl::vkg::Vulkan ;
 
@@ -324,13 +326,13 @@ bool shaderTest()
   buffer  .initialize( graphics_queue, 20              ) ;
   syncs   .initialize( swapchain.count(), device, 0    ) ;
 
-  for( unsigned index = 0; index < 20; index++ )
+  for( unsigned i = 0; i < 50; i++ )
   {
     syncs.current().waitOn( swapchain.acquire() ) ;
   
-    buffer.record( pass, index ) ;
-    buffer.stop( index ) ;
-    graphics_queue.submit( buffer.buffer( index ), syncs ) ;
+    buffer.record( pass, swapchain.current() ) ;
+    buffer.stop( swapchain.current() ) ;
+    graphics_queue.submit( buffer.buffer( swapchain.current() ), syncs ) ;
   
     swapchain.submit( syncs ) ;
     syncs.current().clear() ;
@@ -338,11 +340,37 @@ bool shaderTest()
     syncs.advance() ;
   }
   
-  device.wait() ;
+  device  .wait()  ;
   syncs   .reset() ;
   pipeline.reset() ;
   shader  .reset() ;
   pass    .reset() ;
+  
+  return true ;
+}
+
+bool imageLoadTest()
+{
+  kgl::vkg::VkArray<unsigned char> staging ; 
+  kgl::vkg::Image                  image   ;
+  kgl::vkg::CommandBuffer          cmd     ;
+  int width  ;
+  int height ;
+  int chan   ;
+  
+  auto bytes = stbi_load( "test_image.jpeg", &width, &height, &chan, STBI_rgb_alpha ) ;
+  
+  cmd.initialize      ( graphics_queue, 1 ) ;
+  staging.initialize  ( device, static_cast<unsigned>( width * height * 4 ), true, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst ) ;
+  staging.copyToDevice( bytes, static_cast<unsigned>( width * height * 4 ) ) ;
+  
+  if( !image.initialize( device, static_cast<unsigned>( width ), static_cast<unsigned>( height ), 1 ) ) return false ;
+  
+  cmd.record() ;
+  image.copy( staging.buffer(), cmd.buffer( 0 ) ) ;
+  cmd.stop() ;
+  
+  graphics_queue.submit( cmd ) ;
   
   return true ;
 }
@@ -355,7 +383,9 @@ int main()
   instance.addExtension      ( "VK_KHR_surface"                          ) ;
   instance.addValidationLayer( "VK_LAYER_KHRONOS_validation"             ) ;
   instance.addValidationLayer( "VK_LAYER_LUNARG_standard_validation"     ) ;
+  instance.addValidationLayer( "VK_LAYER_RENDERDOC_Capture"              ) ;
   device  .addValidationLayer( "VK_LAYER_KHRONOS_validation"             ) ;
+  device  .addValidationLayer( "VK_LAYER_RENDERDOC_Capture"              ) ;
   device  .addValidationLayer( "VK_LAYER_LUNARG_standard_validation"     ) ;
   device  .addExtension      ( "VK_KHR_swapchain"                        ) ;
   
@@ -376,6 +406,7 @@ int main()
   manager.add( "7) Memory Host-GPU Copy"                 , &testMemoryHostGPUCopy          ) ;
   manager.add( "8) Image Test"                           , &simpleImageTest                ) ;
   manager.add( "8) Pipeline Test"                        , &shaderTest                     ) ;
+  manager.add( "9) Image Copy Test"                      , &imageLoadTest                  ) ;
   
   std::cout << "\nTesting VKG Library" << std::endl ;
   

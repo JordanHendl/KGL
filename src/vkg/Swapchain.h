@@ -25,6 +25,9 @@
 #ifndef KGL_VKG_SWAPCHAIN_H
 #define KGL_VKG_SWAPCHAIN_H
 
+#include "Image.h"
+
+
 
 namespace vk
 {
@@ -125,6 +128,17 @@ namespace kgl
          */
         const vk::SwapchainKHR& swapchain() const ;
         
+        /** Method to retrieve the image associated with this swapchain.
+         * @param idx The index of image to grab. See @count for the number of images.
+         * @return const reference to the image at the specified index.
+         */
+        const kgl::vkg::Image& image( unsigned idx = 0 ) const ;
+
+       /** Method to retrieve the current index of image in use by the swapchain.
+         * @return The current index of image in use by the swapchain.
+         */
+        unsigned current() const ;
+
         /** Method to tell this swapchain to acquire the next image in it's frambuffers.
          * @return The synchronization object used for syncing this acquire with other GPU operations.
          */

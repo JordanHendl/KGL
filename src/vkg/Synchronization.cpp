@@ -194,7 +194,12 @@ namespace kgl
     
     void Synchronization::reset()
     {
-      
+      for( auto& sem : data().signal_sems )
+      {
+        data().device.destroy( sem ) ;
+      }
+
+      data().device.destroy( data().signal_fence ) ;
     }
 
     SynchronizationData& Synchronization::data()

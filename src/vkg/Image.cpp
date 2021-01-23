@@ -1,8 +1,10 @@
 #include "Image.h"
 #include "Device.h"
 #include "Vulkan.h"
+#include "Buffer.h"
 #include <library/Memory.h>
 #include <vulkan/vulkan.hpp>
+#include <algorithm>
 
 namespace kgl
 {
@@ -10,23 +12,24 @@ namespace kgl
   {
     struct ImageData
     {
-      vkg::Device               device       ; ///< TODO
-      kgl::vkg::VkMemory        memory       ; ///< TODO
-      vk::MemoryRequirements    requirements ; ///< TODO
-      bool                      preallocated ; ///< TODO
-      unsigned                  width        ; ///< TODO
-      unsigned                  height       ; ///< TODO
-      unsigned                  layers       ; ///< TODO
-      unsigned                  num_mip      ; ///< TODO
-      ::vk::Image               image        ; ///< TODO
-      ::vk::ImageView           view         ; ///< TODO
-      ::vk::Sampler             sampler      ; ///< TODO
-      ::vk::ImageLayout         layout       ; ///< TODO
-      ::vk::ImageLayout         old_layout   ; ///< TODO
-      ::vk::Format              format       ; ///< TODO
-      ::vk::ImageType           type         ; ///< TODO
-      ::vk::SampleCountFlagBits num_samples  ; ///< TODO
-      ::vk::ImageUsageFlags     usage_flags  ; ///< TODO
+      vkg::Device                device       ; ///< The library device to use for all vulkan calls.
+      kgl::vkg::VkMemory         memory       ; ///< The underlying memory container.
+      vk::MemoryRequirements     requirements ; ///< The memory requirements for this image.
+      vk::ImageSubresourceLayers subresource  ; ///< The subresource layout describing this image.
+      bool                       preallocated ; ///< Whether or not this image was preallocated or not.
+      unsigned                   width        ; ///< The width of this image in pixels.
+      unsigned                   height       ; ///< The height of this image in pixels.
+      unsigned                   layers       ; ///< The number of layers of this image.
+      unsigned                   num_mip      ; ///< The mip level of this image.
+      ::vk::Image                image        ; ///< The raw vulkan image handle.
+      ::vk::ImageView            view         ; ///< The raw vulkan image view handle.
+      ::vk::Sampler              sampler      ; ///< The raw vulkan image sampler.
+      mutable ::vk::ImageLayout  layout       ; ///< The current vulkan layout of this image.
+      mutable ::vk::ImageLayout  old_layout   ; ///< The old layout of this image.
+      ::vk::Format               format       ; ///< The current vulkan format of this image.
+      ::vk::ImageType            type         ; ///< The vulkan image type for this image
+      ::vk::SampleCountFlagBits  num_samples  ; ///< The number of samples to use for sampling this image.
+      ::vk::ImageUsageFlags      usage_flags  ; ///< The usage flags for this image.
 
       /** Default constructor.
        */
@@ -52,11 +55,14 @@ namespace kgl
     {
       const auto default_usage = ::vk::ImageUsageFlagBits::eSampled         |
                                  ::vk::ImageUsageFlagBits::eTransferSrc     |
+                                 ::vk::ImageUsageFlagBits::eColorAttachment |
                                  ::vk::ImageUsageFlagBits::eTransferDst ;
       
+
+
       this->width        = 0                             ;
       this->height       = 0                             ;
-      this->layers       = 0                             ;
+      this->layers       = 1                             ;
       this->num_mip      = 1                             ;
       this->format       = ::vk::Format::eR8G8B8A8Srgb   ;
       this->layout       = ::vk::ImageLayout::eUndefined ;
@@ -65,6 +71,11 @@ namespace kgl
       this->usage_flags  = default_usage                 ;
       this->num_samples  = ::vk::SampleCountFlagBits::e1 ;
       this->preallocated = false                         ;
+
+      this->subresource.setAspectMask    ( vk::ImageAspectFlagBits::eColor ) ;
+      this->subresource.setBaseArrayLayer( 0                               ) ;
+      this->subresource.setLayerCount    ( this->layers                    ) ;
+      this->subresource.setMipLevel      ( 0                               ) ;
     }
     
     Image::Image()
@@ -80,9 +91,9 @@ namespace kgl
       range.setAspectMask    ( vk::ImageAspectFlagBits::eColor ) ; // @TODO: Make configurable.
       range.setBaseArrayLayer( 0                               ) ;
       range.setBaseMipLevel  ( 0                               ) ;
-      range.setLayerCount    ( this->layers                    ) ;
-      range.setLevelCount    ( this->num_mip                   ) ;
-      
+      range.setLayerCount    ( 1                               ) ;
+      range.setLevelCount    ( 1                               ) ;
+
       info.setImage           ( this->image            ) ;
       info.setViewType        ( vk::ImageViewType::e2D ) ; // @TODO Make configurable.
       info.setFormat          ( this->format           ) ;
@@ -137,7 +148,7 @@ namespace kgl
       info.setInitialLayout( this->layout                  ) ;
       info.setSharingMode  ( ::vk::SharingMode::eExclusive ) ;
       info.setTiling       ( ::vk::ImageTiling::eOptimal   ) ;
-             
+
       image = this->device.device().createImage( info, nullptr ) ;
 
       return image ;
@@ -162,15 +173,55 @@ namespace kgl
       return *this ;
     }
 
-//    void Image::copy( const Image& src, vk::CommandBuffer& buffer )
-//    {
-//    
-//    }
-//
-//    void Image::copy( const unsigned char* src, unsigned element_size, vk::CommandBuffer& cmd_buff )
-//    {
-//      
-//    }
+    void Image::copy( const Image& src, vk::CommandBuffer& buffer )
+    {
+      vk::ImageCopy info    ;
+      vk::Extent3D  extent  ;
+
+      extent.setHeight( std::min( this->height(), src.height() ) ) ;
+      extent.setWidth ( std::min( this->width (), src.width () ) ) ;
+      extent.setDepth ( std::min( this->layers(), src.layers() ) ) ;
+      
+      info.setExtent        ( extent                 ) ;
+      info.setSrcOffset     ( 0                      ) ;
+      info.setDstOffset     ( 0                      ) ;
+      info.setSrcSubresource( src.data().subresource ) ;
+      info.setDstSubresource( data().subresource     ) ;
+      
+      this->transition( vk::ImageLayout::eTransferDstOptimal, buffer ) ; 
+      src .transition ( vk::ImageLayout::eTransferSrcOptimal, buffer ) ; 
+      
+      buffer.copyImage( src.data().image, src.data().layout, data().image, data().layout, 1, &info ) ;
+      
+      src .revertLayout ( buffer ) ;
+      this->revertLayout( buffer ) ;
+    }
+    
+    void Image::copy( const kgl::vkg::Buffer& src, vk::CommandBuffer& buffer )
+    {
+      vk::BufferImageCopy info   ;
+      vk::Extent3D        extent ;
+      vk::Offset3D        offset ;
+      
+      offset.setX( 0 ) ;
+      offset.setY( 0 ) ;
+      offset.setZ( 0 ) ;
+      
+      extent.setHeight( this->height() ) ;
+      extent.setWidth ( this->width () ) ;
+      extent.setDepth ( this->layers() ) ;
+      
+      info.setBufferImageHeight( 0                  ) ;
+      info.setBufferOffset     ( 0                  ) ;
+      info.setBufferRowLength  ( 0                  ) ;
+      info.setImageOffset      ( offset             ) ;
+      info.setImageSubresource ( data().subresource ) ;
+      info.setImageExtent      ( extent             ) ;
+      
+      this->transition( vk::ImageLayout::eTransferDstOptimal, buffer ) ; 
+      buffer.copyBufferToImage( src.buffer(), data().image, vk::ImageLayout::eTransferDstOptimal, 1, &info ) ;
+      this->revertLayout( buffer ) ;
+    }
 
     bool Image::initialize( const vkg::Device& device, unsigned width, unsigned height, unsigned num_layers )
     {
@@ -179,13 +230,15 @@ namespace kgl
       data().height = height     ;
       data().layers = num_layers ;
       
-      data().image   = data().createImage()   ;
+      data().subresource.setLayerCount( num_layers ) ;
+      
+      data().image = data().createImage() ;
 
       data().requirements = device.device().getImageMemoryRequirements( data().image ) ;
       
       if( !data().preallocated )
       {
-        data().memory.initialize( device, data().requirements.size, false ) ;
+        data().memory.initialize( device, data().requirements.size, data().requirements.memoryTypeBits, false ) ;
       }
       
       if( data().requirements.size <= data().memory.size() - data().memory.offset() )
@@ -194,6 +247,7 @@ namespace kgl
         
         data().view    = data().createView ()   ;
         data().sampler = data().createSampler() ;
+        
         return true ;
       }
       
@@ -245,6 +299,7 @@ namespace kgl
     void Image::setMipLevels( unsigned mip_levels )
     {
       data().num_mip = mip_levels ;
+      data().subresource.setMipLevel( mip_levels ) ;
     }
 
     void Image::setFormat( const vk::Format& format )
@@ -257,13 +312,30 @@ namespace kgl
       data().layout = layout ;
     }
 
-    void Image::transition( const vk::ImageLayout& layout, vk::CommandBuffer& cmd_buff )
+    void Image::transition( const vk::ImageLayout& layout, vk::CommandBuffer& cmd_buff ) const
     {
-      ::vk::ImageMemoryBarrier barrier   ;
-      ::vk::ImageSubresource   range     ;
-      ::vk::PipelineStageFlags src       ;
-      ::vk::PipelineStageFlags dst       ;
-      ::vk::DependencyFlags    dep_flags ;
+      vk::ImageMemoryBarrier    barrier   ;
+      vk::ImageSubresourceRange range     ;
+      vk::PipelineStageFlags    src       ;
+      vk::PipelineStageFlags    dst       ;
+      vk::DependencyFlags       dep_flags ;
+
+      range.setBaseArrayLayer( 0                               ) ;
+      range.setBaseMipLevel  ( 0                               ) ;
+      range.setLevelCount    ( 1                               ) ;
+      range.setLayerCount    ( this->layers()                  ) ;
+      range.setAspectMask    ( vk::ImageAspectFlagBits::eColor ) ;
+
+      barrier.setOldLayout       ( data().layout                    ) ;
+      barrier.setNewLayout       ( layout                           ) ;
+      barrier.setImage           ( data().image                     ) ;
+      barrier.setSubresourceRange( range                            ) ;
+      barrier.setSrcAccessMask   ( vk::AccessFlagBits::eMemoryWrite ) ;
+      barrier.setDstAccessMask   ( vk::AccessFlagBits::eMemoryRead  ) ;
+      
+      dep_flags = vk::DependencyFlagBits::eDeviceGroupKHR ;
+      src       = vk::PipelineStageFlagBits::eAllCommands ;
+      dst       = vk::PipelineStageFlagBits::eAllCommands ;
       
       cmd_buff.pipelineBarrier( src, dst, dep_flags, 0, nullptr, 0, nullptr, 1, &barrier ) ;
       
@@ -271,9 +343,12 @@ namespace kgl
       data().layout     = layout        ;
     }
 
-    void Image::revertLayout( vk::CommandBuffer& cmd_buff )
+    void Image::revertLayout( vk::CommandBuffer& cmd_buff ) const 
     {
-      this->transition( data().old_layout, cmd_buff ) ;
+      if( data().old_layout != vk::ImageLayout::eUndefined )
+      {
+        this->transition( data().old_layout, cmd_buff ) ;
+      }
     }
     
     const ::vk::Sampler& Image::sampler() const

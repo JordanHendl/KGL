@@ -297,6 +297,20 @@ namespace kgl
       return data().images.size() ;
     }
 
+    unsigned Swapchain::current() const
+    {
+      return data().acquired.back() ;
+    }
+    
+    const kgl::vkg::Image& Swapchain::image( unsigned idx ) const
+    {
+      static const kgl::vkg::Image dummy ;
+      
+      if( idx < data().images.size() ) return data().images[ idx ] ;
+      
+      return dummy ;
+    }
+    
     const vk::SwapchainKHR& Swapchain::swapchain() const
     {
       return data().swapchain ;
