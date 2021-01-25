@@ -32,7 +32,7 @@
 #include <limits>
 #include <tuple>
 
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
@@ -91,7 +91,7 @@ namespace kgl
     struct DeviceData
     {
       typedef std::vector<std::string    > List       ; ///< TODO
-      typedef std::vector<kgl::vkg::Queue> QueueList  ; ///< TODO
+      typedef std::vector<nyx::vkg::Queue> QueueList  ; ///< TODO
       typedef std::vector<const char*    > CharList   ; ///< TODO
       typedef std::vector<float          > Priorities ; ///< TODO
       
@@ -451,12 +451,12 @@ namespace kgl
     }
 
     //TODO These getters for queues are very bad. Do better eventually.
-    const kgl::vkg::Queue& Device::graphicsQueue()
+    const nyx::vkg::Queue& Device::graphicsQueue()
     {
       const unsigned family = data().queue_families.graphics.getQueue() ;
       const unsigned index  = data().queue_families.graphics.index( family ) ;
       vk::Queue       vk_queue ;
-      kgl::vkg::Queue queue    ;
+      nyx::vkg::Queue queue    ;
       
       vk_queue = data().gpu.getQueue( family, index ) ;
       queue.initialize( *this, vk_queue, family, data().queues.size() ) ;
@@ -466,12 +466,12 @@ namespace kgl
       return data().queues.back() ;
     }
     
-    const kgl::vkg::Queue& Device::presentQueue()
+    const nyx::vkg::Queue& Device::presentQueue()
     {
       const unsigned family = data().queue_families.present.getQueue()      ;
       const unsigned index  = data().queue_families.present.index( family ) ;
       vk::Queue       vk_queue ;
-      kgl::vkg::Queue queue    ;
+      nyx::vkg::Queue queue    ;
       
       vk_queue = data().gpu.getQueue( family, index ) ;
       queue.initialize( *this, vk_queue, family, data().queues.size() ) ;
@@ -481,12 +481,12 @@ namespace kgl
       return data().queues.back() ;
     }
     
-    const kgl::vkg::Queue& Device::computeQueue()
+    const nyx::vkg::Queue& Device::computeQueue()
     {
       const unsigned family = data().queue_families.compute.getQueue()      ;
       const unsigned index  = data().queue_families.compute.index( family ) ;
       vk::Queue       vk_queue ;
-      kgl::vkg::Queue queue    ;
+      nyx::vkg::Queue queue    ;
       
       vk_queue = data().gpu.getQueue( family, index ) ;
       queue.initialize( *this, vk_queue, family, data().queues.size() ) ;
@@ -496,12 +496,12 @@ namespace kgl
       return data().queues.back() ;
     }
     
-    const kgl::vkg::Queue& Device::transferQueue()
+    const nyx::vkg::Queue& Device::transferQueue()
     {
       const unsigned family = data().queue_families.transfer.getQueue()      ;
       const unsigned index  = data().queue_families.transfer.index( family ) ;
       vk::Queue       vk_queue ;
-      kgl::vkg::Queue queue    ;
+      nyx::vkg::Queue queue    ;
       
       vk_queue = data().gpu.getQueue( family, index ) ;
       queue.initialize( *this, vk_queue, family, data().queues.size() ) ;

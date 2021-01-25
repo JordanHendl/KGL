@@ -31,7 +31,7 @@
 #include <mutex>
 #include <map>
 
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
@@ -44,7 +44,7 @@ namespace kgl
     struct QueueData
     {
       vk::Queue        queue  ; ///< The underlying vulkan queue.
-      kgl::vkg::Device device ; ///< The device associated with this queue.
+      nyx::vkg::Device device ; ///< The device associated with this queue.
       vk::SubmitInfo   submit ; ///< The submit structure created here for cacheing.
       unsigned         family ; ///< The queue family associated with this queue.
       unsigned         id     ; ///< The ID associated with this queue.
@@ -109,12 +109,12 @@ namespace kgl
       return data().queue ;
     }
 
-    const kgl::vkg::Device& Queue::device() const
+    const nyx::vkg::Device& Queue::device() const
     {
       return data().device ;
     }
     
-    void Queue::submit( const kgl::vkg::CommandBuffer& cmd_buff )
+    void Queue::submit( const nyx::vkg::CommandBuffer& cmd_buff )
     {
       static const vk::Fence dummy ;
 
@@ -125,7 +125,7 @@ namespace kgl
       data().submit.setWaitSemaphoreCount( 0 ) ;
       data().submit.setSignalSemaphoreCount( 0 ) ;
       
-      if( cmd_buff.level() == kgl::vkg::CommandBuffer::Level::Primary )
+      if( cmd_buff.level() == nyx::vkg::CommandBuffer::Level::Primary )
       {
         mutex_map[ data().family ].lock() ;
         data().queue.submit( 1, &data().submit, dummy ) ;
@@ -136,7 +136,7 @@ namespace kgl
       }
     }
     
-    void Queue::submit( const kgl::vkg::CommandBuffer& cmd_buff, const kgl::vkg::Synchronization& sync )
+    void Queue::submit( const nyx::vkg::CommandBuffer& cmd_buff, const nyx::vkg::Synchronization& sync )
     {
       static const std::vector<::vk::PipelineStageFlags> flags( 100, ::vk::PipelineStageFlagBits::eAllCommands ) ;
 
@@ -150,7 +150,7 @@ namespace kgl
       data().submit.setPWaitSemaphores     ( sync.waits()       ) ;
       data().submit.setPWaitDstStageMask   ( flags.data()       ) ;
 
-      if( cmd_buff.level() == kgl::vkg::CommandBuffer::Level::Primary )
+      if( cmd_buff.level() == nyx::vkg::CommandBuffer::Level::Primary )
       {
         mutex_map[ data().family ].lock() ;
         data().queue.submit( 1, &data().submit, sync.signalFence() ) ;
@@ -158,7 +158,7 @@ namespace kgl
       }
     }
     
-    void Queue::submit( const kgl::vkg::Swapchain& swapchain, unsigned img_index, const kgl::vkg::Synchronization& sync )
+    void Queue::submit( const nyx::vkg::Swapchain& swapchain, unsigned img_index, const nyx::vkg::Synchronization& sync )
     {
       vk::PresentInfoKHR info ;
       
@@ -190,7 +190,7 @@ namespace kgl
       mutex_map[ data().family ].unlock() ;
     }
     
-    void Queue::submit( const vk::CommandBuffer& cmd_buff, const kgl::vkg::Synchronization& sync )
+    void Queue::submit( const vk::CommandBuffer& cmd_buff, const nyx::vkg::Synchronization& sync )
     {
       static constexpr vk::PipelineStageFlags flags = vk::PipelineStageFlagBits::eAllCommands ;
       
@@ -208,7 +208,7 @@ namespace kgl
       mutex_map[ data().family ].unlock() ;
     }
 
-    void Queue::initialize( const kgl::vkg::Device& device, const vk::Queue& queue, unsigned queue_family, unsigned queue_id )
+    void Queue::initialize( const nyx::vkg::Device& device, const vk::Queue& queue, unsigned queue_family, unsigned queue_id )
     {
       data().device = device       ;
       data().queue  = queue        ;

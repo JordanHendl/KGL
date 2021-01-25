@@ -22,10 +22,10 @@
  * Created on December 27, 2020, 2:46 PM
  */
 
-#ifndef KGL_IMAGE_H
-#define KGL_IMAGE_H
+#ifndef NYX_IMAGE_H
+#define NYX_IMAGE_H
 
-namespace kgl
+namespace nyx
 {
   template<typename IMPL>
   class Memory ;

@@ -30,7 +30,7 @@
 #include <vector>
 #include <array>
 
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
@@ -46,7 +46,7 @@ namespace kgl
      */
     struct RenderPassData
     {
-      typedef std::vector<kgl::vkg::Image          > FramebufferImages      ; ///< TODO
+      typedef std::vector<nyx::vkg::Image          > FramebufferImages      ; ///< TODO
       typedef std::vector<vk::Framebuffer          > Framebuffers           ; ///< TODO
       typedef std::vector<vk::AttachmentDescription> AttachmentDescriptions ; ///< TODO
       typedef std::vector<vk::AttachmentReference  > AttachmentReferences   ; ///< TODO
@@ -60,7 +60,7 @@ namespace kgl
       unsigned               height              ; ///< TODO
       unsigned               layers              ; ///< TODO
       mutable unsigned       current             ; ///< The current framebuffer to use for this pass.
-      kgl::vkg::Device       device              ; ///< TODO
+      nyx::vkg::Device       device              ; ///< TODO
       vk::SwapchainKHR       swapchain           ; ///< TODO
       vk::ClearValue         clear_color         ; ///< TODO
       vk::RenderPass         render_pass         ; ///< TODO
@@ -90,7 +90,7 @@ namespace kgl
       
       /** Helper Method to make the framebuffers specified by this render pass.
        */
-      void makeFramebuffers( const kgl::vkg::Swapchain& chain ) ;
+      void makeFramebuffers( const nyx::vkg::Swapchain& chain ) ;
     };
     
     RenderPassData::RenderPassData()
@@ -183,7 +183,7 @@ namespace kgl
       }
     }
     
-    void RenderPassData::makeFramebuffers( const kgl::vkg::Swapchain& chain )
+    void RenderPassData::makeFramebuffers( const nyx::vkg::Swapchain& chain )
     {
       vk::FramebufferCreateInfo info      ;
       vk::ImageView             view[ 1 ] ;
@@ -235,7 +235,7 @@ namespace kgl
       return *this ;
     }
 
-    void RenderPass::initialize( const kgl::vkg::Device& device )
+    void RenderPass::initialize( const nyx::vkg::Device& device )
     {
       data().device = device ;
       
@@ -243,7 +243,7 @@ namespace kgl
       data().makeFramebuffers() ;
     }
     
-    void RenderPass::initialize( const kgl::vkg::Swapchain& swapchain )
+    void RenderPass::initialize( const nyx::vkg::Swapchain& swapchain )
     {
       data().device = swapchain.device() ;
       data().width  = swapchain.width()  ;
@@ -292,7 +292,7 @@ namespace kgl
       return data().clear_color ;
     }
 
-    const kgl::vkg::Device& RenderPass::device() const
+    const nyx::vkg::Device& RenderPass::device() const
     {
       return data().device ;
     }
@@ -307,9 +307,9 @@ namespace kgl
       return data().render_pass ;
     }
     
-    const kgl::vkg::Image& RenderPass::image( unsigned idx ) const
+    const nyx::vkg::Image& RenderPass::image( unsigned idx ) const
     {
-      static const kgl::vkg::Image dummy ;
+      static const nyx::vkg::Image dummy ;
       
       if( idx < data().images.size() ) return data().images[ idx ] ;
       

@@ -30,7 +30,7 @@
 #include <map>
 #include <vector>
 
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
@@ -42,7 +42,7 @@ namespace kgl
     {
       typedef std::vector<vk::CommandBuffer> CmdBuffers ;
       
-      kgl::vkg::Queue            queue               ;
+      nyx::vkg::Queue            queue               ;
       vk::CommandBufferBeginInfo begin_info          ;
       CommandBuffer::Level       level               ;
       CmdBuffers                 cmd_buffers         ;
@@ -110,7 +110,7 @@ namespace kgl
       return *this ;
     }
 
-    void CommandBuffer::initialize( const kgl::vkg::Queue& queue, unsigned count, CommandBuffer::Level level ) 
+    void CommandBuffer::initialize( const nyx::vkg::Queue& queue, unsigned count, CommandBuffer::Level level ) 
     {
       vk::CommandBufferAllocateInfo info      ;
       vk::CommandBufferLevel        cmd_level ;
@@ -133,9 +133,15 @@ namespace kgl
 
     void CommandBuffer::combine( const CommandBuffer& cmd )
     {
+      unsigned amt ;
       if( data().level == Level::Primary && cmd.data().level == Level::Secondary )
       {
-        ; //Combine
+        amt = std::min( cmd.size(), this->size() ) ;
+        
+        for( unsigned index = 0; index < amt; index++ )
+        {
+          data().cmd_buffers[ index ].executeCommands( 1, &cmd.buffer( index ) ) ;
+        }
       }
     }
 
@@ -144,12 +150,12 @@ namespace kgl
       return data().cmd_buffers.size() ;
     }
 
-    const kgl::vkg::Queue& CommandBuffer::queue() const
+    const nyx::vkg::Queue& CommandBuffer::queue() const
     {
       return data().queue ;
     }
 
-    const kgl::vkg::Device& CommandBuffer::device() const
+    const nyx::vkg::Device& CommandBuffer::device() const
     {
       return data().queue.device() ;
     }
@@ -159,7 +165,7 @@ namespace kgl
       return data().level ;
     }
 
-    vk::CommandBuffer& CommandBuffer::buffer( unsigned idx )
+    const vk::CommandBuffer& CommandBuffer::buffer( unsigned idx ) const
     {
       static vk::CommandBuffer dummy ;
       if( idx < data().cmd_buffers.size() ) return data().cmd_buffers[ idx ] ;
@@ -172,22 +178,22 @@ namespace kgl
       return data().cmd_buffers.data() ;
     }
 
-//    void CommandBuffer::draw( const kgl::vkg::Buffer& buffer, unsigned offset )
+//    void CommandBuffer::draw( const nyx::vkg::Buffer& buffer, unsigned offset )
 //    {
 //    
 //    }
 //
-//    void CommandBuffer::drawInstanced( const kgl::vkg::Buffer& buffer, unsigned instance_count, unsigned offset, unsigned first )
+//    void CommandBuffer::drawInstanced( const nyx::vkg::Buffer& buffer, unsigned instance_count, unsigned offset, unsigned first )
 //    {
 //    
 //    }
 //
-//    void CommandBuffer::drawIndexed( const kgl::vkg::Buffer& indices, const kgl::vkg::Buffer& vertices )
+//    void CommandBuffer::drawIndexed( const nyx::vkg::Buffer& indices, const nyx::vkg::Buffer& vertices )
 //    {
 //    
 //    }
 
-    void CommandBuffer::record( const kgl::vkg::RenderPass& render_pass, unsigned index )
+    void CommandBuffer::record( const nyx::vkg::RenderPass& render_pass, unsigned index )
     {
       const vk::SubpassContents flags = vk::SubpassContents::eInline ;
 
@@ -206,7 +212,7 @@ namespace kgl
       }
     }
 
-    void CommandBuffer::record( const kgl::vkg::RenderPass& render_pass )
+    void CommandBuffer::record( const nyx::vkg::RenderPass& render_pass )
     {
       const vk::SubpassContents flags = vk::SubpassContents::eInline ;
 

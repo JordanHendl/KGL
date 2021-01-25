@@ -21,23 +21,24 @@
 #include <library/Memory.h> 
 #include <vulkan/vulkan.hpp>
 
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
-    using IMPL = kgl::vkg::Vulkan ;
+    using IMPL = nyx::vkg::Vulkan ;
     
     /** Structure to encompass a vulkan buffer's internal data.
      */
     struct BufferData
     {
-      kgl::Memory<IMPL>      internal_memory ;
-      ::kgl::vkg::Device     device          ;
+      nyx::Memory<IMPL>      internal_memory ;
+      ::nyx::vkg::Device     device          ;
       vk::MemoryRequirements requirements    ;
       vk::BufferUsageFlags   usage_flags     ;
       vk::Buffer             buffer          ;
       bool                   preallocated    ;
       bool                   host_local      ;
+      bool                   initialized     ;
       unsigned               device_size     ;
 
       /** Method to create a vulkan buffer and return it.
@@ -71,6 +72,7 @@ namespace kgl
       this->usage_flags  = ::vk::BufferUsageFlagBits::eTransferSrc | ::vk::BufferUsageFlagBits::eTransferDst ;
       this->device_size  = 0                                                                                 ;
       this->host_local   = false                                                                             ;
+      this->initialized  = false                                                                             ;
     }
     
     Buffer::Buffer()
@@ -106,7 +108,12 @@ namespace kgl
       }
     }
     
-    bool Buffer::initialize( kgl::Memory<kgl::vkg::Vulkan>& prealloc, unsigned size )
+    bool Buffer::initialized() const
+    {
+      return data().initialized ;
+    }
+    
+    bool Buffer::initialize( nyx::Memory<nyx::vkg::Vulkan>& prealloc, unsigned size )
     {
       data().internal_memory = prealloc ;
       data().preallocated    = true     ;
@@ -114,14 +121,14 @@ namespace kgl
       return this->initialize( prealloc.device(), size == 0 ? prealloc.size() : size ) ;
     }
     
-    bool Buffer::initialize( const kgl::vkg::Device& gpu, unsigned size, bool host_local, UsageFlags flags )
+    bool Buffer::initialize( const nyx::vkg::Device& gpu, unsigned size, bool host_local, UsageFlags flags )
     {
       data().usage_flags = flags ;
       
       return this->initialize( gpu, size, host_local ) ;
     }
 
-    bool Buffer::initialize( const kgl::vkg::Device& gpu, unsigned size, bool host_local )
+    bool Buffer::initialize( const nyx::vkg::Device& gpu, unsigned size, bool host_local )
     {
       unsigned needed_size ;
 
@@ -143,7 +150,7 @@ namespace kgl
       if( data().requirements.size <= needed_size )
       {
         data().device.device().bindBufferMemory( data().buffer, data().internal_memory.memory(), data().internal_memory.offset() ) ;
-        
+        data().initialized = true ;
         return true ;
       }
       else
@@ -173,7 +180,7 @@ namespace kgl
       data().internal_memory.copyToDevice( buffer, byte_size, srcoffset, dstoffset ) ;
     }
     
-    const kgl::vkg::Device& Buffer::device()
+    const nyx::vkg::Device& Buffer::device()
     {
       return data().device ;
     }
@@ -183,12 +190,12 @@ namespace kgl
       return data().requirements.size ;
     }
     
-    kgl::Memory<kgl::vkg::Vulkan>& Buffer::memory()
+    nyx::Memory<nyx::vkg::Vulkan>& Buffer::memory()
     {
       return data().internal_memory ;
     }
 
-    const kgl::Memory<kgl::vkg::Vulkan>& Buffer::memory() const
+    const nyx::Memory<nyx::vkg::Vulkan>& Buffer::memory() const
     {
       return data().internal_memory ;
     }

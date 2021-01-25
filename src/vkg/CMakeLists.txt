@@ -3,7 +3,7 @@ FIND_PACKAGE( Vulkan )
 
 # Only build if we found vulkan.
 IF( ${Vulkan_FOUND} )
-    SET( KGL_VULKAN_SOURCES 
+    SET( NYX_VULKAN_SOURCES 
          Vulkan.cpp
          Buffer.cpp
          Device.cpp
@@ -15,10 +15,10 @@ IF( ${Vulkan_FOUND} )
          Pipeline.cpp
          CommandBuffer.cpp
          Swapchain.cpp
-         KgShader.cpp
+         NyxShader.cpp
        )
 
-    SET( KGL_VULKAN_HEADERS
+    SET( NYX_VULKAN_HEADERS
          Vulkan.h
          Buffer.h
          Device.h
@@ -30,38 +30,38 @@ IF( ${Vulkan_FOUND} )
          Pipeline.h
          CommandBuffer.h
          Swapchain.h
-         KgShader.h
+         NyxShader.h
        )
 
-    SET( KGL_VULKAN_INCLUDE_DIRS
+    SET( NYX_VULKAN_INCLUDE_DIRS
          ${Vulkan_INCLUDE_DIRS}
        )
 
-    SET( KGL_VULKAN_LIBRARIES
+    SET( NYX_VULKAN_LIBRARIES
          ${Vulkan_LIBRARIES}
-         kgfile 
+         nyxfile 
         )
     
     # Add the appropriate OS library to link depending on platform being built.
     IF( UNIX AND NOT APPLE )
-      SET( KGL_VULKAN_LIBRARIES ${KGL_VULKAN_LIBRARIES} kgl_linux )
+      SET( NYX_VULKAN_LIBRARIES ${NYX_VULKAN_LIBRARIES} nyx_linux )
     ELSEIF( WIN32 )
-      SET( KGL_VULKAN_LIBRARIES ${KGL_VULKAN_LIBRARIES} kgl_win32 )
+      SET( NYX_VULKAN_LIBRARIES ${NYX_VULKAN_LIBRARIES} nyx_win32 )
     ENDIF()
 
-    # Make KGL::VKG library.
-    ADD_LIBRARY               ( kgl_vkg SHARED  ${KGL_VULKAN_SOURCES} ${KGL_VULKAN_HEADERS} )
-    TARGET_LINK_LIBRARIES     ( kgl_vkg PUBLIC  ${KGL_VULKAN_LIBRARIES}                     )
-    TARGET_INCLUDE_DIRECTORIES( kgl_vkg PRIVATE ${KGL_VULKAN_INCLUDE_DIRS}                  )
+    # Make NYX::VKG library.
+    ADD_LIBRARY               ( nyx_vkg SHARED  ${NYX_VULKAN_SOURCES} ${NYX_VULKAN_HEADERS} )
+    TARGET_LINK_LIBRARIES     ( nyx_vkg PUBLIC  ${NYX_VULKAN_LIBRARIES}                     )
+    TARGET_INCLUDE_DIRECTORIES( nyx_vkg PRIVATE ${NYX_VULKAN_INCLUDE_DIRS}                  )
     
-    INCLUDE_DIRECTORIES( ${KGL_VULKAN_INCLUDE_DIRS} )
+    INCLUDE_DIRECTORIES( ${NYX_VULKAN_INCLUDE_DIRS} )
 
     FILE( COPY test_image.jpeg DESTINATION ${BUILD_DIR}/ )
 
-    BUILD_TEST( TARGET kgl_vkg )
+    BUILD_TEST( TARGET nyx_vkg )
 
-    INSTALL( FILES  ${KGL_VULKAN_HEADERS} DESTINATION ${INCLUDE_DIR}/vkg )
-    INSTALL( TARGETS kgl_vkg EXPORT kgl   
+    INSTALL( FILES  ${NYX_VULKAN_HEADERS} DESTINATION ${INCLUDE_DIR}/vkg )
+    INSTALL( TARGETS nyx_vkg EXPORT Nyx   
              ARCHIVE  DESTINATION ${EXPORT_LIB_DIR}/vkg
              RUNTIME  DESTINATION ${EXPORT_LIB_DIR}/vkg
              LIBRARY  DESTINATION ${EXPORT_LIB_DIR}/vkg

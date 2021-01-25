@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KGL_CUDA_H
-#define KGL_CUDA_H
+#ifndef NYX_CUDA_H
+#define NYX_CUDA_H
 
 struct cudaChannelFormatDesc  ;
 
-namespace kgl
+namespace nyx
 {
   
   /** Forward declared Memory object for friendship.
@@ -40,7 +40,7 @@ namespace kgl
     {
       public:
         using Device         = unsigned              ;
-        using Buffer         = ::kgl::Memory<Cuda>   ;
+        using Buffer         = ::nyx::Memory<Cuda>   ;
         using ImageFormat    = cudaChannelFormatDesc ;
         using ImageLayout    = int                   ;
         using Memory         = void*                 ;
@@ -66,7 +66,7 @@ namespace kgl
         
         /** Friend declaration of memory object to use this implementation for.
          */
-        friend class ::kgl::Memory<Cuda> ;
+        friend class ::nyx::Memory<Cuda> ;
   
         /** Default constructor.
          */
@@ -118,14 +118,14 @@ namespace kgl
   /** Helper Aliases for useful types.
    */
   template<typename TYPE>
-  using CudaImage = kgl::Image<kgl::cg::Cuda, TYPE> ;
+  using CudaImage = nyx::Image<nyx::cg::Cuda, TYPE> ;
   
   template<typename TYPE>
-  using CudaArray  = kgl::Array <kgl::cg::Cuda, TYPE> ;
+  using CudaArray  = nyx::Array <nyx::cg::Cuda, TYPE> ;
   
-  using CudaMemory     = kgl::Memory<kgl::cg::Cuda              > ;
-  using FloatCudaImage = kgl::Image<kgl::cg::Cuda, float        > ;
-  using CharCudaImage  = kgl::Image<kgl::cg::Cuda, unsigned char> ;
+  using CudaMemory     = nyx::Memory<nyx::cg::Cuda              > ;
+  using FloatCudaImage = nyx::Image<nyx::cg::Cuda, float        > ;
+  using CharCudaImage  = nyx::Image<nyx::cg::Cuda, unsigned char> ;
 }
 
 #endif

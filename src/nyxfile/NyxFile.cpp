@@ -16,7 +16,7 @@
  */
 
 
-#include "KgFile.h"
+#include "NyxFile.h"
 #include <string>
 #include <sstream>
 #include <fstream>
@@ -32,10 +32,10 @@
 #include <limits.h>
 #include <stdlib.h>
 
-namespace kgl
+namespace nyx
 {
   struct Shader ;
-  typedef std::map<kgl::ShaderStage, Shader> ShaderMap ;
+  typedef std::map<nyx::ShaderStage, Shader> ShaderMap ;
 
   const unsigned long long MAGIC = 0x555755200d0a ;
 
@@ -318,9 +318,9 @@ namespace kgl
     std::string                str     ;
     unsigned                   sz      ;
     unsigned long long         magic   ;
-    ::kgl::Shader      shader  ;
-    ::kgl::Uniform     uniform ;
-    ::kgl::Attribute   attr    ;
+    ::nyx::Shader      shader  ;
+    ::nyx::Uniform     uniform ;
+    ::nyx::Attribute   attr    ;
 
     data().map.clear() ;
     stream.open( path, std::ios::binary ) ;
@@ -328,7 +328,7 @@ namespace kgl
     if( stream )
     {
       magic = data().readMagic( stream ) ;        
-      if( magic != ::kgl::MAGIC ) /*TODO: LOG ERROR HERE */ return ;
+      if( magic != ::nyx::MAGIC ) /*TODO: LOG ERROR HERE */ return ;
 
       sz = data().readUnsigned( stream ) ;
       for( unsigned it = 0; it < sz; it++ )
@@ -345,7 +345,7 @@ namespace kgl
         shader.spirv     .assign( spirv, spirv + spirv_size ) ;
         shader.uniforms  .resize( num_uniforms              ) ;
         shader.attributes.resize( num_attributes            ) ;
-        shader.stage = static_cast<::kgl::ShaderStage>( stage ) ;
+        shader.stage = static_cast<::nyx::ShaderStage>( stage ) ;
         for( unsigned index = 0; index < num_uniforms; index++ )
         {
            const std::string name         = data().readString  ( stream ) ;
@@ -354,7 +354,7 @@ namespace kgl
            const unsigned uniform_size    = data().readUnsigned( stream ) ;
 
            uniform.name    = name                                            ;
-           uniform.type    = static_cast<::kgl::UniformType>( uniform_type ) ;
+           uniform.type    = static_cast<::nyx::UniformType>( uniform_type ) ;
            uniform.binding = uniform_binding                                 ;
            uniform.size    = uniform_size                                    ;
 

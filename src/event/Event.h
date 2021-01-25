@@ -25,7 +25,7 @@
 #ifndef EVENT_H
 #define EVENT_H
 
-namespace kgl
+namespace nyx
 {
   class      Event       ;
   enum class Key         ;
@@ -49,7 +49,7 @@ namespace kgl
    */
   const char* toString( const MouseButton& button ) ;
 
-  /** All keys mapped for return from the KGL event handler.
+  /** All keys mapped for return from the NYX event handler.
    */
   enum class Key
   {
@@ -132,7 +132,7 @@ namespace kgl
     Down
   };
  
-  /** KGL Mouse Button Events
+  /** NYX Mouse Button Events
    */
   enum class MouseButton
   {
@@ -146,7 +146,7 @@ namespace kgl
     Button02
   };
   
-  /** Class to encapsulate a KGL event.
+  /** Class to encapsulate a NYX event.
    */
   class Event
   {
@@ -202,11 +202,11 @@ namespace kgl
       
       /** Friend function to make a key event.
        */
-      friend Event makeKeyEvent( Event::Type type, kgl::Key key ) ;
+      friend Event makeKeyEvent( Event::Type type, nyx::Key key ) ;
       
       /** Friend function to make a button event.
        */
-      friend Event makeMouseButtonEvent( Event::Type type, kgl::MouseButton button ) ;
+      friend Event makeMouseButtonEvent( Event::Type type, nyx::MouseButton button ) ;
 
       Type        event_type   ;
       Key         event_key    ;
@@ -224,14 +224,14 @@ namespace kgl
    * @param key The key that was pressed.
    * @return The created event.
    */
-  Event makeKeyEvent( Event::Type type, kgl::Key key ) ;
+  Event makeKeyEvent( Event::Type type, nyx::Key key ) ;
   
   /** Function to create a mouse button event from the input params.
    * @param type The type of event.
    * @param button The button that was pressed.
    * @return The created event.
    */
-  Event makeMouseButtonEvent( Event::Type type, kgl::MouseButton button ) ;
+  Event makeMouseButtonEvent( Event::Type type, nyx::MouseButton button ) ;
 
   /** Class to manage library event handling.
    */
@@ -280,14 +280,14 @@ namespace kgl
        * @param type The type of event to recieve signals for.
        * @param key The key to use to reference the callback.
        */
-      void enroll( EventCallback callback, kgl::Event::Type type, const char* key ) ;
+      void enroll( EventCallback callback, nyx::Event::Type type, const char* key ) ;
       
       /** Method to subscribe a callback with the manager.
        * @param callback The callback to subscribe with.
        * @param keysym The key to recieve signals for.
        * @param key The key to use to reference the callback.
        */
-      void enroll( EventCallback callback, kgl::Key keysym,  const char* key ) ;
+      void enroll( EventCallback callback, nyx::Key keysym,  const char* key ) ;
       
       
       /** Method to subscribe a callback with the manager.
@@ -305,7 +305,7 @@ namespace kgl
        * @param key The key to use to reference the callback.
        */
       template<class Object>
-      void enroll( Object* obj, void (Object::*callback)( const Event& ), kgl::Event::Type type, const char* key ) ;
+      void enroll( Object* obj, void (Object::*callback)( const Event& ), nyx::Event::Type type, const char* key ) ;
 
       /** Method to subscribe a callback with the manager.
        * @param obj The object to use for calling the callback.
@@ -314,7 +314,7 @@ namespace kgl
        * @param key The key to use to reference the callback.
        */
       template<class Object>
-      void enroll( Object* obj, void (Object::*callback)( const Event& ), kgl::Key keysym, const char* key ) ;
+      void enroll( Object* obj, void (Object::*callback)( const Event& ), nyx::Key keysym, const char* key ) ;
       
       /** Method to remove all callbacks from this object.
        */
@@ -327,7 +327,7 @@ namespace kgl
       class MethodSubscriber : public Subscriber
       {
         public:
-          typedef void ( Object::*Callback )( const kgl::Event& ) ;
+          typedef void ( Object::*Callback )( const nyx::Event& ) ;
           
           MethodSubscriber( Object* obj, Callback callback ) ;
           
@@ -354,8 +354,8 @@ namespace kgl
       /** Base cases to recieve data from template functions.
        */
       void enrollBase( Subscriber* subscriber, const char* key ) ;
-      void enrollBase( Subscriber* subscriber, kgl::Event::Type type, const char* key ) ;
-      void enrollBase( Subscriber* subscriber, kgl::Key keysym, const char* key ) ;
+      void enrollBase( Subscriber* subscriber, nyx::Event::Type type, const char* key ) ;
+      void enrollBase( Subscriber* subscriber, nyx::Key keysym, const char* key ) ;
       
       /** Forward-declared structure to contain this object's internal data.
        */
@@ -397,7 +397,7 @@ namespace kgl
   }
   
   template<class Object>
-  void EventManager::enroll( Object* obj, void (Object::*setter)( const Event& ), kgl::Event::Type type, const char* key )
+  void EventManager::enroll( Object* obj, void (Object::*setter)( const Event& ), nyx::Event::Type type, const char* key )
   {
     typedef EventManager::MethodSubscriber<Object> Callback ;
     Callback *callback ;
@@ -408,7 +408,7 @@ namespace kgl
   }
 
   template<class Object>
-  void EventManager::enroll( Object* obj, void (Object::*setter)( const Event& ), kgl::Key keysym, const char* key )
+  void EventManager::enroll( Object* obj, void (Object::*setter)( const Event& ), nyx::Key keysym, const char* key )
   {
     typedef EventManager::MethodSubscriber<Object> Callback ;
     Callback *callback ;

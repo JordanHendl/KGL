@@ -22,8 +22,8 @@
  * Created on December 30, 2020, 8:14 PM
  */
 
-#ifndef KGL_WINDOW_H
-#define KGL_WINDOW_H
+#ifndef NYX_WINDOW_H
+#define NYX_WINDOW_H
 
 #ifdef _WIN32
   #include "./win32/Win32.h"
@@ -33,7 +33,7 @@
   #include "./linux/Window.h"
 #endif
 
-namespace kgl
+namespace nyx
 {
   template<typename OS, typename API>
   class BaseWindow
@@ -62,7 +62,27 @@ namespace kgl
       /** Method to reset this object back to it's initial state.
        */
       void reset() ;
+    
+      /** Method to set the X Position of the monitor on the screen.
+       * @param position The X-Position to set the monitor to.
+       */
+      void setXPosition( unsigned position ) ;
+      
+      /** Method to set the Y Position of the monitor on the screen.
+       * @param position The Y-Position to set the monitor to.
+       */
+      void setYPosition( unsigned position ) ;
+      
+      /** Method to set the width of this object.
+       * @param width The width of the window to resize to.
+       */
+      void setWidth( unsigned width )  ;
 
+      /** Method to set the height of this object.
+       * @param width The height of the window to resize to.
+       */
+      void setHeight( unsigned height ) ;
+      
       /** Method to set the monitor to put the window on.
        * @param monitor_id The ID of the monitor to put the window on.
        */
@@ -110,7 +130,7 @@ namespace kgl
   template<typename OS, typename API>
   void BaseWindow<OS, API>::initialize( const char* window_title, unsigned width, unsigned height )
   {
-    os_window.initialize( window_title, width, height ) ;
+    this->os_window.initialize( window_title, width, height ) ;
     
     this->api_context = API::contextFromBaseWindow( this->os_window ) ;
   }
@@ -118,43 +138,67 @@ namespace kgl
   template<typename OS, typename API>
   void BaseWindow<OS, API>::reset()
   {
-    os_window.reset() ;
+    this->os_window.reset() ;
+  }
+
+  template<typename OS, typename API>
+  void BaseWindow<OS, API>::setXPosition( unsigned position )
+  {
+    this->os_window.setXPosition( position ) ;
+  }
+  
+  template<typename OS, typename API>
+  void BaseWindow<OS, API>::setYPosition( unsigned position )
+  {
+    this->os_window.setYPosition( position ) ;
+  }
+  
+  template<typename OS, typename API>
+  void BaseWindow<OS, API>::setWidth( unsigned width ) 
+  {
+    this->os_window.setWidth( width ) ;
+  }
+  
+  template<typename OS, typename API>
+  void BaseWindow<OS, API>::setHeight( unsigned height )
+  {
+    this->os_window.setHeight( height ) ;
   }
 
   template<typename OS, typename API>
   void BaseWindow<OS, API>::setMonitor( unsigned monitor_id )
   {
-    os_window.setMonitor( monitor_id ) ;
+    this->os_window.setMonitor( monitor_id ) ;
   }
 
   template<typename OS, typename API>
   void BaseWindow<OS, API>::setFullscreen( bool value )
   {
-    os_window.setFullscreen( value ) ;
+    this->os_window.setFullscreen( value ) ;
   }
 
   template<typename OS, typename API>
   void BaseWindow<OS, API>::setResizable( bool value )
   {
-    os_window.setResizable( value ) ;
+    this->os_window.setResizable( value ) ;
   }
 
   template<typename OS, typename API>
   void BaseWindow<OS, API>::setBorderless( bool value )
   {
-    os_window.setBorderless( value ) ;
+    this->os_window.setBorderless( value ) ;
   }
 
   template<typename OS, typename API>
   void BaseWindow<OS, API>::setMinimize( bool value )
   {
-    os_window.setMinimize( value ) ;
+    this->os_window.setMinimize( value ) ;
   }
 
   template<typename OS, typename API>
   void BaseWindow<OS, API>::setMaximized( bool value )
   {
-    os_window.setMaximize( value ) ;
+    this->os_window.setMaximize( value ) ;
   }
 
   template<typename OS, typename API>
@@ -177,10 +221,10 @@ namespace kgl
 
   #ifdef WIN32
     template<typename API>
-    using Window = kgl::BaseWindow<kgl::win32::Win32, API> ;
+    using Window = nyx::BaseWindow<nyx::win32::Win32, API> ;
   #elif __linux__ 
     template<typename API>
-    using Window = kgl::BaseWindow<kgl::lx::Linux, API> ;
+    using Window = nyx::BaseWindow<nyx::lx::Linux, API> ;
   #endif
 }
 #endif

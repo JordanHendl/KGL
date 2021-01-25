@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KGL_VULKAN_H
-#define KGL_VULKAN_H
+#ifndef NYX_VULKAN_H
+#define NYX_VULKAN_H
 
 typedef unsigned VkFlags ;
 
@@ -42,7 +42,7 @@ namespace vk
  */
 unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second ) ;
 
-namespace kgl
+namespace nyx
 {
   
   /** Forward declared Memory object for friendship.
@@ -155,9 +155,9 @@ namespace kgl
     class Vulkan
     {
       public:
-        using Device         = ::kgl::vkg::Device                        ; ///< TODO
-        using Buffer         = ::kgl::vkg::Buffer                        ; ///< TODO
-        using Image          = ::kgl::vkg::Image                         ; ///< TODO
+        using Device         = ::nyx::vkg::Device                        ; ///< TODO
+        using Buffer         = ::nyx::vkg::Buffer                        ; ///< TODO
+        using Image          = ::nyx::vkg::Image                         ; ///< TODO
         using Memory         = ::vk::DeviceMemory                        ; ///< TODO
         using CommandRecord  = ::vk::CommandBuffer                       ; ///< TODO
         using MemoryPropFlag = ::vk::Flags<::vk::MemoryPropertyFlagBits> ; ///< TODO
@@ -180,13 +180,13 @@ namespace kgl
          * @param window The Win32 window to get a surface from.
          * @return A Valid vulkan surface.
          */
-        static Vulkan::Context contextFromBaseWindow( const kgl::win32::Window& window ) ;
+        static Vulkan::Context contextFromBaseWindow( const nyx::win32::Window& window ) ;
         
         /** Static method for retrieving a vulkan surface from a linux window.
          * @param window The Linux window to get a surface from.
          * @return A Valid vulkan surface.
          */
-        static Vulkan::Context contextFromBaseWindow( const kgl::lx::Window& window ) ;
+        static Vulkan::Context contextFromBaseWindow( const nyx::lx::Window& window ) ;
 
         /** Method to retrieve the platform-specific instance extension names for the surface of this system.
          * @return String names of the platform-specific extensions needed by this system for a vulkan surface.
@@ -243,7 +243,7 @@ namespace kgl
         
         /** Friend declaration of memory object to use this implementation for.
          */
-        friend class ::kgl::Memory<Vulkan> ;
+        friend class ::nyx::Memory<Vulkan> ;
   
         /** Default constructor.
          */
@@ -294,14 +294,14 @@ namespace kgl
     /** Aliases for parent types.
      */
     template<typename TYPE>
-    using VkArray  = kgl::Array <kgl::vkg::Vulkan, TYPE> ;
+    using VkArray  = nyx::Array <nyx::vkg::Vulkan, TYPE> ;
 
     template<typename TYPE>
-    using VkImage = kgl::Image<kgl::vkg::Vulkan, TYPE> ;
+    using VkImage = nyx::Image<nyx::vkg::Vulkan, TYPE> ;
 
-    using VkMemory     = kgl::Memory<kgl::vkg::Vulkan              > ;
-    using FloatVkImage = kgl::Image<kgl::vkg::Vulkan, float        > ;
-    using CharVkImage  = kgl::Image<kgl::vkg::Vulkan, unsigned char> ;
+    using VkMemory     = nyx::Memory<nyx::vkg::Vulkan              > ;
+    using FloatVkImage = nyx::Image<nyx::vkg::Vulkan, float        > ;
+    using CharVkImage  = nyx::Image<nyx::vkg::Vulkan, unsigned char> ;
   }
 }
 

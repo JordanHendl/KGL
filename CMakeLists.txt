@@ -24,25 +24,24 @@
 
 CMAKE_MINIMUM_REQUIRED( VERSION 3.8.0 )
 
-LIST( APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/modules" )
-LIST( APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/modules" )
+LIST( APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" )
 
 INCLUDE( Message   )
 INCLUDE( BuildTest )
 
 # Build options
-OPTION( BUILD_WIN32   "Whether or not the KGL::WIN32 library will be built, if available" ON  )
-OPTION( BUILD_LINUX   "Whether or not the KGL::LINUX library will be built, if available" ON  )
-OPTION( BUILD_CUDA    "Whether or not the KGL::CUDA library will be built, if available"  ON  )
-OPTION( BUILD_VULKAN  "Whether or not the KGL::VKG library will be built, if available"   ON  )
-OPTION( BUILD_TESTS   "Whether or not the KGL tests should be built"                      ON  )
-OPTION( BUILD_DOCS    "Whether or not to generate documentation of KGL"                   OFF )
+OPTION( BUILD_WIN32   "Whether or not the Nyx::WIN32 library will be built, if available" ON  )
+OPTION( BUILD_LINUX   "Whether or not the Nyx::LINUX library will be built, if available" ON  )
+OPTION( BUILD_CUDA    "Whether or not the Nyx::CUDA library will be built, if available"  ON  )
+OPTION( BUILD_VULKAN  "Whether or not the Nyx::VKG library will be built, if available"   ON  )
+OPTION( BUILD_TESTS   "Whether or not the Nyx tests should be built"                      ON  )
+OPTION( RUN_TESTS     "Whether or not the Nyx tests should be run"                        ON  )
+OPTION( BUILD_DOCS    "Whether or not to generate documentation of Nyx"                   OFF )
 OPTION( BUILD_RELEASE "Whether or not the to build for release."                          OFF )
-OPTION( RUN_TESTS     "Whether or not the KGL tests should be run"                        OFF )
 
-PROJECT( KGL CXX )
+PROJECT( Nyx CXX )
 
-MESSAGE( INFO "KGL Library Prebuild" ) 
+MESSAGE( INFO "Nyx Library Prebuild" ) 
 MESSAGE( INFO " " ) 
 
 IF( BUILD_RELEASE  )
@@ -159,4 +158,4 @@ INCLUDE ( BuildDocs )
 
 ADD_SUBDIRECTORY( src )
 
-INSTALL( EXPORT kgl FILE KGLConfig.cmake DESTINATION ${CMAKE_PROJECT_NAME} COMPONENT dev )
+INSTALL( EXPORT Nyx FILE NyxConfig.cmake DESTINATION ${CMAKE_PROJECT_NAME} COMPONENT dev )

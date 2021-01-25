@@ -5,11 +5,11 @@
 #include <vector>
 #include <iostream>
 
-#define KGL_MAJOR_VERSION 0 
-#define KGL_MINOR_VERSION 2 
-#define KGL_REVISION      0
+#define NYX_MAJOR_VERSION 0 
+#define NYX_MINOR_VERSION 2 
+#define NYX_REVISION      0
 
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
@@ -49,7 +49,7 @@ namespace kgl
         if( toFlags( output_level ) & type && toFlags( output_severity ) & severity ) 
         {
           std::cout << "\n" ;
-          std::cout << "--  KGL::VKG Instance Debug"                  << "\n" ;
+          std::cout << "--  NYX::VKG Instance Debug"                  << "\n" ;
           std::cout << "--  Type    : "  << vk::to_string( type     ) << "\n" ;
           std::cout << "--  Severity: "  << vk::to_string( severity ) << "\n" ;
           std::cout << "---> Message: " << pCallbackData->pMessage    << "\n" ;
@@ -121,7 +121,7 @@ namespace kgl
     {
       app_version = { 0, 0, 1 }        ;
       api_version = { 1, 2, 0 }        ;
-      app_name    = "KGL_DEFAULT_NAME" ;
+      app_name    = "NYX_DEFAULT_NAME" ;
       debug       = true               ;
     }
     
@@ -151,12 +151,12 @@ namespace kgl
     {
       ::vk::ApplicationInfo info ;
       
-      constexpr auto engine_version = VK_MAKE_VERSION( KGL_MAJOR_VERSION, KGL_MINOR_VERSION, KGL_REVISION                           ) ;
+      constexpr auto engine_version = VK_MAKE_VERSION( NYX_MAJOR_VERSION, NYX_MINOR_VERSION, NYX_REVISION                           ) ;
       auto           app_version    = VK_MAKE_VERSION( this->app_version.major, this->app_version.minor, this->app_version.revision ) ;
       auto           api_version    = VK_MAKE_VERSION( this->api_version.major, this->api_version.minor, this->api_version.revision ) ;
 
       info.setPApplicationName  ( this->app_name.c_str() ) ;
-      info.setPEngineName       ( "KGL"                  ) ;
+      info.setPEngineName       ( "NYX"                  ) ;
       info.setApplicationVersion( app_version            ) ;
       info.setApiVersion        ( api_version            ) ;
       info.setEngineVersion     ( engine_version         ) ;
@@ -288,12 +288,12 @@ namespace kgl
     
     void Instance::setDebugOutputLevel( Instance::DebugOutputLevel level )
     {
-      kgl::vkg::output_level = level ;
+      nyx::vkg::output_level = level ;
     }
     
     void Instance::setDebugOutputType( Instance::DebugSeverity severity )
     {
-      kgl::vkg::output_severity = severity ;
+      nyx::vkg::output_severity = severity ;
     }
         
     void Instance::setApplicationName( const char* app_name )

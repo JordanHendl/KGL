@@ -22,12 +22,12 @@
  * Created on January 9, 2021, 6:04 AM
  */
 
-#ifndef KGL_WIN32_H
-#define KGL_WIN32_H
+#ifndef NYX_WIN32_H
+#define NYX_WIN32_H
 
 #include "Window.h"
 
-namespace kgl
+namespace nyx
 {
   namespace win32
   {
@@ -36,7 +36,7 @@ namespace kgl
     class Win32
     {
       public:
-        using Window = kgl::win32::Window ; ///< The type of window to use.
+        using Window = nyx::win32::Window ; ///< The type of window to use.
     };
   }
 }

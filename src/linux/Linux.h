@@ -22,13 +22,13 @@
  * Created on December 30, 2020, 8:57 PM
  */
 
-#ifndef KGL_LINUX_H
-#define KGL_LINUX_H
+#ifndef NYX_LINUX_H
+#define NYX_LINUX_H
 
 #include "Window.h"
 
 
-namespace kgl
+namespace nyx
 {
   namespace lx
   {
@@ -37,7 +37,7 @@ namespace kgl
     class Linux
     {
       public:
-        using Window = kgl::lx::Window ;
+        using Window = nyx::lx::Window ;
     };
   }
 }

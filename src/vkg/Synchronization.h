@@ -22,8 +22,8 @@
  * Created on January 8, 2021, 7:17 PM
  */
 
-#ifndef KGL_VKG_SYNCHRONIZATION_H
-#define KGL_VKG_SYNCHRONIZATION_H
+#ifndef NYX_VKG_SYNCHRONIZATION_H
+#define NYX_VKG_SYNCHRONIZATION_H
 
 namespace vk
 {
@@ -33,7 +33,7 @@ namespace vk
   class PhysicalDevice ;
 }
 
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
@@ -79,12 +79,12 @@ namespace kgl
          * @param num_sems The amount of signal semaphores to create.
          * @param num_fences The amount of fences to create.
          */
-        void initialize( const kgl::vkg::Device& device, unsigned num_sems = 1 ) ;
+        void initialize( const nyx::vkg::Device& device, unsigned num_sems = 1 ) ;
         
         /** Method to add the input synchronization object to be waited on by this one.
          * @param sync The synchronization object to wait on for this current object's operation.
          */
-        void waitOn( const kgl::vkg::Synchronization& sync ) ;
+        void waitOn( const nyx::vkg::Synchronization& sync ) ;
         
         /** Method to retrieve the number of fences created by this object.
          * @return The number of fences created by this object.

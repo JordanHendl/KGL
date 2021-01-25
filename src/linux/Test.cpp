@@ -24,7 +24,7 @@
 
 #include "Window.h"
 #include <event/Event.h>
-#include <KT/Manager.h>
+#include <Athena/Manager.h>
 #include <iostream> 
 static const unsigned object_input_expected = 250 ;
 static const unsigned only_type_expected    = 480 ;
@@ -33,30 +33,30 @@ static unsigned only_type    = 0 ;
 class Object
 {
 public :
-  void inputB( const kgl::Event& event )
+  void inputB( const nyx::Event& event )
   {
-    if( event.key() == kgl::Key::B )
+    if( event.key() == nyx::Key::B )
     {
       object_input = object_input_expected ;
     }
   }
 };
 
-void onlyKeyUp( const kgl::Event& event )
+void onlyKeyUp( const nyx::Event& event )
 {
-  if( event.type() == kgl::Event::Type::KeyUp )
+  if( event.type() == nyx::Event::Type::KeyUp )
   {
     only_type = only_type_expected ;
   }
 }
 
-static Object               obj     ;
-static karma::test::Manager manager ;
-static kgl::EventManager    event   ;
+static Object            obj     ;
+static athena::Manager   manager ;
+static nyx::EventManager event   ;
 
 bool checkMethodInput()
 {
-  kgl::Event tmp = kgl::makeKeyEvent( kgl::Event::Type::KeyDown, kgl::Key::B ) ;
+  nyx::Event tmp = nyx::makeKeyEvent( nyx::Event::Type::KeyDown, nyx::Key::B ) ;
   
   event.pushEvent( tmp ) ;
   if( object_input == object_input_expected ) return true ;
@@ -65,7 +65,7 @@ bool checkMethodInput()
 
 bool checkTypeOnlyInput()
 {
-  kgl::Event tmp = kgl::makeKeyEvent( kgl::Event::Type::KeyUp, kgl::Key::A ) ;
+  nyx::Event tmp = nyx::makeKeyEvent( nyx::Event::Type::KeyUp, nyx::Key::A ) ;
   
   event.pushEvent( tmp ) ;
   if( only_type == only_type_expected ) return true ;
@@ -74,10 +74,10 @@ bool checkTypeOnlyInput()
 
 bool testWindowCreation()
 {
-  kgl::lx::Window window ;
+  nyx::lx::Window window ;
   
   window.initialize( "Test", 1024, 720 ) ;
-
+  
   if( window.window() )
   {
     return true ;
@@ -87,12 +87,12 @@ bool testWindowCreation()
 }
 int main() 
 {
-  event.enroll( &obj, &Object::inputB, kgl::Key::B, "OnlyBMethod" ) ;
-  event.enroll( &onlyKeyUp, kgl::Key::A, "OnlyA" ) ;
+  event.enroll( &obj, &Object::inputB, nyx::Key::B, "OnlyBMethod" ) ;
+  event.enroll( &onlyKeyUp, nyx::Key::A, "OnlyA" ) ;
   manager.add( "1) Linux Event Handler: Method Only Specific Key Events Test."   , &checkMethodInput   ) ;
   manager.add( "2) Linux Event Handler: Function Only Specific Type Events Test.", &checkMethodInput   ) ;
   manager.add( "3) Linux Window Creation Test."                                  , &testWindowCreation ) ;
 
-  return manager.test( karma::test::Output::Verbose ) ;
+  return manager.test( athena::Output::Verbose ) ;
 }
 

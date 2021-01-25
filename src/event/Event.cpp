@@ -29,7 +29,7 @@
 #include <vector>
 #include <tuple>
 
-namespace kgl
+namespace nyx
 {
   const char* toString( const Event& event )
   {
@@ -91,8 +91,8 @@ namespace kgl
   
   struct StaticEventManagerData
   {
-    typedef std::multimap<kgl::Key        , std::tuple<std::string, EventManager::Subscriber*>> KeyCallbackMap  ; ///< TODO
-    typedef std::multimap<kgl::Event::Type, std::tuple<std::string, EventManager::Subscriber*>> TypeCallbackMap ; ///< TODO
+    typedef std::multimap<nyx::Key        , std::tuple<std::string, EventManager::Subscriber*>> KeyCallbackMap  ; ///< TODO
+    typedef std::multimap<nyx::Event::Type, std::tuple<std::string, EventManager::Subscriber*>> TypeCallbackMap ; ///< TODO
     typedef std::multimap<std::string,                              EventManager::Subscriber*>  CallbackMap     ; ///< TODO
     
     
@@ -111,7 +111,7 @@ namespace kgl
 
   static StaticEventManagerData man_data ; ///< TODO
 
-  Event makeKeyEvent( Event::Type type, kgl::Key key )
+  Event makeKeyEvent( Event::Type type, nyx::Key key )
   {
     Event event ;
     
@@ -120,7 +120,7 @@ namespace kgl
     return event ;
   }
   
-  Event makeMouseButtonEvent( Event::Type type, kgl::MouseButton button )
+  Event makeMouseButtonEvent( Event::Type type, nyx::MouseButton button )
   {
     Event event ;
     event.event_type   = type   ;
@@ -142,7 +142,7 @@ namespace kgl
     this->event_type = event.event_type ;
   }
   
-  kgl::MouseButton Event::button() const
+  nyx::MouseButton Event::button() const
   {
     return this->event_button ;
   }
@@ -196,7 +196,7 @@ namespace kgl
     }
   }
   
-  void EventManager::enroll( EventCallback callback, kgl::Event::Type type, const char* key )
+  void EventManager::enroll( EventCallback callback, nyx::Event::Type type, const char* key )
   {
     typedef EventManager::FunctionSubscriber Callback ;
     
@@ -209,7 +209,7 @@ namespace kgl
     if( iter == man_data.type_callbacks.end() ) data().local_type_callbacks.push_back( man_data.type_callbacks.insert( iter, { type, tup } ) ) ;
   }
   
-  void EventManager::enroll( EventCallback callback, kgl::Key keysym, const char* key )
+  void EventManager::enroll( EventCallback callback, nyx::Key keysym, const char* key )
   {
     typedef EventManager::FunctionSubscriber Callback ;
     
@@ -240,7 +240,7 @@ namespace kgl
     if( iter == man_data.callbacks.end() ) data().local_callbacks.push_back( man_data.callbacks.insert( iter, { key, subscriber } ) ) ;
   }
   
-  void EventManager::enrollBase( Subscriber* subscriber, kgl::Event::Type type, const char* key )
+  void EventManager::enrollBase( Subscriber* subscriber, nyx::Event::Type type, const char* key )
   {
     auto iter = man_data.type_callbacks.find( type ) ;
     
@@ -248,7 +248,7 @@ namespace kgl
     if( iter == man_data.type_callbacks.end() ) data().local_type_callbacks.push_back( man_data.type_callbacks.insert( iter, { type, tup } ) ) ;
   }
   
-  void EventManager::enrollBase( Subscriber* subscriber, kgl::Key keysym, const char* key )
+  void EventManager::enrollBase( Subscriber* subscriber, nyx::Key keysym, const char* key )
   {
     auto iter = man_data.key_callbacks.find( keysym ) ;
     auto tup = std::make_tuple( std::string( key ), subscriber ) ;

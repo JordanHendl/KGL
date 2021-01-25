@@ -32,7 +32,7 @@
 #include <queue>
 #include <limits.h>
 
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
@@ -40,16 +40,16 @@ namespace kgl
     {
       using Formats = std::vector<vk::SurfaceFormatKHR>      ; ///< TODO
       using Modes   = std::vector<vk::PresentModeKHR>        ; ///< TODO
-      using Images  = std::vector<kgl::vkg::Image>           ; ///< TODO
+      using Images  = std::vector<nyx::vkg::Image>           ; ///< TODO
       using Fences  = std::vector<vk::Fence>                 ; ///< TODO
-      using Syncs   = std::vector<kgl::vkg::Synchronization> ; ///< TODO
+      using Syncs   = std::vector<nyx::vkg::Synchronization> ; ///< TODO
       
       Syncs                      syncs          ; ///< The synchronizations of this object.
       Fences                     fences         ; ///< The fences used for managing frames.
       Formats                    formats        ; ///< TODO
       Modes                      modes          ; ///< TODO
       Images                     images         ; ///< TODO
-      kgl::vkg::Queue            present_queue  ; ///< TODO
+      nyx::vkg::Queue            present_queue  ; ///< TODO
       vk::SwapchainKHR           swapchain      ; ///< TODO
       vk::SurfaceCapabilitiesKHR capabilities   ; ///< TODO
       vk::SurfaceFormatKHR       surface_format ; ///< TODO
@@ -205,7 +205,7 @@ namespace kgl
       return data().swapchain ;
     }
 
-    void Swapchain::initialize(  const kgl::vkg::Queue& present_queue, const vk::SurfaceKHR& surface )
+    void Swapchain::initialize(  const nyx::vkg::Queue& present_queue, const vk::SurfaceKHR& surface )
     {
       data().present_queue = present_queue ;
       data().surface       = surface       ;
@@ -222,7 +222,7 @@ namespace kgl
       for( auto& sync : data().syncs ) sync.initialize( present_queue.device(), 1 ) ;
     }
 
-    const kgl::vkg::Synchronization& Swapchain::acquire()
+    const nyx::vkg::Synchronization& Swapchain::acquire()
     {
       const auto device    = data().present_queue.device().device() ;
       const unsigned index = data().current_frame                   ;
@@ -251,7 +251,7 @@ namespace kgl
       return data().syncs[ index ] ;
     }
 
-    void Swapchain::submit( const kgl::vkg::Synchronization& sync )
+    void Swapchain::submit( const nyx::vkg::Synchronization& sync )
     {
       const unsigned index = data().acquired.front() ;
       
@@ -262,12 +262,12 @@ namespace kgl
       data().syncs[ index ].clear() ;
     }
     
-    const kgl::vkg::Image* Swapchain::images() const
+    const nyx::vkg::Image* Swapchain::images() const
     {
       return data().images.data() ;
     }
     
-    const kgl::vkg::Device& Swapchain::device() const
+    const nyx::vkg::Device& Swapchain::device() const
     {
       return data().present_queue.device() ;
     }
@@ -302,9 +302,9 @@ namespace kgl
       return data().acquired.back() ;
     }
     
-    const kgl::vkg::Image& Swapchain::image( unsigned idx ) const
+    const nyx::vkg::Image& Swapchain::image( unsigned idx ) const
     {
-      static const kgl::vkg::Image dummy ;
+      static const nyx::vkg::Image dummy ;
       
       if( idx < data().images.size() ) return data().images[ idx ] ;
       

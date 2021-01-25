@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KGL_VKG_IMAGE_H
-#define KGL_VKG_IMAGE_H
+#ifndef NYX_VKG_IMAGE_H
+#define NYX_VKG_IMAGE_H
 typedef unsigned VkFlags ;
 
 namespace vk
@@ -35,7 +35,7 @@ namespace vk
   enum class SampleCountFlagBits : VkFlags ;
 }
 
-namespace kgl
+namespace nyx
 {
   template<class T>
   class Memory ;
@@ -85,13 +85,13 @@ namespace kgl
          * @param src The image to copy from.
          * @param buffer Reference to a valid vulkan command buffer to record the copy operation to.
          */
-        void copy( const Image& src, vk::CommandBuffer& buffer ) ;
+        void copy( const Image& src, const vk::CommandBuffer& buffer ) ;
         
         /** Method to perform a deep copy on the input image.
          * @param src The image to copy from.
          * @param buffer Reference to a valid vulkan command buffer to record the copy operation to.
          */
-        void copy( const kgl::vkg::Buffer& src, vk::CommandBuffer& buffer ) ;
+        void copy( const nyx::vkg::Buffer& src, const vk::CommandBuffer& buffer ) ;
 
         /** Method to initialize this object with the input parameters.
          * @note Uses any set values from other setters in initialization.
@@ -99,7 +99,7 @@ namespace kgl
          * @param height The height of the image in pixels.
          * @param num_layers The number of layers of the image.
          */
-        bool initialize( const kgl::vkg::Device& gpu, unsigned width, unsigned height, unsigned num_layers = 1 ) ;
+        bool initialize( const nyx::vkg::Device& gpu, unsigned width, unsigned height, unsigned num_layers = 1 ) ;
         
         /** Method to initialize this object with the input parameters.
          * @note Uses any set values from other setters in initialization.
@@ -107,7 +107,7 @@ namespace kgl
          * @param height The height of the image in pixels.
          * @param num_layers The number of layers of the image.
          */
-        bool initialize( const kgl::vkg::Device& gpu, unsigned width, unsigned height, vk::Image prealloc, unsigned num_layers = 1 ) ;
+        bool initialize( const nyx::vkg::Device& gpu, unsigned width, unsigned height, vk::Image prealloc, unsigned num_layers = 1 ) ;
 
         /** Method to initialize this object with the input parameters.
          * @note Uses any set values from other setters in initialization.
@@ -116,17 +116,17 @@ namespace kgl
          * @param height The height of the image in pixels.
          * @param num_layers The number of layers of the image.
          */
-        bool initialize( kgl::Memory<kgl::vkg::Vulkan>& prealloc, unsigned width, unsigned height, unsigned num_layers = 1 ) ;
+        bool initialize( nyx::Memory<nyx::vkg::Vulkan>& prealloc, unsigned width, unsigned height, unsigned num_layers = 1 ) ;
         
         /** Method to retrieve the underlying memory of this object.
          * @return The memory representation of this object.
          */
-        kgl::Memory<kgl::vkg::Vulkan>& memory() ;
+        nyx::Memory<nyx::vkg::Vulkan>& memory() ;
         
         /** Method to retrieve the underlying memory of this object.
          * @return The memory representation of this object.
          */
-        const kgl::Memory<kgl::vkg::Vulkan>& memory() const ;
+        const nyx::Memory<nyx::vkg::Vulkan>& memory() const ;
         
         /** Method to set this image's vulkan usage.
          * @param usage The Vulkan usage of the image.
@@ -167,12 +167,12 @@ namespace kgl
          * @param layout The layout to transition this image to.
          * @param cmd_buff The Vulkan command buffer to record the transition operation to.
          */
-        void transition( const vk::ImageLayout& layout, vk::CommandBuffer& cmd_buff ) const ;
+        void transition( const vk::ImageLayout& layout, const vk::CommandBuffer& cmd_buff ) const ;
         
         /** Method to transition the image back to it's last known layout.
          * @param cmd_buff The Vulkan command buffer to record the transition operation to.
          */
-        void revertLayout( vk::CommandBuffer& cmd_buff ) const ;
+        void revertLayout( const vk::CommandBuffer& cmd_buff ) const ;
         
         /** Method to retrieve the vulkan image view associated with this image.
          * @return The vulkan image view associated with this image.

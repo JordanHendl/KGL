@@ -22,8 +22,8 @@
  * Created on December 28, 2020, 10:34 AM
  */
 
-#ifndef KGL_VKG_RENDERPASS_H
-#define KGL_VKG_RENDERPASS_H
+#ifndef NYX_VKG_RENDERPASS_H
+#define NYX_VKG_RENDERPASS_H
 
 #include "Image.h"
 
@@ -53,7 +53,7 @@ namespace vk
   enum class PipelineBindPoint               ;
 }
 
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
@@ -93,12 +93,12 @@ namespace kgl
         /** Method to initialize this object & Generate a vulkan render pass.
          * @param device The Library device to use for the operation.
          */
-        void initialize( const kgl::vkg::Device& device ) ;
+        void initialize( const nyx::vkg::Device& device ) ;
 
         /** Method to initialize this object & Generate a vulkan render pass.
          * @param swapchain The swapchain to use as a target for this tenderpass.
          */
-        void initialize( const kgl::vkg::Swapchain& swapchain ) ;
+        void initialize( const nyx::vkg::Swapchain& swapchain ) ;
         
         /** Method to return whether or not this object is initialized.
          * @return Whether or not this object is initialized.
@@ -118,7 +118,7 @@ namespace kgl
         /** Method to retrieve the library device used for this object.
          * @return The library device used for this object.
          */
-        const kgl::vkg::Device& device() const ;
+        const nyx::vkg::Device& device() const ;
         
         /** Method to retrieve the viewport of this render pass.
          * @return The viewport of this render pass at the specified index.
@@ -156,7 +156,7 @@ namespace kgl
          * @param idx The index of image of this render pass to grab. See @RenderPass::numFramebuffers for the size.
          * @return Const refence to the image at the specified index.
          */
-        const kgl::vkg::Image& image( unsigned idx = 0 ) const ;
+        const nyx::vkg::Image& image( unsigned idx = 0 ) const ;
 
         /** Method to retrieve the amount of framebuffers created by this renderpass.
          * @return The number of framebuffers created by this object.

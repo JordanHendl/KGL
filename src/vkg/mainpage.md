@@ -1,5 +1,5 @@
-# KGL: Vulkan GPU Library
+# NYX: Vulkan GPU Library
 
-Underlying Vulkan implementation for the KGL library.
+Underlying Vulkan implementation for the NYX library.
 
 See Test.cpp for examples of usage.

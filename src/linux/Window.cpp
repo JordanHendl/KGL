@@ -29,18 +29,18 @@
 #include <iostream>
 #include <unordered_map>
 
-namespace kgl
+namespace nyx
 {
   namespace lx
   {
-    static kgl::EventManager manager ;
+    static nyx::EventManager manager ;
 
     /** This method converts an XCB key to a library enum.
      * @note This is apparently O(1)? TODO: Look for better ways of doing this.
      * @param key The XCB key code to convert.
      * @return A Library Key enum.
      */
-    kgl::Key keyFromXCB( unsigned char key )
+    nyx::Key keyFromXCB( unsigned char key )
     {
       switch( key )
       {
@@ -53,69 +53,69 @@ namespace kgl
         case 6   : 
         case 7   : 
         case 8   : 
-        case 9   : return kgl::Key::None       ;
-        case 10  : return kgl::Key::One        ;
-        case 11  : return kgl::Key::Two        ;
-        case 12  : return kgl::Key::Three      ;
-        case 13  : return kgl::Key::Four       ;
-        case 14  : return kgl::Key::Five       ;
-        case 15  : return kgl::Key::Six        ;
-        case 16  : return kgl::Key::Seven      ;
-        case 17  : return kgl::Key::Eight      ;
-        case 18  : return kgl::Key::Nine       ;
-        case 19  : return kgl::Key::Zero       ;
-        case 20  : return kgl::Key::Hyphen     ;
-        case 21  : return kgl::Key::Equals     ;
+        case 9   : return nyx::Key::None       ;
+        case 10  : return nyx::Key::One        ;
+        case 11  : return nyx::Key::Two        ;
+        case 12  : return nyx::Key::Three      ;
+        case 13  : return nyx::Key::Four       ;
+        case 14  : return nyx::Key::Five       ;
+        case 15  : return nyx::Key::Six        ;
+        case 16  : return nyx::Key::Seven      ;
+        case 17  : return nyx::Key::Eight      ;
+        case 18  : return nyx::Key::Nine       ;
+        case 19  : return nyx::Key::Zero       ;
+        case 20  : return nyx::Key::Hyphen     ;
+        case 21  : return nyx::Key::Equals     ;
         case 22  :                         
-        case 23  : return kgl::Key::None       ;
-        case 24  : return kgl::Key::Q          ;
-        case 25  : return kgl::Key::W          ;
-        case 26  : return kgl::Key::E          ;
-        case 27  : return kgl::Key::R          ;
-        case 28  : return kgl::Key::T          ;
-        case 29  : return kgl::Key::Y          ;
-        case 30  : return kgl::Key::U          ;
-        case 32  : return kgl::Key::I          ;
-        case 33  : return kgl::Key::O          ;
-        case 34  : return kgl::Key::LBracket   ;
-        case 35  : return kgl::Key::RBracket   ;
-        case 36  : return kgl::Key::Return     ;
-        case 37  : return kgl::Key::LCtrl      ;
-        case 38  : return kgl::Key::A          ;
-        case 39  : return kgl::Key::S          ;
-        case 40  : return kgl::Key::D          ;
-        case 41  : return kgl::Key::F          ;
-        case 42  : return kgl::Key::G          ;
-        case 43  : return kgl::Key::H          ;
-        case 44  : return kgl::Key::J          ;
-        case 45  : return kgl::Key::K          ;
-        case 46  : return kgl::Key::L          ;
-        case 47  : return kgl::Key::Semicolon  ;
-        case 48  : return kgl::Key::Apostraphe ;
-        case 49  : return kgl::Key::Backtick   ;
-        case 50  : return kgl::Key::LShift     ;
-        case 51  : return kgl::Key::BSlash     ;
-        case 52  : return kgl::Key::Z          ;
-        case 53  : return kgl::Key::X          ;
-        case 54  : return kgl::Key::C          ;
-        case 55  : return kgl::Key::V          ;
-        case 56  : return kgl::Key::B          ;
-        case 57  : return kgl::Key::N          ;
-        case 58  : return kgl::Key::M          ;
-        case 59  : return kgl::Key::Comma      ;
-        case 60  : return kgl::Key::Period     ;
-        case 61  : return kgl::Key::FSlash     ;
+        case 23  : return nyx::Key::None       ;
+        case 24  : return nyx::Key::Q          ;
+        case 25  : return nyx::Key::W          ;
+        case 26  : return nyx::Key::E          ;
+        case 27  : return nyx::Key::R          ;
+        case 28  : return nyx::Key::T          ;
+        case 29  : return nyx::Key::Y          ;
+        case 30  : return nyx::Key::U          ;
+        case 32  : return nyx::Key::I          ;
+        case 33  : return nyx::Key::O          ;
+        case 34  : return nyx::Key::LBracket   ;
+        case 35  : return nyx::Key::RBracket   ;
+        case 36  : return nyx::Key::Return     ;
+        case 37  : return nyx::Key::LCtrl      ;
+        case 38  : return nyx::Key::A          ;
+        case 39  : return nyx::Key::S          ;
+        case 40  : return nyx::Key::D          ;
+        case 41  : return nyx::Key::F          ;
+        case 42  : return nyx::Key::G          ;
+        case 43  : return nyx::Key::H          ;
+        case 44  : return nyx::Key::J          ;
+        case 45  : return nyx::Key::K          ;
+        case 46  : return nyx::Key::L          ;
+        case 47  : return nyx::Key::Semicolon  ;
+        case 48  : return nyx::Key::Apostraphe ;
+        case 49  : return nyx::Key::Backtick   ;
+        case 50  : return nyx::Key::LShift     ;
+        case 51  : return nyx::Key::BSlash     ;
+        case 52  : return nyx::Key::Z          ;
+        case 53  : return nyx::Key::X          ;
+        case 54  : return nyx::Key::C          ;
+        case 55  : return nyx::Key::V          ;
+        case 56  : return nyx::Key::B          ;
+        case 57  : return nyx::Key::N          ;
+        case 58  : return nyx::Key::M          ;
+        case 59  : return nyx::Key::Comma      ;
+        case 60  : return nyx::Key::Period     ;
+        case 61  : return nyx::Key::FSlash     ;
         case 62  :  
         case 63  :  
-        case 64  : return kgl::Key::None       ; 
-        case 65  : return kgl::Key::Space      ; 
-        case 66  : return kgl::Key::FSlash     ;
+        case 64  : return nyx::Key::None       ; 
+        case 65  : return nyx::Key::Space      ; 
+        case 66  : return nyx::Key::FSlash     ;
         
-        case 111 : return kgl::Key::Up         ;
-        case 113 : return kgl::Key::Left       ;
-        case 114 : return kgl::Key::Right      ;
-        case 116 : return kgl::Key::Down       ;
-        default  : return kgl::Key::None       ;
+        case 111 : return nyx::Key::Up         ;
+        case 113 : return nyx::Key::Left       ;
+        case 114 : return nyx::Key::Right      ;
+        case 116 : return nyx::Key::Down       ;
+        default  : return nyx::Key::None       ;
       }
     }
     
@@ -123,16 +123,16 @@ namespace kgl
      * @param key The XCB button key press to convert.
      * @return A Library Key Enum.
      */
-    kgl::MouseButton mouseButtonFromXCB( unsigned char key )
+    nyx::MouseButton mouseButtonFromXCB( unsigned char key )
     {
       switch( key )
       {
-        case 1  : return kgl::MouseButton::LeftClick   ;
-        case 2  : return kgl::MouseButton::MiddleClick ;
-        case 3  : return kgl::MouseButton::RightClick  ;
-        case 8  : return kgl::MouseButton::Button01    ;
-        case 9  : return kgl::MouseButton::Button02    ;
-        default : return kgl::MouseButton::None        ;
+        case 1  : return nyx::MouseButton::LeftClick   ;
+        case 2  : return nyx::MouseButton::MiddleClick ;
+        case 3  : return nyx::MouseButton::RightClick  ;
+        case 8  : return nyx::MouseButton::Button01    ;
+        case 9  : return nyx::MouseButton::Button02    ;
+        default : return nyx::MouseButton::None        ;
       }
     }
     
@@ -141,7 +141,7 @@ namespace kgl
      */
     void handleMousePress( const xcb_button_press_event_t* press )
     {
-      kgl::Event event = kgl::makeMouseButtonEvent( Event::Type::MouseButtonDown , mouseButtonFromXCB( press->detail ) ) ;
+      nyx::Event event = nyx::makeMouseButtonEvent( Event::Type::MouseButtonDown , mouseButtonFromXCB( press->detail ) ) ;
       manager.pushEvent( event ) ;
     }
     
@@ -150,7 +150,7 @@ namespace kgl
      */
     void handleMouseRelease( const xcb_button_release_event_t* release )
     {
-      kgl::Event event = kgl::makeMouseButtonEvent( Event::Type::MouseButtonUp , mouseButtonFromXCB( release->detail ) ) ;
+      nyx::Event event = nyx::makeMouseButtonEvent( Event::Type::MouseButtonUp , mouseButtonFromXCB( release->detail ) ) ;
       manager.pushEvent( event ) ;
     }
 
@@ -159,7 +159,7 @@ namespace kgl
      */
     void handleKeyPress( const xcb_key_press_event_t* press )
     {
-      kgl::Event event = kgl::makeKeyEvent( Event::Type::KeyDown, keyFromXCB( press->detail ) ) ;
+      nyx::Event event = nyx::makeKeyEvent( Event::Type::KeyDown, keyFromXCB( press->detail ) ) ;
       manager.pushEvent( event ) ;
     }
 
@@ -168,7 +168,7 @@ namespace kgl
      */
     void handleKeyRelease( const xcb_key_release_event_t* press )
     {
-      kgl::Event event = kgl::makeKeyEvent( Event::Type::KeyUp, keyFromXCB( press->detail )  ) ;
+      nyx::Event event = nyx::makeKeyEvent( Event::Type::KeyUp, keyFromXCB( press->detail )  ) ;
       manager.pushEvent( event ) ;
     }
     
@@ -271,6 +271,11 @@ namespace kgl
       delete this->window_data ;
     }
     
+    bool Window::initialized() const
+    {
+      return ( data().connection != nullptr && data().screen != nullptr ) ;
+    }
+    
     void Window::initialize( const char* window_title, unsigned width, unsigned height )
     {
       data().title  = window_title ;
@@ -280,6 +285,41 @@ namespace kgl
       data().create() ;
     }
     
+    void Window::setXPosition( unsigned position )
+    {
+      static uint32_t values[ 2 ] ;
+      values[ 0 ] = position ;
+
+      if( this->initialized() )
+      {
+        xcb_configure_window( data().connection, data().window, XCB_CONFIG_WINDOW_X, static_cast<const void*>( values ) ) ;
+      }
+    }
+    
+    void Window::setYPosition( unsigned position )
+    {
+      if( this->initialized() )
+      {
+        xcb_configure_window( data().connection, data().window, XCB_CONFIG_WINDOW_Y, static_cast<const void*>( &position ) ) ;
+      }
+    }
+    
+    void Window::setWidth( unsigned width )
+    {
+      if( this->initialized() )
+      {
+        xcb_configure_window( data().connection, data().window, XCB_CONFIG_WINDOW_WIDTH, static_cast<const void*>( &width ) ) ;
+      }
+    }
+    
+    void Window::setHeight( unsigned height )
+    { 
+      if( this->initialized() )
+      {
+        xcb_configure_window( data().connection, data().window, XCB_CONFIG_WINDOW_HEIGHT, static_cast<const void*>( &height ) ) ;
+      }
+    }
+
     void Window::setMonitor( unsigned monitor_id )
     {
       data().monitor = monitor_id ;

@@ -1,5 +1,5 @@
-#ifndef KGL_VKG_INSTANCE_H
-#define KGL_VKG_INSTANCE_H
+#ifndef NYX_VKG_INSTANCE_H
+#define NYX_VKG_INSTANCE_H
 
 /** Forward declared vulkan objects.
  */
@@ -9,7 +9,7 @@ namespace vk
   class PhysicalDevice ;
 }
 
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {

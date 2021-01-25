@@ -6,14 +6,14 @@
 #include <vulkan/vulkan.hpp>
 #include <algorithm>
 
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
     struct ImageData
     {
       vkg::Device                device       ; ///< The library device to use for all vulkan calls.
-      kgl::vkg::VkMemory         memory       ; ///< The underlying memory container.
+      nyx::vkg::VkMemory         memory       ; ///< The underlying memory container.
       vk::MemoryRequirements     requirements ; ///< The memory requirements for this image.
       vk::ImageSubresourceLayers subresource  ; ///< The subresource layout describing this image.
       bool                       preallocated ; ///< Whether or not this image was preallocated or not.
@@ -173,7 +173,7 @@ namespace kgl
       return *this ;
     }
 
-    void Image::copy( const Image& src, vk::CommandBuffer& buffer )
+    void Image::copy( const Image& src, const vk::CommandBuffer& buffer )
     {
       vk::ImageCopy info    ;
       vk::Extent3D  extent  ;
@@ -197,7 +197,7 @@ namespace kgl
       this->revertLayout( buffer ) ;
     }
     
-    void Image::copy( const kgl::vkg::Buffer& src, vk::CommandBuffer& buffer )
+    void Image::copy( const nyx::vkg::Buffer& src, const vk::CommandBuffer& buffer )
     {
       vk::BufferImageCopy info   ;
       vk::Extent3D        extent ;
@@ -254,7 +254,7 @@ namespace kgl
       return false ;
     }
 
-    bool Image::initialize( const kgl::vkg::Device& gpu, unsigned width, unsigned height, vk::Image prealloc, unsigned num_layers )
+    bool Image::initialize( const nyx::vkg::Device& gpu, unsigned width, unsigned height, vk::Image prealloc, unsigned num_layers )
     {
       data().device = gpu        ;
       data().width  = width      ;
@@ -268,7 +268,7 @@ namespace kgl
       return true ;
     }
     
-    bool Image::initialize( kgl::Memory<kgl::vkg::Vulkan>& prealloc, unsigned width, unsigned height, unsigned num_layers )
+    bool Image::initialize( nyx::Memory<nyx::vkg::Vulkan>& prealloc, unsigned width, unsigned height, unsigned num_layers )
     {
       data().memory       = prealloc ;
       data().preallocated = true     ;
@@ -312,7 +312,7 @@ namespace kgl
       data().layout = layout ;
     }
 
-    void Image::transition( const vk::ImageLayout& layout, vk::CommandBuffer& cmd_buff ) const
+    void Image::transition( const vk::ImageLayout& layout, const vk::CommandBuffer& cmd_buff ) const
     {
       vk::ImageMemoryBarrier    barrier   ;
       vk::ImageSubresourceRange range     ;
@@ -343,7 +343,7 @@ namespace kgl
       data().layout     = layout        ;
     }
 
-    void Image::revertLayout( vk::CommandBuffer& cmd_buff ) const 
+    void Image::revertLayout( const vk::CommandBuffer& cmd_buff ) const 
     {
       if( data().old_layout != vk::ImageLayout::eUndefined )
       {

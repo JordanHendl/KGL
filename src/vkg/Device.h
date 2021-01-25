@@ -22,8 +22,8 @@
  * Created on December 23, 2020, 8:03 PM
  */
 
-#ifndef KGL_VKG_DEVICE_H
-#define KGL_VKG_DEVICE_H
+#ifndef NYX_VKG_DEVICE_H
+#define NYX_VKG_DEVICE_H
 
 namespace vk
 {
@@ -32,7 +32,7 @@ namespace vk
   class SurfaceKHR     ;
 }
 
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
@@ -154,22 +154,22 @@ namespace kgl
         /** Method to retrieve a graphics queue from the device, if available.
          * @return A const reference to a created graphics queue.
          */
-        const kgl::vkg::Queue& graphicsQueue() ;
+        const nyx::vkg::Queue& graphicsQueue() ;
         
         /** Method to retrieve a present queue from the device, if available.
          * @return A const reference to the created present queue.
          */
-        const kgl::vkg::Queue& presentQueue() ;
+        const nyx::vkg::Queue& presentQueue() ;
         
         /** Method to retrieve a compute queue from the device, if available.
          * @return A const reference to the created present queue.
          */
-        const kgl::vkg::Queue& computeQueue() ;
+        const nyx::vkg::Queue& computeQueue() ;
         
         /** Method to retrieve a transfer queue from the device, if available.
          * @return A const reference to the created transfer queue.
          */
-        const kgl::vkg::Queue& transferQueue() ;
+        const nyx::vkg::Queue& transferQueue() ;
         
         /** Method to enable the Sampler Anisotropy device feature.
          * @param value Whether or not to enable the feature.

@@ -22,12 +22,12 @@
  * Created on December 30, 2020, 9:00 PM
  */
 
-#ifndef KGL_LINUX_WINDOW_H
-#define KGL_LINUX_WINDOW_H
+#ifndef NYX_LINUX_WINDOW_H
+#define NYX_LINUX_WINDOW_H
 
 typedef struct xcb_connection_t xcb_connection_t ; 
 typedef        unsigned         xcb_window_t     ;
-namespace kgl
+namespace nyx
 {
   namespace lx
   {
@@ -43,6 +43,11 @@ namespace kgl
          */
         ~Window() ;
         
+        /** Method to check if this object is initialized.
+         * @return Whether or not this object was initialized.
+         */
+        bool initialized() const ;
+
         /** Method to initialize this object.
          * @param window_name The title of the window. 
          * @param width The width of the window in pixels.
@@ -50,6 +55,26 @@ namespace kgl
          */
         void initialize( const char* window_title, unsigned width, unsigned height ) ;
         
+        /** Method to set the X Position of the monitor on the screen.
+         * @param position The X-Position to set the monitor to.
+         */
+        void setXPosition( unsigned position ) ;
+
+        /** Method to set the Y Position of the monitor on the screen.
+         * @param position The Y-Position to set the monitor to.
+         */
+        void setYPosition( unsigned position ) ;
+
+        /** Method to set the width of this object.
+         * @param width The width of the window to resize to.
+         */
+        void setWidth( unsigned width )  ;
+
+        /** Method to set the height of this object.
+         * @param width The height of the window to resize to.
+         */
+        void setHeight( unsigned height ) ;
+
         /** Method to set the monitor to put the window on.
          * @param monitor_id The ID of the monitor to put the window on.
          */

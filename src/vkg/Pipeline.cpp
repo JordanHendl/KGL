@@ -24,11 +24,11 @@
 
 #include "Pipeline.h"
 #include "Device.h"
-#include "KgShader.h"
+#include "NyxShader.h"
 #include "RenderPass.h"
 #include <vulkan/vulkan.hpp>
 
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
@@ -55,9 +55,9 @@ namespace kgl
     struct PipelineData
     {
       PipelineConfig       config              ; ///< TODO
-      kgl::vkg::Device     device              ; ///< TODO
-      kgl::vkg::RenderPass render_pass         ; ///< TODO
-      kgl::vkg::KgShader   shader              ; ///< TODO
+      nyx::vkg::Device     device              ; ///< TODO
+      nyx::vkg::RenderPass render_pass         ; ///< TODO
+      nyx::vkg::KgShader   shader              ; ///< TODO
       vk::Pipeline         pipeline            ; ///< TODO
       vk::PipelineLayout   layout              ; ///< TODO
       vk::PipelineCache    cache               ; ///< TODO
@@ -222,7 +222,7 @@ namespace kgl
       return data().pipeline ;
     }
 
-    void Pipeline::initialize( const kgl::vkg::Device& device, const char* kg_path )
+    void Pipeline::initialize( const nyx::vkg::Device& device, const char* kg_path )
     {
       data().device = device ;
       data().shader.initialize( device, kg_path ) ;
@@ -231,7 +231,7 @@ namespace kgl
       data().createPipeline() ;
     }
 
-    void Pipeline::initialize( const kgl::vkg::RenderPass& pass, const char* kg_path )
+    void Pipeline::initialize( const nyx::vkg::RenderPass& pass, const char* kg_path )
     {
       data().render_pass = pass          ;
       data().device      = pass.device() ;
@@ -250,7 +250,7 @@ namespace kgl
       data().createPipeline() ;
     }
 
-    void Pipeline::initialize( const kgl::vkg::RenderPass& pass, const KgShader& shader )
+    void Pipeline::initialize( const nyx::vkg::RenderPass& pass, const KgShader& shader )
     {
       data().render_pass = pass          ;
       data().device      = pass.device() ;

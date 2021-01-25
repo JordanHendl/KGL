@@ -25,7 +25,7 @@
 #ifndef LIBRARY_H
 #define LIBRARY_H
 
-namespace kgl
+namespace nyx
 {
   class Library
   {

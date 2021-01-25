@@ -22,19 +22,18 @@
  * Created on January 9, 2021, 6:04 AM
  */
 
-#ifndef KGL_VKG_WINDOW_H
-#define KGL_VKG_WINDOW_H
+#ifndef NYX_VKG_WINDOW_H
+#define NYX_VKG_WINDOW_H
 
 // Win32 Forward declares.
 #ifndef _WINDEF_
-  struct  HINSTANCE__          ; 
-  typedef HINSTANCE__* HINSTANCE;
-
-  struct  HWND__       ;
-  typedef HWND__* HWND ;
+  struct  HINSTANCE__            ; 
+  typedef HINSTANCE__* HINSTANCE ;
+  struct  HWND__                 ;
+  typedef HWND__* HWND           ;
 #endif
 
-namespace kgl
+namespace nyx
 {
   namespace win32
   {

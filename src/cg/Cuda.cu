@@ -20,7 +20,7 @@
 #include <algorithm>
 #include <iostream>
 
-namespace kgl
+namespace nyx
 {
   namespace cg
   {

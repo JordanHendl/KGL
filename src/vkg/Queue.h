@@ -22,8 +22,8 @@
  * Created on December 30, 2020, 6:11 PM
  */
 
-#ifndef KGL_VKG_QUEUE_H
-#define KGL_VKG_QUEUE_H
+#ifndef NYX_VKG_QUEUE_H
+#define NYX_VKG_QUEUE_H
 
 #include "Swapchain.h"
 #include "Synchronization.h"
@@ -37,7 +37,7 @@ namespace vk
   class Queue         ;
   class CommandBuffer ;
 }
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
@@ -93,20 +93,20 @@ namespace kgl
         /** Method to retrive the library device used for this object's queue creation.
          * @return The library device used for this object's creation.
          */
-        const kgl::vkg::Device& device() const ;
+        const nyx::vkg::Device& device() const ;
         
         /** Method to submit a command to a queue.
          * @note This object handles concurrent CPU-side access to vulkan queues.
          * @param cmd_buff The command buffer to submit.
          */
-        void submit( const kgl::vkg::CommandBuffer& cmd_buff ) ;
+        void submit( const nyx::vkg::CommandBuffer& cmd_buff ) ;
         
         /** Method to submit a command to a queue.
          * @note This object handles concurrent CPU-side access to vulkan queues.
          * @param cmd_buff The command buffer to submit.
          * @param sync The library synchronization object to synchronize this submition.
          */
-        void submit( const kgl::vkg::CommandBuffer& cmd_buff, const kgl::vkg::Synchronization& sync ) ;
+        void submit( const nyx::vkg::CommandBuffer& cmd_buff, const nyx::vkg::Synchronization& sync ) ;
 
         /** Method to submit a command to a queue.
          * @note This object handles concurrent CPU-side access to vulkan queues.
@@ -119,27 +119,27 @@ namespace kgl
          * @param cmd_buff The command buffer to submit.
          * @param sync The library synchronization object to synchronize this submition.
          */
-        void submit( const vk::CommandBuffer& cmd_buff, const kgl::vkg::Synchronization& sync ) ;
+        void submit( const vk::CommandBuffer& cmd_buff, const nyx::vkg::Synchronization& sync ) ;
         
         /** Method to submit a swapchain present operation to this queue.
          * @param swapchain The swapchain to submit the present operation for.
          * @param img_index The image index acquired by the swapchain.
          * @param sync The synchronization object to use for syncing the GPU operation.
          */
-        void submit( const kgl::vkg::Swapchain& swapchain, unsigned img_index, const kgl::vkg::Synchronization& sync ) ;
+        void submit( const nyx::vkg::Swapchain& swapchain, unsigned img_index, const nyx::vkg::Synchronization& sync ) ;
 
       private:
         
         /** Friend decleration. This object should only be initialized through a device.
          */
-        friend class kgl::vkg::Device ;
+        friend class nyx::vkg::Device ;
 
         /** Method to initialize this object for use by the library device.
          * @param device The device used in the creation of this object.
          * @param queue_family The index of queue family associated with this queue. 
          * @param queue_id The unique queue-id of this object.
          */
-        void initialize( const kgl::vkg::Device& device, const vk::Queue& queue, unsigned queue_family, unsigned queue_id ) ;
+        void initialize( const nyx::vkg::Device& device, const vk::Queue& queue, unsigned queue_family, unsigned queue_id ) ;
         
 
         /** Forward Declared structure to contain this object's internal data.

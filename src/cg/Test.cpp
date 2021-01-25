@@ -29,14 +29,14 @@
 #include <algorithm>
 #include <assert.h>
 #include <iostream>
-#include <KT/Manager.h>
+#include <Athena/Manager.h>
 
-using Impl = ::kgl::cg::Cuda ;
+using Impl = ::nyx::cg::Cuda ;
 const unsigned device = 0 ;
 
 bool testMemoryHostGPUCopy()
 {
-  kgl::Memory<Impl>     memory   ;
+  nyx::Memory<Impl>     memory   ;
   std::vector<unsigned> host_mem ;
   
   memory.initialize( device, sizeof( unsigned ) * 200, true ) ;
@@ -62,7 +62,7 @@ bool testMemoryHostGPUCopy()
 
 bool simpleArrayTest()
 {
-  kgl::CudaArray<float> array ;
+  nyx::CudaArray<float> array ;
   
   array.initialize( device, 500, true ) ;
   
@@ -71,12 +71,12 @@ bool simpleArrayTest()
 
 int main()
 {
-  karma::test::Manager manager ;
+  athena::Manager manager ;
   Impl::initialize() ;
-  std::cout << "Testing KGL CUDA Library" << std::endl ;
+  std::cout << "Testing NYX CUDA Library" << std::endl ;
   
   manager.add( "1) Memory Host-GPU Copy", &testMemoryHostGPUCopy ) ;
   manager.add( "2) Testing Cuda Array"  , &simpleArrayTest       ) ;
   
-  return manager.test( karma::test::Output::Verbose ) ;
+  return manager.test( athena::Output::Verbose ) ;
 }

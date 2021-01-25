@@ -17,8 +17,8 @@
 
 typedef unsigned VkFlags ;
 
-#ifndef KGL_VKG_BUFFER_H
-#define KGL_VKG_BUFFER_H
+#ifndef NYX_VKG_BUFFER_H
+#define NYX_VKG_BUFFER_H
 
 namespace vk
 {
@@ -32,7 +32,7 @@ namespace vk
 }
 
 
-namespace kgl
+namespace nyx
 {
   template<class T>
   class Memory ;
@@ -109,12 +109,17 @@ namespace kgl
          */
         void copyToHost( const void* src, unsigned size, ::vk::CommandBuffer cmd_buff, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
         
+        /** Method to retrieve whether or not this object is initialized.
+         * @return Whether or not this buffer is initialized
+         */
+        bool initialized() const ;
+
         /** Method to initialize this object using the input pre-allocated memory object. Does not allocate any extra data.
          * @param prealloc The pre-allocated memory object to use for this object's internal memory.
          * @param size The mount of the preallocated memory to use.
          * @return Whether or not this object was successfully initialized.
          */
-        bool  initialize( kgl::Memory<kgl::vkg::Vulkan>& prealloc, unsigned size = 0 ) ;
+        bool initialize( nyx::Memory<nyx::vkg::Vulkan>& prealloc, unsigned size = 0 ) ;
         
         /** Method to initialize this object using the input parameters.
          * @param gpu The device to use for all GPU calls.
@@ -122,7 +127,7 @@ namespace kgl
          * @param host_local Whether to allocate a host-copy of this data.
          * @return Whether or not this buffer was successfully initialized.
          */
-        bool initialize( const kgl::vkg::Device& gpu, unsigned size, bool host_local = false ) ;
+        bool initialize( const nyx::vkg::Device& gpu, unsigned size, bool host_local = false ) ;
         
         /** Method to initialize this object using the input parameters.
          * @param gpu The device to use for all GPU calls.
@@ -130,7 +135,7 @@ namespace kgl
          * @param host_local Whether to allocate a host-copy of this data.
          * @return Whether or not this buffer was successfully initialized.
          */
-        bool initialize( const kgl::vkg::Device& gpu, unsigned size, bool host_local, UsageFlags flags ) ;
+        bool initialize( const nyx::vkg::Device& gpu, unsigned size, bool host_local, UsageFlags flags ) ;
         
         /** Method to return the size of this object on the GPU.
          * @return The size in bytes of this object on the GPU.
@@ -140,7 +145,7 @@ namespace kgl
         /** Method to retrieve a reference to this object's internal memory container.
          * @return Reference to this object's internal memory container.
          */
-        kgl::Memory<kgl::vkg::Vulkan>& memory() ;
+        nyx::Memory<nyx::vkg::Vulkan>& memory() ;
         
         /** Method to sync this buffer to the host.
          */
@@ -149,7 +154,7 @@ namespace kgl
         /** Method to reitreve the device used for this buffer.
          * @return Const-reference to the device used for this buffer.
          */
-        const kgl::vkg::Device& device() ;
+        const nyx::vkg::Device& device() ;
 
         /** Method to sync this buffer to the device.
          */
@@ -158,7 +163,7 @@ namespace kgl
         /** Method to retrieve a const-reference to this object's internal memory container.
          * @return Const-reference to this object's internal memory container.
          */
-        const kgl::Memory<kgl::vkg::Vulkan>& memory() const ;
+        const nyx::Memory<nyx::vkg::Vulkan>& memory() const ;
         
         /** Method to retrieve a const-reference to this object's internal Vulkan buffer.
          * @return Const-reference to this object's internal Vulkan buffer.
@@ -189,7 +194,7 @@ namespace kgl
          * @param buffer_flags The flags to use for buffer creation.
          * @return 
          */
-        bool initializeBase( const kgl::vkg::Device& gpu, unsigned size, bool host_local, unsigned buffer_flags ) ;
+        bool initializeBase( const nyx::vkg::Device& gpu, unsigned size, bool host_local, unsigned buffer_flags ) ;
         
         /** Forward-declared structure to contain this object's internal data.
          */

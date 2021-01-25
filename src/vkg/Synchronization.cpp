@@ -27,7 +27,7 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <limits.h>
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
@@ -86,7 +86,7 @@ namespace kgl
       return data().p_device ;
     }
 
-    void Synchronization::initialize( const kgl::vkg::Device& device, unsigned num_sems )
+    void Synchronization::initialize( const nyx::vkg::Device& device, unsigned num_sems )
     {
       vk::SemaphoreCreateInfo sem_info   ;
       vk::FenceCreateInfo     fence_info ;
@@ -108,7 +108,7 @@ namespace kgl
       data().device.resetFences( 1, &data().signal_fence ) ;
     }
 
-    void Synchronization::waitOn( const kgl::vkg::Synchronization& sync )
+    void Synchronization::waitOn( const nyx::vkg::Synchronization& sync )
     {
       for( auto &sem : sync.data().signal_sems )
       {

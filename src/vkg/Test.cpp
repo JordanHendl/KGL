@@ -30,7 +30,7 @@
 #include "Queue.h"
 #include "CommandBuffer.h"
 #include "Synchronization.h"
-#include "KgShader.h"
+#include "NyxShader.h"
 #include "RenderPass.h"
 #include "Pipeline.h"
 #include "Swapchain.h"
@@ -44,18 +44,18 @@
 #include <algorithm>
 #include <assert.h>
 #include <iostream>
-#include <KT/Manager.h>
+#include <Athena/Manager.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-using Impl = ::kgl::vkg::Vulkan ;
+using Impl = ::nyx::vkg::Vulkan ;
 
-static kgl::vkg::Instance   instance       ;
-static kgl::vkg::Device     device         ;
-static kgl::vkg::Queue      graphics_queue ;
-static kgl::vkg::Swapchain  swapchain      ;
-static kgl::Window<Impl>    window         ;
-static karma::test::Manager manager        ;
+static nyx::vkg::Instance  instance       ;
+static nyx::vkg::Device    device         ;
+static nyx::vkg::Queue     graphics_queue ;
+static nyx::vkg::Swapchain swapchain      ;
+static nyx::Window<Impl>   window         ;
+static athena::Manager     manager        ;
 static std::vector<unsigned> test_array ;
 
 
@@ -131,7 +131,7 @@ const unsigned test_frag[] =
 
 bool testMemoryHostGPUCopy()
 {
-  kgl::Memory<Impl>     memory   ;
+  nyx::Memory<Impl>     memory   ;
   std::vector<unsigned> host_mem ;
   
   memory.initialize( device, sizeof( unsigned ) * 200, true, ::vk::MemoryPropertyFlagBits::eHostVisible | ::vk::MemoryPropertyFlagBits::eHostCoherent ) ;
@@ -157,7 +157,7 @@ bool testMemoryHostGPUCopy()
 
 bool testBufferSingleAllocation()
 {
-  kgl::vkg::Buffer buffer ;
+  nyx::vkg::Buffer buffer ;
   
   buffer.initialize( device, 200, false ) ;
   
@@ -176,8 +176,8 @@ bool testBufferSingleAllocation()
 bool testBufferPreallocatedSingle()
 {
   const unsigned buffer_size = sizeof( unsigned ) * 200 ;
-  kgl::vkg::Buffer  buffer ;
-  kgl::Memory<Impl> memory ;
+  nyx::vkg::Buffer  buffer ;
+  nyx::Memory<Impl> memory ;
   unsigned          binded ;
   
   binded = 0 ;
@@ -199,10 +199,10 @@ bool testBufferPreallocatedSingle()
 bool testBufferPreallocatedMultiple()
 {
   const unsigned buffer_size = sizeof( unsigned ) * 200 ;
-  kgl::vkg::Buffer  buffer_one ;
-  kgl::vkg::Buffer  buffer_two ;
-  kgl::Memory<Impl> memory_one ;
-  kgl::Memory<Impl> memory_two ;
+  nyx::vkg::Buffer  buffer_one ;
+  nyx::vkg::Buffer  buffer_two ;
+  nyx::Memory<Impl> memory_one ;
+  nyx::Memory<Impl> memory_two ;
   unsigned          binded     ;
   
   binded = 0 ;
@@ -228,7 +228,7 @@ bool testBufferPreallocatedMultiple()
 
 bool simpleArrayTest()
 {
-  kgl::vkg::VkArray<float> array ;
+  nyx::vkg::VkArray<float> array ;
   
   array.initialize( device, 500, true ) ;
   array.reset() ;
@@ -237,7 +237,7 @@ bool simpleArrayTest()
 
 bool simpleImageTest()
 {
-  kgl::vkg::CharVkImage image ;
+  nyx::vkg::CharVkImage image ;
   
   if( image.initialize( device, 1280, 720 ) )
   {
@@ -250,9 +250,9 @@ bool simpleImageTest()
 
 bool arrayCopyTest()
 {
-  kgl::vkg::CommandBuffer     cmd      ;
-  kgl::vkg::VkArray<unsigned> buffer_1 ;
-  kgl::vkg::VkArray<unsigned> buffer_2 ; 
+  nyx::vkg::CommandBuffer     cmd      ;
+  nyx::vkg::VkArray<unsigned> buffer_1 ;
+  nyx::vkg::VkArray<unsigned> buffer_2 ; 
   
   test_array.resize( 500 ) ;
   std::fill( test_array.begin(), test_array.end(), 76006 ) ;
@@ -277,10 +277,10 @@ bool arrayCopyTest()
 
 bool arrayCopyNonSyncedTest()
 {
-  kgl::vkg::CommandBuffer     cmd      ;
-  kgl::vkg::VkArray<unsigned> buffer_1 ;
-  kgl::vkg::VkArray<unsigned> buffer_2 ; 
-  kgl::vkg::Synchronization   sync     ;
+  nyx::vkg::CommandBuffer     cmd      ;
+  nyx::vkg::VkArray<unsigned> buffer_1 ;
+  nyx::vkg::VkArray<unsigned> buffer_2 ; 
+  nyx::vkg::Synchronization   sync     ;
   
   test_array.resize( 500 ) ;
   std::fill( test_array.begin(), test_array.end(), 76006 ) ;
@@ -304,15 +304,15 @@ bool arrayCopyNonSyncedTest()
 
 bool shaderTest()
 {
-  kgl::vkg::KgShader        shader   ;
-  kgl::vkg::RenderPass      pass     ;
-  kgl::vkg::Pipeline        pipeline ;
-  kgl::vkg::CommandBuffer   buffer   ;
+  nyx::vkg::KgShader        shader   ;
+  nyx::vkg::RenderPass      pass     ;
+  nyx::vkg::Pipeline        pipeline ;
+  nyx::vkg::CommandBuffer   buffer   ;
   
-  kgl::List<kgl::vkg::Synchronization> syncs ;
+  nyx::List<nyx::vkg::Synchronization> syncs ;
   
   // Add shaders.
-  shader.addAttribute   ( 0, 0, kgl::vkg::KgShader::Format::vec4, 0                                    ) ;
+  shader.addAttribute   ( 0, 0, nyx::vkg::KgShader::Format::vec4, 0                                    ) ;
   shader.addInputBinding( 0, sizeof( float ) * 3, vk::VertexInputRate::eVertex                         ) ;
   shader.addDescriptor  ( 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eFragment ) ;
   shader.addShaderModule( vk::ShaderStageFlagBits::eVertex  , test_vert, sizeof( test_vert )           ) ;
@@ -351,9 +351,9 @@ bool shaderTest()
 
 bool imageLoadTest()
 {
-  kgl::vkg::VkArray<unsigned char> staging ; 
-  kgl::vkg::Image                  image   ;
-  kgl::vkg::CommandBuffer          cmd     ;
+  nyx::vkg::VkArray<unsigned char> staging ; 
+  nyx::vkg::Image                  image   ;
+  nyx::vkg::CommandBuffer          cmd     ;
   int width  ;
   int height ;
   int chan   ;
@@ -378,7 +378,7 @@ bool imageLoadTest()
 int main()
 {
   // Initialize Instance.
-  instance.setApplicationName( "KGL-VKG Test App"                        ) ;
+  instance.setApplicationName( "NYX-VKG Test App"                        ) ;
   instance.addExtension      ( Impl::platformSurfaceInstanceExtensions() ) ;
   instance.addExtension      ( "VK_KHR_surface"                          ) ;
   instance.addValidationLayer( "VK_LAYER_KHRONOS_validation"             ) ;
@@ -410,5 +410,5 @@ int main()
   
   std::cout << "\nTesting VKG Library" << std::endl ;
   
-  return manager.test( karma::test::Output::Verbose ) ;
+  return manager.test( athena::Output::Verbose ) ;
 }

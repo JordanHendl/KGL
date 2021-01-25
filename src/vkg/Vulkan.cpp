@@ -37,7 +37,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
   return first | static_cast<unsigned>( second ) ;
 }
 
- namespace kgl
+ namespace nyx
  {
    namespace vkg
    {
@@ -86,28 +86,28 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        return this->err ;
      }
 
-     kgl::vkg::Vulkan::MemoryFlags::MemoryFlags()
+     nyx::vkg::Vulkan::MemoryFlags::MemoryFlags()
      {
        using Flags = ::vk::MemoryPropertyFlagBits ;
        this->flag = static_cast<unsigned>( ( Flags::eHostCoherent | Flags::eHostVisible ) ) ;
      }
      
-     kgl::vkg::Vulkan::MemoryFlags::MemoryFlags( unsigned flags )
+     nyx::vkg::Vulkan::MemoryFlags::MemoryFlags( unsigned flags )
      {
        this->flag = flags ;
      }
      
-     kgl::vkg::Vulkan::MemoryFlags::MemoryFlags( Vulkan::MemoryPropFlag flags )
+     nyx::vkg::Vulkan::MemoryFlags::MemoryFlags( Vulkan::MemoryPropFlag flags )
      {
        this->flag = static_cast<unsigned>( flags ) ;
      }
      
-     kgl::vkg::Vulkan::MemoryFlags::MemoryFlags( ::vk::MemoryPropertyFlagBits flags )
+     nyx::vkg::Vulkan::MemoryFlags::MemoryFlags( ::vk::MemoryPropertyFlagBits flags )
      {
        this->flag = static_cast<unsigned>( flags ) ;
      }
 
-     Vulkan::MemoryPropFlag kgl::vkg::Vulkan::MemoryFlags::val()
+     Vulkan::MemoryPropFlag nyx::vkg::Vulkan::MemoryFlags::val()
      {
        return static_cast<::vk::MemoryPropertyFlags>( this->flag ) ;
      }
@@ -121,15 +121,15 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
 
      void Vulkan::initialize( const vk::Instance& instance )
      {
-       ::kgl::vkg::vk_instance = instance ;
+       ::nyx::vkg::vk_instance = instance ;
      }
 
      vkg::Error Vulkan::convertError( vk::Result error )
      {
        switch( error )
        {
-         case vk::Result::eErrorDeviceLost : return kgl::vkg::Error( vkg::Error::DeviceLost  ) ;
-         default : return kgl::vkg::Error( vkg::Error::None ) ;
+         case vk::Result::eErrorDeviceLost : return nyx::vkg::Error( vkg::Error::DeviceLost  ) ;
+         default : return nyx::vkg::Error( vkg::Error::None ) ;
        }
      }
 
@@ -223,7 +223,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
      }
 
      #ifdef WIN32
-     Vulkan::Context Vulkan::contextFromBaseWindow( const kgl::win32::Window& window )
+     Vulkan::Context Vulkan::contextFromBaseWindow( const nyx::win32::Window& window )
      {
        VkWin32SurfaceCreateInfoKHR info       ;
        VkSurfaceKHR                surface    ;
@@ -236,9 +236,9 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        info.hinstance = window.instance()                               ;
        info.hwnd      = window.handle()                                 ;
 
-       if( kgl::vkg::vk_instance )
+       if( nyx::vkg::vk_instance )
        {
-         result = static_cast<vk::Result>( vkCreateWin32SurfaceKHR( kgl::vkg::vk_instance, &info, nullptr, &surface ) ) ;
+         result = static_cast<vk::Result>( vkCreateWin32SurfaceKHR( nyx::vkg::vk_instance, &info, nullptr, &surface ) ) ;
          if( result != vk::Result::eSuccess )
          {
            std::cout << "Error creating surface: " << vk::to_string( result ) << "\n" ;
@@ -250,7 +250,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
      }
 
      #elif __linux__
-     Vulkan::Context Vulkan::contextFromBaseWindow( const kgl::lx::Window& window )
+     Vulkan::Context Vulkan::contextFromBaseWindow( const nyx::lx::Window& window )
      {
        VkXcbSurfaceCreateInfoKHR info         ;
        VkSurfaceKHR              surface      ;
@@ -263,9 +263,9 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        info.connection = window.connection()                           ;
        info.window     = window.window()                               ;
        
-       if( kgl::vkg::vk_instance )
+       if( nyx::vkg::vk_instance )
        {
-         result = static_cast<vk::Result>( vkCreateXcbSurfaceKHR( kgl::vkg::vk_instance, &info, nullptr, &surface ) ) ;
+         result = static_cast<vk::Result>( vkCreateXcbSurfaceKHR( nyx::vkg::vk_instance, &info, nullptr, &surface ) ) ;
          
          if( result != vk::Result::eSuccess )
          {

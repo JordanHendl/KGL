@@ -22,10 +22,10 @@
  * Created on January 18, 2021, 3:26 AM
  */
 
-#ifndef KGL_LIST_H
-#define KGL_LIST_H
+#ifndef NYX_LIST_H
+#define NYX_LIST_H
 
-namespace kgl
+namespace nyx
 {
   /** Template class for managing a list of items.
    * @tparma Type The type of object to contain in this list.

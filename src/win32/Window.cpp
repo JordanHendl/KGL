@@ -43,7 +43,7 @@ BOOL APIENTRY DllMain( HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpRese
   return TRUE ;
 }
 
-namespace kgl
+namespace nyx
 {
   namespace win32
   {
@@ -58,7 +58,7 @@ namespace kgl
     /** Function to convert a win32 key param to a library key.
      * @param param The Window Wparam to convert.
      */
-    static kgl::Key keyFromWin32Key( WPARAM param ) ;
+    static nyx::Key keyFromWin32Key( WPARAM param ) ;
     
     /** Structure to contain a WIN32 Window's data.
      */
@@ -80,91 +80,91 @@ namespace kgl
       void createWindow() ;
     };
 
-     kgl::Key keyFromWin32Key( WPARAM param )
+     nyx::Key keyFromWin32Key( WPARAM param )
     {
       switch (param)
       {
-        case 8  : return kgl::Key::Backspace  ;
-        case 9  : return kgl::Key::LTab       ;
-        case 13 : return kgl::Key::Return     ;
-        case 16 : return kgl::Key::LShift     ;
-        case 17 : return kgl::Key::LCtrl      ;
-        case 32 : return kgl::Key::Space      ;
-        case 37 : return kgl::Key::Left       ;
-        case 38 : return kgl::Key::Up         ;
-        case 39 : return kgl::Key::Right      ;
-        case 40 : return kgl::Key::Down       ;
-        case 48 : return kgl::Key::Zero       ;
-        case 49 : return kgl::Key::One        ;
-        case 50 : return kgl::Key::Two        ;
-        case 51 : return kgl::Key::Three      ;
-        case 52 : return kgl::Key::Four       ;
-        case 53 : return kgl::Key::Five       ;
-        case 54 : return kgl::Key::Six        ;
-        case 55 : return kgl::Key::Seven      ;
-        case 56 : return kgl::Key::Eight      ;
-        case 57 : return kgl::Key::Nine       ;
+        case 8  : return nyx::Key::Backspace  ;
+        case 9  : return nyx::Key::LTab       ;
+        case 13 : return nyx::Key::Return     ;
+        case 16 : return nyx::Key::LShift     ;
+        case 17 : return nyx::Key::LCtrl      ;
+        case 32 : return nyx::Key::Space      ;
+        case 37 : return nyx::Key::Left       ;
+        case 38 : return nyx::Key::Up         ;
+        case 39 : return nyx::Key::Right      ;
+        case 40 : return nyx::Key::Down       ;
+        case 48 : return nyx::Key::Zero       ;
+        case 49 : return nyx::Key::One        ;
+        case 50 : return nyx::Key::Two        ;
+        case 51 : return nyx::Key::Three      ;
+        case 52 : return nyx::Key::Four       ;
+        case 53 : return nyx::Key::Five       ;
+        case 54 : return nyx::Key::Six        ;
+        case 55 : return nyx::Key::Seven      ;
+        case 56 : return nyx::Key::Eight      ;
+        case 57 : return nyx::Key::Nine       ;
         case 58 : 
         case 59 : 
-        case 60 : return kgl::Key::None       ;
-        case 65 : return kgl::Key::A          ;
-        case 66 : return kgl::Key::B          ;
-        case 67 : return kgl::Key::C          ;
-        case 68 : return kgl::Key::D          ;
-        case 69 : return kgl::Key::E          ;
-        case 70 : return kgl::Key::F          ;
-        case 71 : return kgl::Key::G          ;
-        case 72 : return kgl::Key::H          ;
-        case 73 : return kgl::Key::I          ;
-        case 74 : return kgl::Key::J          ;
-        case 75 : return kgl::Key::K          ;
-        case 76 : return kgl::Key::L          ;
-        case 77 : return kgl::Key::M          ;
-        case 78 : return kgl::Key::N          ;
-        case 79 : return kgl::Key::O          ;
-        case 80 : return kgl::Key::P          ;
-        case 81 : return kgl::Key::Q          ;
-        case 82 : return kgl::Key::R          ;
-        case 83 : return kgl::Key::S          ;
-        case 84 : return kgl::Key::T          ;
-        case 85 : return kgl::Key::U          ;
-        case 86 : return kgl::Key::V          ;
-        case 87 : return kgl::Key::W          ;
-        case 88 : return kgl::Key::X          ;
-        case 89 : return kgl::Key::Y          ;
-        case 90 : return kgl::Key::Z          ;
-        case 112: return kgl::Key::F1         ;
-        case 113: return kgl::Key::F2         ;
-        case 114: return kgl::Key::F3         ;
-        case 115: return kgl::Key::F4         ;
-        case 116: return kgl::Key::F5         ;
-        case 117: return kgl::Key::F6         ;
-        case 118: return kgl::Key::F7         ;
-        case 119: return kgl::Key::F8         ;
-        case 120: return kgl::Key::F9         ;
-        case 121: return kgl::Key::F10        ;
-        case 122: return kgl::Key::F11        ;
-        case 123: return kgl::Key::F12        ;
+        case 60 : return nyx::Key::None       ;
+        case 65 : return nyx::Key::A          ;
+        case 66 : return nyx::Key::B          ;
+        case 67 : return nyx::Key::C          ;
+        case 68 : return nyx::Key::D          ;
+        case 69 : return nyx::Key::E          ;
+        case 70 : return nyx::Key::F          ;
+        case 71 : return nyx::Key::G          ;
+        case 72 : return nyx::Key::H          ;
+        case 73 : return nyx::Key::I          ;
+        case 74 : return nyx::Key::J          ;
+        case 75 : return nyx::Key::K          ;
+        case 76 : return nyx::Key::L          ;
+        case 77 : return nyx::Key::M          ;
+        case 78 : return nyx::Key::N          ;
+        case 79 : return nyx::Key::O          ;
+        case 80 : return nyx::Key::P          ;
+        case 81 : return nyx::Key::Q          ;
+        case 82 : return nyx::Key::R          ;
+        case 83 : return nyx::Key::S          ;
+        case 84 : return nyx::Key::T          ;
+        case 85 : return nyx::Key::U          ;
+        case 86 : return nyx::Key::V          ;
+        case 87 : return nyx::Key::W          ;
+        case 88 : return nyx::Key::X          ;
+        case 89 : return nyx::Key::Y          ;
+        case 90 : return nyx::Key::Z          ;
+        case 112: return nyx::Key::F1         ;
+        case 113: return nyx::Key::F2         ;
+        case 114: return nyx::Key::F3         ;
+        case 115: return nyx::Key::F4         ;
+        case 116: return nyx::Key::F5         ;
+        case 117: return nyx::Key::F6         ;
+        case 118: return nyx::Key::F7         ;
+        case 119: return nyx::Key::F8         ;
+        case 120: return nyx::Key::F9         ;
+        case 121: return nyx::Key::F10        ;
+        case 122: return nyx::Key::F11        ;
+        case 123: return nyx::Key::F12        ;
                     
-        case 182: return kgl::Key::Hyphen     ;
-        case 186: return kgl::Key::Semicolon  ;
-        case 187: return kgl::Key::Equals     ;
-        case 188: return kgl::Key::Comma      ;
-        case 190: return kgl::Key::Period     ;
-        case 191: return kgl::Key::FSlash     ;
-        case 192: return kgl::Key::Backtick   ;
-        case 219: return kgl::Key::LBracket   ;
-        case 220: return kgl::Key::BSlash     ;
-        case 221: return kgl::Key::RBracket   ;
-        case 222: return kgl::Key::Apostraphe ;
-        default : return kgl::Key::None ;
+        case 182: return nyx::Key::Hyphen     ;
+        case 186: return nyx::Key::Semicolon  ;
+        case 187: return nyx::Key::Equals     ;
+        case 188: return nyx::Key::Comma      ;
+        case 190: return nyx::Key::Period     ;
+        case 191: return nyx::Key::FSlash     ;
+        case 192: return nyx::Key::Backtick   ;
+        case 219: return nyx::Key::LBracket   ;
+        case 220: return nyx::Key::BSlash     ;
+        case 221: return nyx::Key::RBracket   ;
+        case 222: return nyx::Key::Apostraphe ;
+        default : return nyx::Key::None ;
       } ;
     }
        
     LRESULT CALLBACK processWindow( HWND handle, UINT message, WPARAM wParam, LPARAM lParam )
     {
-      static kgl::EventManager manager ;
-      static kgl::Event        event   ;
+      static nyx::EventManager manager ;
+      static nyx::Event        event   ;
       static int               xmouse  ;
       static int               ymouse  ;
       static unsigned          button  ;
@@ -183,53 +183,53 @@ namespace kgl
            ymouse = GET_Y_LPARAM( lParam ) ;
            break ;
          case WM_KEYDOWN :
-           event = kgl::makeKeyEvent( kgl::Event::Type::KeyDown, keyFromWin32Key( wParam ) ) ;
+           event = nyx::makeKeyEvent( nyx::Event::Type::KeyDown, keyFromWin32Key( wParam ) ) ;
            manager.pushEvent( event ) ;
            break ;
          case WM_KEYUP   :
-           event = kgl::makeKeyEvent( kgl::Event::Type::KeyUp, keyFromWin32Key( wParam ) ) ;
+           event = nyx::makeKeyEvent( nyx::Event::Type::KeyUp, keyFromWin32Key( wParam ) ) ;
            manager.pushEvent( event ) ;
 
            break ;
          case WM_MBUTTONDOWN :
-           event = kgl::makeMouseButtonEvent( kgl::Event::Type::KeyDown, kgl::MouseButton::MiddleClick ) ;
+           event = nyx::makeMouseButtonEvent( nyx::Event::Type::KeyDown, nyx::MouseButton::MiddleClick ) ;
            manager.pushEvent( event ) ;
            break ;
          case WM_MBUTTONUP :
-           event = kgl::makeMouseButtonEvent( kgl::Event::Type::KeyUp, kgl::MouseButton::MiddleClick ) ;
+           event = nyx::makeMouseButtonEvent( nyx::Event::Type::KeyUp, nyx::MouseButton::MiddleClick ) ;
            manager.pushEvent( event ) ;
            break ;                                                   
          case WM_LBUTTONDOWN :
-           event = kgl::makeMouseButtonEvent( kgl::Event::Type::KeyDown, kgl::MouseButton::LeftClick ) ;
+           event = nyx::makeMouseButtonEvent( nyx::Event::Type::KeyDown, nyx::MouseButton::LeftClick ) ;
            manager.pushEvent( event ) ;
            break ;
          case WM_LBUTTONUP :
-           event = kgl::makeMouseButtonEvent( kgl::Event::Type::KeyUp, kgl::MouseButton::LeftClick ) ;
+           event = nyx::makeMouseButtonEvent( nyx::Event::Type::KeyUp, nyx::MouseButton::LeftClick ) ;
            manager.pushEvent( event ) ;
            break ;                                                                                
          case WM_RBUTTONDOWN :
-           event = kgl::makeMouseButtonEvent( kgl::Event::Type::KeyDown, kgl::MouseButton::RightClick ) ;
+           event = nyx::makeMouseButtonEvent( nyx::Event::Type::KeyDown, nyx::MouseButton::RightClick ) ;
            manager.pushEvent( event ) ;
            break ;
          case WM_RBUTTONUP :
-           event = kgl::makeMouseButtonEvent( kgl::Event::Type::KeyUp, kgl::MouseButton::RightClick ) ;
+           event = nyx::makeMouseButtonEvent( nyx::Event::Type::KeyUp, nyx::MouseButton::RightClick ) ;
            manager.pushEvent( event ) ;
            break ;                                                                                
          case WM_XBUTTONDOWN :
            button = GET_XBUTTON_WPARAM( wParam ) ;
            if( button == XBUTTON1 )
-           event = kgl::makeMouseButtonEvent( kgl::Event::Type::KeyDown, kgl::MouseButton::Button01 ) ;
+           event = nyx::makeMouseButtonEvent( nyx::Event::Type::KeyDown, nyx::MouseButton::Button01 ) ;
            else
-           event = kgl::makeMouseButtonEvent( kgl::Event::Type::KeyDown, kgl::MouseButton::Button02 ) ;
+           event = nyx::makeMouseButtonEvent( nyx::Event::Type::KeyDown, nyx::MouseButton::Button02 ) ;
 
            manager.pushEvent( event ) ;
            break ;                                                                                
          case WM_XBUTTONUP :
            button = GET_XBUTTON_WPARAM( wParam ) ;
            if( button == XBUTTON1 )
-           event = kgl::makeMouseButtonEvent( kgl::Event::Type::KeyUp, kgl::MouseButton::Button01 ) ;
+           event = nyx::makeMouseButtonEvent( nyx::Event::Type::KeyUp, nyx::MouseButton::Button01 ) ;
            else
-           event = kgl::makeMouseButtonEvent( kgl::Event::Type::KeyUp, kgl::MouseButton::Button02 ) ;
+           event = nyx::makeMouseButtonEvent( nyx::Event::Type::KeyUp, nyx::MouseButton::Button02 ) ;
 
            manager.pushEvent( event ) ;
            break ;
@@ -246,7 +246,7 @@ namespace kgl
     }
     void WindowData::createWindow()
     {
-      static const char* CLASS_NAME = "KGL_WIN32_WINDOW" ;
+      static const char* CLASS_NAME = "NYX_WIN32_WINDOW" ;
       this->instance = win_module ;
       this->window_class               = {}                      ;
       this->window_class.hInstance     = this->instance          ;

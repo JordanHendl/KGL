@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KGL_ARRAY_H
-#define KGL_ARRAY_H
+#ifndef NYX_ARRAY_H
+#define NYX_ARRAY_H
 
-namespace kgl
+namespace nyx
 {
   template<typename IMPL>
   class Memory ;
@@ -45,6 +45,16 @@ namespace kgl
        */
       Array& operator=( const Array<IMPL, TYPE>& array ) ;
       
+      /** Implicit conversion to turn an this object into an implementation-specific version.
+       * @return The underlying implmentation-specific container of this object.
+       */
+      operator const typename IMPL::Buffer&() const ;
+      
+      /** Implicit conversion to turn an this object into an implementation-specific version.
+       * @return The underlying implmentation-specific container of this object.
+       */
+      operator typename IMPL::Buffer&() ;
+      
       /** Method to retrieve the reference to the data at the specified index on the host.
        * @param index The index of data to retrieve.
        * @return The reference to this host-data at the specified index.
@@ -66,7 +76,7 @@ namespace kgl
        * @param The source offset to start at.
        * @param The destination offset to start the copy at.
        */
-      void copy( const Array<IMPL, TYPE>& src, typename IMPL::CommandRecord& record, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+      void copy( const Array<IMPL, TYPE>& src, const typename IMPL::CommandRecord& record, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
       
       /** Method to copy the date of the input host pointer to the device.
        * @param src The host-pointer to copy from.
@@ -125,6 +135,11 @@ namespace kgl
        */
       void initialize( const typename IMPL::Buffer& buffer ) ;
       
+      /** Method to check if this object is initialized or not.
+       * @return Whether or not this object is initialized.
+       */
+      bool initialized() const ;
+
       /** Method to initialize this object & allocate data.
        * @param size The number of elements allocated to this object.
        * @param device The implementation-specific device to use for this object.
@@ -184,37 +199,32 @@ namespace kgl
     this->arr_buffer = array.arr_buffer ;
     this->count      = array.count      ;
   }
-
   
   template<typename IMPL, class TYPE>
   void Array<IMPL, TYPE>::copy( const Array<IMPL, TYPE>& src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
   {
     this->arr_buffer.copy( src.arr_buffer, amount, srcoffset, dstoffset ) ;
   }
-
   
   template<typename IMPL, class TYPE>
-  void Array<IMPL, TYPE>::copy( const Array<IMPL, TYPE>& src, typename IMPL::CommandRecord& record, unsigned amount, unsigned srcoffset, unsigned dstoffset )
+  void Array<IMPL, TYPE>::copy( const Array<IMPL, TYPE>& src, const typename IMPL::CommandRecord& record, unsigned amount, unsigned srcoffset, unsigned dstoffset )
   {
     if( amount == 0 ) amount = sizeof( TYPE ) * this->count ;
     else              amount *= sizeof( TYPE ) ;
     this->arr_buffer.copy( src.arr_buffer, amount, record, srcoffset, dstoffset ) ;
   }
 
-  
   template<typename IMPL, class TYPE>
   void Array<IMPL, TYPE>::copyToDevice( const TYPE* src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
   {
     this->arr_buffer.copyToDevice( static_cast<const void*>( src ), sizeof( TYPE ) * amount, srcoffset, dstoffset ) ;
   }
-
   
   template<typename IMPL, class TYPE>
   void Array<IMPL, TYPE>::copyToHost( const TYPE* src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
   {
     this->arr_buffer.copyToHost( static_cast<const void*>( src ), amount * sizeof( TYPE ), srcoffset, dstoffset ) ;
   }
-
   
   template<typename IMPL, class TYPE>
   void Array<IMPL, TYPE>::copySynced( const TYPE* src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
@@ -222,21 +232,30 @@ namespace kgl
     this->copyToDevice( src, amount, srcoffset, dstoffset ) ;
     this->copyToHost  ( src, amount, srcoffset, dstoffset ) ;
   }
-
   
+  template<typename IMPL, class TYPE>
+  Array<IMPL, TYPE>::operator const typename IMPL::Buffer&() const
+  {
+    return this->arr_buffer ;
+  }
+  
+  template<typename IMPL, class TYPE>
+  Array<IMPL, TYPE>::operator typename IMPL::Buffer&()
+  {
+    return this->arr_buffer ;
+  }
+
   template<typename IMPL, class TYPE>
   unsigned Array<IMPL, TYPE>::elementSize() const
   {
-    return this->arr_memory.elementSize() ;
+    return sizeof( TYPE ) ;
   }
 
-  
   template<typename IMPL, class TYPE>
   void Array<IMPL, TYPE>::syncToDevice()
   {
     this->arr_buffer.syncToDevice() ;
   }
-
   
   template<typename IMPL, class TYPE>
   void Array<IMPL, TYPE>::syncToHost()
@@ -244,13 +263,11 @@ namespace kgl
     this->arr_buffer.syncToHost() ;
   }
 
-  
   template<typename IMPL, class TYPE>
   bool Array<IMPL, TYPE>::dirty()
   {
-    return this->arr_memory.dirty() ;
+    return this->arr_buffer.dirty() ;
   }
-
   
   template<typename IMPL, class TYPE>
   unsigned Array<IMPL, TYPE>::size() const
@@ -267,7 +284,7 @@ namespace kgl
   template<typename IMPL, class TYPE>
   unsigned Array<IMPL, TYPE>::byteSize() const
   {
-    return this->arr_memory.byteSize() ;
+    return this->arr_buffer.size() ;
   }
   
   template<typename IMPL, class TYPE>
@@ -282,7 +299,12 @@ namespace kgl
     this->count = size ;
     this->arr_buffer.initialize( device, size * sizeof( TYPE ), host_alloc ) ;
   }
-
+  
+  template<typename IMPL, class TYPE>
+  bool Array<IMPL, TYPE>::initialized() const 
+  {
+    return this->arr_buffer.initialized() ;
+  }
 
   template<typename IMPL, class TYPE>
   template<typename ... BUFFER_FLAGS>
@@ -292,13 +314,11 @@ namespace kgl
     this->arr_buffer.initialize( device, size * sizeof( TYPE ), host_alloc, buffer_flags... ) ;
   }
 
-
   template<typename IMPL, class TYPE>
   const typename IMPL::Buffer& Array<IMPL, TYPE>::buffer() const
   {
     return this->arr_buffer ;
   }
-
   
   template<typename IMPL, class TYPE>
   const typename IMPL::Device& Array<IMPL, TYPE>::device() const

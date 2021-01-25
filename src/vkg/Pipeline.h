@@ -22,8 +22,8 @@
  * Created on December 30, 2020, 1:21 AM
  */
 
-#ifndef KGL_VKG_PIPELINE_H
-#define KGL_VKG_PIPELINE_H
+#ifndef NYX_VKG_PIPELINE_H
+#define NYX_VKG_PIPELINE_H
 
 #include "RenderPass.h"
 #include "Device.h"
@@ -35,7 +35,7 @@ namespace vk
   class Pipeline       ;
 }
 
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
@@ -81,13 +81,13 @@ namespace kgl
          * @param device The device to use for generating this compute pipeline.
          * @param kg_path The path to the KgShader file on disk to use for this pipeline.
          */
-        void initialize( const kgl::vkg::Device& device, const char* kg_path ) ;
+        void initialize( const nyx::vkg::Device& device, const char* kg_path ) ;
 
         /** Method to initialize this graphics pipeline with the input renderpass and shader.
          * @param pass The render pass to use for this pipeline creation.
          * @param kg_path The path to the KgShader file on disk to use for this pipeline.
          */
-        void initialize( const kgl::vkg::RenderPass& pass, const char* kg_path ) ;
+        void initialize( const nyx::vkg::RenderPass& pass, const char* kg_path ) ;
         
         /** Method to initialize this compute pipeline with the input shader.
          * @param shader The shader to use to describe this pipeline.
@@ -98,7 +98,7 @@ namespace kgl
          * @param pass The render pass to use for this pipeline creation.
          * @param shader The KgShader to describe this pipeline.
          */
-        void initialize( const kgl::vkg::RenderPass& pass, const KgShader& shader ) ;
+        void initialize( const nyx::vkg::RenderPass& pass, const KgShader& shader ) ;
         
         /** Method to set the push constant size in bytes for this pipeline.
          * @return The push constant size in bytes.

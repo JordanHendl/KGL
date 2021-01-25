@@ -18,7 +18,7 @@
 #ifndef KARMA_GPU_FILE_H
 #define KARMA_GPU_FILE_H
 
-namespace kgl
+namespace nyx
 {
   class KgFile ;
   

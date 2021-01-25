@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KGL_MEMORY_H
-#define KGL_MEMORY_H
+#ifndef NYX_MEMORY_H
+#define NYX_MEMORY_H
 
-namespace kgl
+namespace nyx
 {
   /** Template function to combine parameters.
    * @return The parameters bitwise OR'd together.
@@ -306,7 +306,7 @@ namespace kgl
     this->byte_size  = sz  ;
     this->gpu        = gpu ;
     
-    this->memory_ptr = impl.createMemory( gpu, sz, static_cast<typename IMPL::MemoryFlags>( ::kgl::combine( mem_flags... ) ) ) ;
+    this->memory_ptr = impl.createMemory( gpu, sz, static_cast<typename IMPL::MemoryFlags>( ::nyx::combine( mem_flags... ) ) ) ;
     
     if( host_alloc )
     {
@@ -335,7 +335,7 @@ namespace kgl
     this->byte_size  = sz  ;
     this->gpu        = gpu ;
     
-    this->memory_ptr = impl.createMemory( gpu, sz, static_cast<typename IMPL::MemoryFlags>( ::kgl::combine( mem_flags... ) ), filter ) ;
+    this->memory_ptr = impl.createMemory( gpu, sz, static_cast<typename IMPL::MemoryFlags>( ::nyx::combine( mem_flags... ) ), filter ) ;
     
     if( host_alloc )
     {

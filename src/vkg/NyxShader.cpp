@@ -22,8 +22,8 @@
  * Created on December 30, 2020, 2:26 PM
  */
 
-#include "KgShader.h"
-#include <kgfile/KgFile.h>
+#include "NyxShader.h"
+#include <nyxfile/NyxFile.h>
 #include "Device.h"
 #include <vulkan/vulkan.hpp>
 #include <map>
@@ -31,7 +31,7 @@
 #include <istream>
 #include <fstream>
 
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
@@ -39,12 +39,12 @@ namespace kgl
      * @param desc_type
      * @param type
      */
-    static inline void operator<<( ::vk::DescriptorType& desc_type, const kgl::UniformType& type ) ;
+    static inline void operator<<( ::vk::DescriptorType& desc_type, const nyx::UniformType& type ) ;
     
     /**
      * @param stage
      */
-    static inline ::vk::ShaderStageFlagBits vulkanBitFromStage( const kgl::ShaderStage& stage ) ;
+    static inline ::vk::ShaderStageFlagBits vulkanBitFromStage( const nyx::ShaderStage& stage ) ;
     
     /**
      * @param type
@@ -62,18 +62,18 @@ namespace kgl
      * @param format
      * @return 
      */
-    static inline vk::Format formatFromShaderFormat( kgl::vkg::KgShader::Format format ) ;
+    static inline vk::Format formatFromShaderFormat( nyx::vkg::KgShader::Format format ) ;
 
     /**
      * @param flag
      * @return 
      */
-    static inline kgl::ShaderStage kglStageFromVulkan( const vk::ShaderStageFlagBits& flag ) ;
+    static inline nyx::ShaderStage nyxStageFromVulkan( const vk::ShaderStageFlagBits& flag ) ;
 
     struct KgShaderData
     {
       using SPIRVMap      = std::map<vk::ShaderStageFlagBits, vk::ShaderModuleCreateInfo> ; ///< TODO
-      using ShaderModules = std::map<kgl::ShaderStage, vk::ShaderModule>                  ; ///< TODO
+      using ShaderModules = std::map<nyx::ShaderStage, vk::ShaderModule>                  ; ///< TODO
       using Attributes    = std::vector<vk::VertexInputAttributeDescription>              ; ///< TODO
       using Bindings      = std::vector<vk::VertexInputBindingDescription>                ; ///< TODO
       using Infos         = std::vector<vk::PipelineShaderStageCreateInfo>                ; ///< TODO
@@ -85,8 +85,8 @@ namespace kgl
       Attributes                             attributes  ; ///< TODO
       Bindings                               bindings    ; ///< TODO
       Infos                                  infos       ; ///< TODO
-      kgl::KgFile                            kgfile      ; ///< TODO
-      kgl::vkg::Device                       device      ; ///< TODO
+      nyx::KgFile                            kgfile      ; ///< TODO
+      nyx::vkg::Device                       device      ; ///< TODO
       vk::DescriptorSetLayout                layout      ; ///< TODO
       vk::PipelineVertexInputStateCreateInfo info        ; ///< TODO
       vk::VertexInputRate                    rate        ; ///< TODO
@@ -122,7 +122,7 @@ namespace kgl
       else                   return 1 ;
     }
           
-    unsigned byteSizeFromFormat( kgl::ShaderIterator& it, unsigned index )
+    unsigned byteSizeFromFormat( nyx::ShaderIterator& it, unsigned index )
     {
       const std::string s = std::string( it.attributeType( index ) ) ;
       
@@ -153,61 +153,61 @@ namespace kgl
       return ::vk::Format::eR32Sfloat ;
     }
 
-    vk::Format formatFromShaderFormat( kgl::vkg::KgShader::Format format )
+    vk::Format formatFromShaderFormat( nyx::vkg::KgShader::Format format )
     {
       switch( format )
       {
-        case kgl::vkg::KgShader::Format::mat4  : return ::vk::Format::eR32G32B32A32Sfloat ;
-        case kgl::vkg::KgShader::Format::vec4  : return ::vk::Format::eR32G32B32A32Sfloat ;
-        case kgl::vkg::KgShader::Format::ivec4 : return ::vk::Format::eR32G32B32A32Sint   ;
-        case kgl::vkg::KgShader::Format::uvec4 : return ::vk::Format::eR32G32B32A32Uint   ;
-        case kgl::vkg::KgShader::Format::mat3  : return ::vk::Format::eR32G32B32A32Sfloat ;
-        case kgl::vkg::KgShader::Format::vec3  : return ::vk::Format::eR32G32B32A32Sfloat ;
-        case kgl::vkg::KgShader::Format::ivec3 : return ::vk::Format::eR32G32B32A32Sint   ;
-        case kgl::vkg::KgShader::Format::uvec3 : return ::vk::Format::eR32G32B32A32Uint   ;
-        case kgl::vkg::KgShader::Format::mat2  : return ::vk::Format::eR32G32Sfloat       ;
-        case kgl::vkg::KgShader::Format::vec2  : return ::vk::Format::eR32G32Sfloat       ;
-        case kgl::vkg::KgShader::Format::ivec2 : return ::vk::Format::eR32G32Sint         ;
-        case kgl::vkg::KgShader::Format::uvec2 : return ::vk::Format::eR32G32Uint         ;
+        case nyx::vkg::KgShader::Format::mat4  : return ::vk::Format::eR32G32B32A32Sfloat ;
+        case nyx::vkg::KgShader::Format::vec4  : return ::vk::Format::eR32G32B32A32Sfloat ;
+        case nyx::vkg::KgShader::Format::ivec4 : return ::vk::Format::eR32G32B32A32Sint   ;
+        case nyx::vkg::KgShader::Format::uvec4 : return ::vk::Format::eR32G32B32A32Uint   ;
+        case nyx::vkg::KgShader::Format::mat3  : return ::vk::Format::eR32G32B32A32Sfloat ;
+        case nyx::vkg::KgShader::Format::vec3  : return ::vk::Format::eR32G32B32A32Sfloat ;
+        case nyx::vkg::KgShader::Format::ivec3 : return ::vk::Format::eR32G32B32A32Sint   ;
+        case nyx::vkg::KgShader::Format::uvec3 : return ::vk::Format::eR32G32B32A32Uint   ;
+        case nyx::vkg::KgShader::Format::mat2  : return ::vk::Format::eR32G32Sfloat       ;
+        case nyx::vkg::KgShader::Format::vec2  : return ::vk::Format::eR32G32Sfloat       ;
+        case nyx::vkg::KgShader::Format::ivec2 : return ::vk::Format::eR32G32Sint         ;
+        case nyx::vkg::KgShader::Format::uvec2 : return ::vk::Format::eR32G32Uint         ;
         default : return ::vk::Format::eR32Sfloat ;
       }
     }
                 
-    ::vk::ShaderStageFlagBits vulkanBitFromStage( const kgl::ShaderStage& stage )
+    ::vk::ShaderStageFlagBits vulkanBitFromStage( const nyx::ShaderStage& stage )
     {
       switch( stage )
       {
-        case kgl::ShaderStage::FRAGMENT      : return ::vk::ShaderStageFlagBits::eFragment               ;
-        case kgl::ShaderStage::GEOMETRY      : return ::vk::ShaderStageFlagBits::eGeometry               ;
-        case kgl::ShaderStage::TESSALATION_C : return ::vk::ShaderStageFlagBits::eTessellationControl    ;
-        case kgl::ShaderStage::TESSELATION_E : return ::vk::ShaderStageFlagBits::eTessellationEvaluation ;
-        case kgl::ShaderStage::COMPUTE       : return ::vk::ShaderStageFlagBits::eCompute                ;
-        case kgl::ShaderStage::VERTEX        : return ::vk::ShaderStageFlagBits::eVertex                 ;
+        case nyx::ShaderStage::FRAGMENT      : return ::vk::ShaderStageFlagBits::eFragment               ;
+        case nyx::ShaderStage::GEOMETRY      : return ::vk::ShaderStageFlagBits::eGeometry               ;
+        case nyx::ShaderStage::TESSALATION_C : return ::vk::ShaderStageFlagBits::eTessellationControl    ;
+        case nyx::ShaderStage::TESSELATION_E : return ::vk::ShaderStageFlagBits::eTessellationEvaluation ;
+        case nyx::ShaderStage::COMPUTE       : return ::vk::ShaderStageFlagBits::eCompute                ;
+        case nyx::ShaderStage::VERTEX        : return ::vk::ShaderStageFlagBits::eVertex                 ;
         default                                          : return ::vk::ShaderStageFlagBits::eFragment   ;
       }
     }
 
-    void operator<<( ::vk::DescriptorType& desc_type, const kgl::UniformType& type )
+    void operator<<( ::vk::DescriptorType& desc_type, const nyx::UniformType& type )
     {
       switch( type )
       {
-        case kgl::UniformType::UBO     : desc_type = ::vk::DescriptorType::eUniformBuffer        ; break ;
-        case kgl::UniformType::SAMPLER : desc_type = ::vk::DescriptorType::eCombinedImageSampler ; break ;
-        case kgl::UniformType::SSBO    : desc_type = ::vk::DescriptorType::eStorageBuffer        ; break ;
-        case kgl::UniformType::None    : desc_type = ::vk::DescriptorType::eUniformBuffer        ; break ;
+        case nyx::UniformType::UBO     : desc_type = ::vk::DescriptorType::eUniformBuffer        ; break ;
+        case nyx::UniformType::SAMPLER : desc_type = ::vk::DescriptorType::eCombinedImageSampler ; break ;
+        case nyx::UniformType::SSBO    : desc_type = ::vk::DescriptorType::eStorageBuffer        ; break ;
+        case nyx::UniformType::None    : desc_type = ::vk::DescriptorType::eUniformBuffer        ; break ;
         default : break ;
       }
     }
 
-    kgl::ShaderStage kglStageFromVulkan( const vk::ShaderStageFlagBits& flag )
+    nyx::ShaderStage nyxStageFromVulkan( const vk::ShaderStageFlagBits& flag )
     {
       switch( flag )
       {
-        case vk::ShaderStageFlagBits::eVertex   : return kgl::ShaderStage::VERTEX   ;
-        case vk::ShaderStageFlagBits::eFragment : return kgl::ShaderStage::FRAGMENT ;
-        case vk::ShaderStageFlagBits::eCompute  : return kgl::ShaderStage::COMPUTE  ;
-        case vk::ShaderStageFlagBits::eGeometry : return kgl::ShaderStage::GEOMETRY ;
-        default : return kgl::ShaderStage::VERTEX ;
+        case vk::ShaderStageFlagBits::eVertex   : return nyx::ShaderStage::VERTEX   ;
+        case vk::ShaderStageFlagBits::eFragment : return nyx::ShaderStage::FRAGMENT ;
+        case vk::ShaderStageFlagBits::eCompute  : return nyx::ShaderStage::COMPUTE  ;
+        case vk::ShaderStageFlagBits::eGeometry : return nyx::ShaderStage::GEOMETRY ;
+        default : return nyx::ShaderStage::VERTEX ;
       }
     }
     
@@ -251,7 +251,7 @@ namespace kgl
         }
         
         
-        if( iter.stage() == kgl::ShaderStage::VERTEX )
+        if( iter.stage() == nyx::ShaderStage::VERTEX )
         {
           for( unsigned index = 0; index < iter.numAttributes(); index++ )
           {
@@ -312,7 +312,7 @@ namespace kgl
       {
         mod = this->device.device().createShaderModule( shader.second, nullptr ) ;
         
-        this->modules[ kglStageFromVulkan( shader.first ) ] = mod ;
+        this->modules[ nyxStageFromVulkan( shader.first ) ] = mod ;
       }
     }
     
@@ -359,7 +359,7 @@ namespace kgl
       return *this ;
     }
 
-    void KgShader::initialize( const kgl::vkg::Device& device, const char* kg_path )
+    void KgShader::initialize( const nyx::vkg::Device& device, const char* kg_path )
     {
       data().device = device ;
       data().kgfile.load( kg_path ) ;
@@ -370,7 +370,7 @@ namespace kgl
       data().makePipelineShaderInfos() ;
     }
 
-    void KgShader::initialize( const kgl::vkg::Device& device )
+    void KgShader::initialize( const nyx::vkg::Device& device )
     {
       data().device = device ;
       
@@ -438,7 +438,7 @@ namespace kgl
       data().spirv_map[ flags ] = info ;
     }
     
-    const kgl::vkg::Device& KgShader::device() const
+    const nyx::vkg::Device& KgShader::device() const
     {
       return data().device ;
     }

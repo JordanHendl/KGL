@@ -22,8 +22,8 @@
  * Created on January 14, 2021, 2:21 AM
  */
 
-#ifndef KGL_VKG_SWAPCHAIN_H
-#define KGL_VKG_SWAPCHAIN_H
+#ifndef NYX_VKG_SWAPCHAIN_H
+#define NYX_VKG_SWAPCHAIN_H
 
 #include "Image.h"
 
@@ -37,7 +37,7 @@ namespace vk
 
 }
 
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
@@ -86,7 +86,7 @@ namespace kgl
          * @param present_queue The present queue to use for this object's initialization.
          * @param surface The Vulkan Surface for the window to create a swapchain of.
          */
-        void initialize( const kgl::vkg::Queue& present_queue, const vk::SurfaceKHR& surface ) ;
+        void initialize( const nyx::vkg::Queue& present_queue, const vk::SurfaceKHR& surface ) ;
         
         /** Method to check if this object has been initialized or not.
          * @return Whether or not this object is initialized.
@@ -96,7 +96,7 @@ namespace kgl
         /** Method to retrieve the library device used for this object.
          * @return The device used to initialize this object.
          */
-        const kgl::vkg::Device& device() const ;
+        const nyx::vkg::Device& device() const ;
 
         /** Method to set the vulkan format to use for the swapchain creation.
          * @param format The format of the swapchain's images.
@@ -132,7 +132,7 @@ namespace kgl
          * @param idx The index of image to grab. See @count for the number of images.
          * @return const reference to the image at the specified index.
          */
-        const kgl::vkg::Image& image( unsigned idx = 0 ) const ;
+        const nyx::vkg::Image& image( unsigned idx = 0 ) const ;
 
        /** Method to retrieve the current index of image in use by the swapchain.
          * @return The current index of image in use by the swapchain.
@@ -142,12 +142,12 @@ namespace kgl
         /** Method to tell this swapchain to acquire the next image in it's frambuffers.
          * @return The synchronization object used for syncing this acquire with other GPU operations.
          */
-        const kgl::vkg::Synchronization& acquire() ;
+        const nyx::vkg::Synchronization& acquire() ;
         
         /** Method to submit this swapchain's presentation to the queue used for it's initialization.
          * @param sync The synchronization object used to sync this operation so that it occurs after other GPU events.
          */
-        void submit( const kgl::vkg::Synchronization& sync ) ;
+        void submit( const nyx::vkg::Synchronization& sync ) ;
         
         /** Method to reset this object and deallocate all data.
          */
@@ -161,7 +161,7 @@ namespace kgl
          * @see Swapchain::count() for the amount of images in the list.
          * @return Const pointer to the start of the image list.
          */
-        const kgl::vkg::Image* images() const ;
+        const nyx::vkg::Image* images() const ;
 
         /** Forward declared structure to contain this object's internal data.
          */

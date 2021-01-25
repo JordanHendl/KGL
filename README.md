@@ -1,8 +1,8 @@
-# (K)arma (G)PU (L)ibrary
-  KGL is a GPU library aimed to supply a generic interface to interact with the GPU, while also providing specific libraries for API's and OS's for more fine-grained access if needed.
+# NYX
+  Nyx is a GPU library aimed to supply a generic interface to interact with the GPU, while also providing specific libraries for API's and OS's for more fine-grained access if needed.
 
 ## How to build and install
-  KGL is built using **CMake**. If on linux, to build from source, simply do: 
+  Nyx is built using **CMake**. If on linux, to build from source, simply do: 
   
   ```
   mkdir build
@@ -21,12 +21,12 @@
   
   And then simply open the generated .sln with whatever editor of your preference and build.
 
-  Generated RPM's default install to '/usr/local/KGL' on UNIX, and 'C:\Program Files\KGL' on Windows.
+  Generated RPM's default install to '/usr/local/Nyx' on UNIX, and 'C:\Program Files\Nyx' on Windows.
 
   Using with CMake: 
   1) Add the path to the install to your *CMAKE_PREFIX_PATH*.
-  2) ```FIND_PACKAGE( KGL ) ```
-  3) Link against any KGL library ( kgl, kgl_vkg, kgl_linux, etc. ) you need!
+  2) ```FIND_PACKAGE( Nyx ) ```
+  3) Link against any Nyx library ( nyx, nyx_vkg, nyx_linux, etc. ) you need!
   
 ## How to use
   The core library is intended to be a templated GPGPU library that enables development using whatever platform and API.
@@ -45,11 +45,11 @@
   int main()
   {
     // Aliases for API's.
-    using VULKAN = kgl::vkg::Vulkan ;
-    using CUDA   = kgl::cg::Cuda    ;
+    using VULKAN = nyx::vkg::Vulkan ;
+    using CUDA   = nyx::cg::Cuda    ;
 
-    kgl::Memory<CUDA  > cuda_memory   ;
-    kgl::Memory<VULKAN> vulkan_memory ;
+    nyx::Memory<CUDA  > cuda_memory   ;
+    nyx::Memory<VULKAN> vulkan_memory ;
   
     // do things with them here.
 
@@ -61,7 +61,7 @@
 
 ### Example 2 :
   ```
-  // For KGL Window.
+  // For Nyx Window.
   #include <library/Window.h>
   
   // For linux window.
@@ -77,12 +77,12 @@
   int main()
   {
     // Aliases for API's.
-    using VULKAN = kgl::vkg::Vulkan ;
-    using CUDA   = kgl::cg::Cuda    ;
+    using VULKAN = nyx::vkg::Vulkan ;
+    using CUDA   = nyx::cg::Cuda    ;
  
     // Implicit XCB on Linux or WINAPI on Windows depending on OS.
-    kgl::Window<VULKAN> window       ;
-    kgl::lx::Window     linux_window ;
+    nyx::Window<VULKAN> window       ;
+    nyx::lx::Window     linux_window ;
 
     // Initialize window 
     window.initialize( "Test window", 1024, 720 ) ;
@@ -99,13 +99,13 @@
 
 ## Dependancies
 
-  Base, KGL depends on nothing. However, if it can find the libraries on the system, it will build what it can. 
+  Base, Nyx depends on nothing. However, if it can find the libraries on the system, it will build what it can. 
  
-  E.g. If vulkan is found, KGL Vulkan libs will be build.
+  E.g. If vulkan is found, Nyx Vulkan libs will be build.
 
   XCB is used for Linux windowing, however it should be already installed on mosts systems.
 
-  Karma Test ( KT ) is used for testing. To output tests, install the KT library. ( See https://github.com/JordanHendl/KT )
+  Athena is used for testing. To output tests, install the Athena testing library. ( See https://github.com/JordanHendl/Athena )
 
 ## Closing
   For usages of each specific API, I suggest checking out the Test.cpp in each one!

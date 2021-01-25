@@ -22,15 +22,15 @@
  * Created on December 30, 2020, 1:42 PM
  */
 
-#ifndef KGL_VKG_COMMANDBUFFER_H
-#define KGL_VKG_COMMANDBUFFER_H
+#ifndef NYX_VKG_COMMANDBUFFER_H
+#define NYX_VKG_COMMANDBUFFER_H
 
 namespace vk
 {
   class CommandBuffer ;
 }
 
-namespace kgl
+namespace nyx
 {
   namespace vkg
   {
@@ -79,7 +79,7 @@ namespace kgl
          * @param count The number of command buffers to generate.
          * @param level The command buffer level of this object.
          */
-        void initialize( const kgl::vkg::Queue& queue, unsigned count, CommandBuffer::Level level = CommandBuffer::Level::Primary ) ;
+        void initialize( const nyx::vkg::Queue& queue, unsigned count, CommandBuffer::Level level = CommandBuffer::Level::Primary ) ;
         
         /** Method to combine a secondary command buffer into this object.
          * @param cmd The secondary command buffer to consume into this object.
@@ -94,18 +94,18 @@ namespace kgl
         /** Method to retrieve the queue associated with this command buffer & command pool.
          * @return The queue associated with this command buffer & command pool.
          */
-        const kgl::vkg::Queue& queue() const ;
+        const nyx::vkg::Queue& queue() const ;
         
         /** Method to retrive the library device associated with this object.
          * @return The library device associated with this object.
          */
-        const kgl::vkg::Device& device() const ;
+        const nyx::vkg::Device& device() const ;
         
         /** Method to retrieve the specified command buffer at the index.
          * @param idx The index of command buffer to retrieve.
          * @return The command buffer at the specified index.
          */
-        vk::CommandBuffer& buffer( unsigned idx ) ;
+        const vk::CommandBuffer& buffer( unsigned idx ) const ;
         
         /** Method to retrieve the level of command buffer this object is.
          * @return The level ( Primary or Secondary ) of this object.
@@ -121,7 +121,7 @@ namespace kgl
          * @param buffer The buffer containing vertex data to draw.
          * @param offset The elementoffset into the buffer to start drawing at.
          */
-        void draw( const kgl::vkg::Buffer& buffer, unsigned offset = 0 ) ;
+        void draw( const nyx::vkg::Buffer& buffer, unsigned offset = 0 ) ;
         
         /** Method to record a instanced draw operation on this object's command buffers.
          * @param buffer The buffer containing vertex data to draw instanced.
@@ -129,19 +129,19 @@ namespace kgl
          * @param offset The offset into the buffer to start drawing.
          * @param first The first index into the buffer to draw at.
          */
-        void drawInstanced( const kgl::vkg::Buffer& buffer, unsigned instance_count, unsigned offset = 0, unsigned first = 0 ) ;
+        void drawInstanced( const nyx::vkg::Buffer& buffer, unsigned instance_count, unsigned offset = 0, unsigned first = 0 ) ;
         
         /** Method to record an indexed draw command to this object's command buffers.
          * @param indices The buffer containing the indices of the vertex buffer to draw.
          * @param vertices The vertex buffer used for drawing.
          */
-        void drawIndexed( const kgl::vkg::Buffer& indices, const kgl::vkg::Buffer& vertices ) ;
+        void drawIndexed( const nyx::vkg::Buffer& indices, const nyx::vkg::Buffer& vertices ) ;
         
         /** Method to begin all this object's command buffers record using input render pass.
          * @param render_pass Method to begin the render pass & all this object's command buffers record as well.
          * @param index The index of command buffer to start recording.
          */
-        void record( const kgl::vkg::RenderPass& render_pass, unsigned index ) ;
+        void record( const nyx::vkg::RenderPass& render_pass, unsigned index ) ;
         
         /** Method to begin all of this object's command buffers recording.
          */
@@ -150,7 +150,7 @@ namespace kgl
         /** Method to begin all this object's command buffers record using input render pass.
          * @param render_pass Method to begin the render pass & all this object's command buffers record as well.
          */
-        void record( const kgl::vkg::RenderPass& render_pass ) ;
+        void record( const nyx::vkg::RenderPass& render_pass ) ;
         
         /** Method to begin all of this object's command buffers recording.
          */
