@@ -23,17 +23,6 @@
  */
 
 #include "Vulkan.h"
-#include "Device.h"
-#include "Instance.h"
-#include "Buffer.h"
-#include "Image.h"
-#include "Queue.h"
-#include "CommandBuffer.h"
-#include "Synchronization.h"
-#include "NyxShader.h"
-#include "RenderPass.h"
-#include "Pipeline.h"
-#include "Swapchain.h"
 #include <library/Array.h>
 #include <library/Memory.h>
 #include <library/Image.h>
@@ -48,16 +37,16 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-using Impl = ::nyx::vkg::Vulkan ;
+using Impl = nyx::vkg::Vulkan ;
 
-static nyx::vkg::Instance  instance       ;
-static nyx::vkg::Device    device         ;
-static nyx::vkg::Queue     graphics_queue ;
-static nyx::vkg::Swapchain swapchain      ;
+static Impl::Instance      instance       ;
+static Impl::Device        device         ;
+static Impl::Queue         graphics_queue ;
+static Impl::Swapchain     swapchain      ;
 static nyx::Window<Impl>   window         ;
 static athena::Manager     manager        ;
-static std::vector<unsigned> test_array ;
 
+static std::vector<unsigned> test_array ;
 
 const unsigned test_vert[] = 
 {
@@ -129,11 +118,116 @@ const unsigned test_frag[] =
 	0x000100fd,0x00010038
 };
 
-bool testMemoryHostGPUCopy()
+athena::Result instance_initialization_test()
+{
+  // Initialize Instance.
+  instance.setApplicationName( "NYX-VKG Test App"                        ) ;
+  instance.addExtension      ( Impl::platformSurfaceInstanceExtensions() ) ;
+  instance.addExtension      ( "VK_KHR_surface"                          ) ;
+  instance.addValidationLayer( "VK_LAYER_KHRONOS_validation"             ) ;
+  instance.addValidationLayer( "VK_LAYER_LUNARG_standard_validation"     ) ;
+  
+  instance.initialize() ;
+  
+  if( instance.initialized() ) return true ;
+  return false ;
+}
+
+athena::Result window_creation_test()
+{
+  window.initialize( "Test", 1240, 1024 ) ;
+  
+  if( !window.initialized() ) return athena::Result::Fail ;
+  return true ;
+}
+
+athena::Result device_creation_test()
+{
+  if( instance.numDevices() == 0 ) return athena::Result::Skip ;
+  
+  device  .addValidationLayer( "VK_LAYER_KHRONOS_validation"         ) ;
+  device  .addValidationLayer( "VK_LAYER_LUNARG_standard_validation" ) ;
+  device  .addExtension      ( "VK_KHR_swapchain"                    ) ;
+  device.initialize( instance.device( 0 ), window.context() ) ;
+  
+  if( !device.initialized() ) return athena::Result::Fail ;
+  
+  return athena::Result::Pass ;
+}
+
+athena::Result graphics_queue_get_test()
+{
+  graphics_queue = device.graphicsQueue() ;
+  
+  if( !device.initialized() ) return athena::Result::Skip ;
+  if( !graphics_queue.valid() || !graphics_queue.graphics() ) return false ;
+  
+  return true ;
+}
+
+athena::Result swapchain_creation_test()
+{
+  swapchain.initialize( graphics_queue, window.context() ) ;
+  
+  if( !device.initialized() ) return athena::Result::Skip ;
+  if( !swapchain.initialized() ) return false ;
+  return true ;
+}
+
+athena::Result array_initialize_test()
+{
+  Impl::Array<float> array ;
+  
+  if( !device.initialized() ) return athena::Result::Skip ;
+  array.initialize( device, 500, true ) ;
+  array.reset() ;
+  return true ;
+}
+
+athena::Result array_size_test()
+{
+  Impl::Array<float> array ;
+  
+  if( !device.initialized() ) return athena::Result::Skip ;
+  array.initialize( device, 500, true ) ;
+  if( array.size() != 500 ) return athena::Result::Fail ;
+  
+  return true ;
+}
+athena::Result array_host_copy_test()
+{
+  Impl::CommandRecord   cmd      ;
+  Impl::Array<unsigned> buffer_1 ;
+  Impl::Array<unsigned> buffer_2 ; 
+  
+  test_array.resize( 500 ) ;
+  std::fill( test_array.begin(), test_array.end(), 76006 ) ;
+
+  if( !device.initialized() ) return athena::Result::Skip ;
+  buffer_1.initialize( device, 500, true  ) ;
+  buffer_2.initialize( device, 500, false ) ;
+  cmd     .initialize( graphics_queue, 1  ) ;
+  if( cmd.size() != 1 ) return false ;
+  
+  // Record copy command.
+  cmd.record() ;
+  buffer_1.copyToDevice( test_array.data(), 500 ) ;
+  buffer_2.copy( buffer_1, cmd ) ;
+  cmd.stop() ;
+  
+  // Submit & Sync.
+  graphics_queue.submit( cmd ) ;
+  cmd.reset() ;
+  
+  return true ;
+}
+
+athena::Result testMemoryHostGPUCopy()
 {
   nyx::Memory<Impl>     memory   ;
   std::vector<unsigned> host_mem ;
   
+  if( !device.initialized() ) return athena::Result::Skip ;
   memory.initialize( device, sizeof( unsigned ) * 200, true, ::vk::MemoryPropertyFlagBits::eHostVisible | ::vk::MemoryPropertyFlagBits::eHostCoherent ) ;
   host_mem.resize( 200 ) ;
   std::fill( host_mem.begin(), host_mem.end(), 2503 ) ;
@@ -155,13 +249,12 @@ bool testMemoryHostGPUCopy()
   return true ;
 }
 
-bool testBufferSingleAllocation()
+athena::Result testBufferSingleAllocation()
 {
-  nyx::vkg::Buffer buffer ;
+  Impl::Buffer buffer ;
   
+  if( !device.initialized() ) return athena::Result::Skip ;
   buffer.initialize( device, 200, false ) ;
-  
-  
 
   if( buffer.buffer() && buffer.memory().memory() ) 
   {
@@ -173,15 +266,16 @@ bool testBufferSingleAllocation()
   return false ;
 }
 
-bool testBufferPreallocatedSingle()
+athena::Result testBufferPreallocatedSingle()
 {
   const unsigned buffer_size = sizeof( unsigned ) * 200 ;
-  nyx::vkg::Buffer  buffer ;
+  Impl::Buffer      buffer ;
   nyx::Memory<Impl> memory ;
   unsigned          binded ;
   
   binded = 0 ;
   
+  if( !device.initialized() ) return athena::Result::Skip ;
             memory.initialize( device, sizeof( unsigned ) * 1000 ) ;
   binded += buffer.initialize( memory, buffer_size               ) ;
   
@@ -196,17 +290,17 @@ bool testBufferPreallocatedSingle()
   return false ;
 }
 
-bool testBufferPreallocatedMultiple()
+athena::Result testBufferPreallocatedMultiple()
 {
   const unsigned buffer_size = sizeof( unsigned ) * 200 ;
-  nyx::vkg::Buffer  buffer_one ;
-  nyx::vkg::Buffer  buffer_two ;
+  Impl::Buffer      buffer_one ;
+  Impl::Buffer      buffer_two ;
   nyx::Memory<Impl> memory_one ;
   nyx::Memory<Impl> memory_two ;
   unsigned          binded     ;
   
   binded = 0 ;
-  
+  if( !device.initialized() ) return athena::Result::Skip ;
             memory_one.initialize( device, sizeof( unsigned ) * 1000 ) ;
   binded += buffer_one.initialize( memory_one, buffer_size           ) ;
   
@@ -226,19 +320,11 @@ bool testBufferPreallocatedMultiple()
   return false ;
 }
 
-bool simpleArrayTest()
+athena::Result simpleImageTest()
 {
-  nyx::vkg::VkArray<float> array ;
+  Impl::Image<nyx::ImageFormat::RGBA8> image ;
   
-  array.initialize( device, 500, true ) ;
-  array.reset() ;
-  return true ;
-}
-
-bool simpleImageTest()
-{
-  nyx::vkg::CharVkImage image ;
-  
+  if( !device.initialized() ) return athena::Result::Skip ;
   if( image.initialize( device, 1280, 720 ) )
   {
     image.reset() ;
@@ -248,43 +334,16 @@ bool simpleImageTest()
   return false ;
 }
 
-bool arrayCopyTest()
+athena::Result arrayCopyNonSyncedTest()
 {
-  nyx::vkg::CommandBuffer     cmd      ;
-  nyx::vkg::VkArray<unsigned> buffer_1 ;
-  nyx::vkg::VkArray<unsigned> buffer_2 ; 
+  Impl::CommandRecord   cmd      ;
+  Impl::Array<unsigned> buffer_1 ;
+  Impl::Array<unsigned> buffer_2 ; 
+  Impl::Synchronization sync     ;
   
   test_array.resize( 500 ) ;
   std::fill( test_array.begin(), test_array.end(), 76006 ) ;
-
-  buffer_1.initialize( device, 500, true  ) ;
-  buffer_2.initialize( device, 500, false ) ;
-  cmd     .initialize( graphics_queue, 1  ) ;
-  if( cmd.size() != 1 ) return false ;
-  
-  // Record copy command.
-  cmd.record() ;
-  buffer_1.copyToDevice( test_array.data(), 500 ) ;
-  buffer_2.copy( buffer_1, cmd.buffer( 0 ) ) ;
-  cmd.stop() ;
-  
-  // Submit & Sync.
-  graphics_queue.submit( cmd ) ;
-  cmd.reset() ;
-  
-  return true ;
-}
-
-bool arrayCopyNonSyncedTest()
-{
-  nyx::vkg::CommandBuffer     cmd      ;
-  nyx::vkg::VkArray<unsigned> buffer_1 ;
-  nyx::vkg::VkArray<unsigned> buffer_2 ; 
-  nyx::vkg::Synchronization   sync     ;
-  
-  test_array.resize( 500 ) ;
-  std::fill( test_array.begin(), test_array.end(), 76006 ) ;
-
+  if( !device.initialized() ) return athena::Result::Skip ;
   buffer_1.initialize( device, 500, true  ) ;
   buffer_2.initialize( device, 500, false ) ;
   cmd     .initialize( graphics_queue, 1  ) ;
@@ -294,7 +353,7 @@ bool arrayCopyNonSyncedTest()
   // Record copy command.
   cmd.record() ;
   buffer_1.copyToDevice( test_array.data(), 500 ) ;
-  buffer_2.copy( buffer_1, cmd.buffer( 0 ) ) ;
+  buffer_2.copy( buffer_1, cmd ) ;
   cmd.stop() ;
   
   // Submit & Sync.
@@ -302,17 +361,18 @@ bool arrayCopyNonSyncedTest()
   return true ;
 }
 
-bool shaderTest()
+athena::Result shaderTest()
 {
-  nyx::vkg::KgShader        shader   ;
-  nyx::vkg::RenderPass      pass     ;
-  nyx::vkg::Pipeline        pipeline ;
-  nyx::vkg::CommandBuffer   buffer   ;
+  Impl::Shader        shader   ;
+  Impl::RenderPass    pass     ;
+  Impl::Pipeline      pipeline ;
+  Impl::CommandRecord buffer   ;
   
-  nyx::List<nyx::vkg::Synchronization> syncs ;
+  nyx::List<Impl::Synchronization> syncs ;
   
+  if( !device.initialized() ) return athena::Result::Skip ;
   // Add shaders.
-  shader.addAttribute   ( 0, 0, nyx::vkg::KgShader::Format::vec4, 0                                    ) ;
+  shader.addAttribute   ( 0, 0, Impl::Shader::Format::vec4, 0                                    ) ;
   shader.addInputBinding( 0, sizeof( float ) * 3, vk::VertexInputRate::eVertex                         ) ;
   shader.addDescriptor  ( 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eFragment ) ;
   shader.addShaderModule( vk::ShaderStageFlagBits::eVertex  , test_vert, sizeof( test_vert )           ) ;
@@ -349,17 +409,17 @@ bool shaderTest()
   return true ;
 }
 
-bool imageLoadTest()
+athena::Result imageLoadTest()
 {
-  nyx::vkg::VkArray<unsigned char> staging ; 
-  nyx::vkg::Image                  image   ;
-  nyx::vkg::CommandBuffer          cmd     ;
+  Impl::Array<unsigned char> staging ; 
+  nyx::RGBAImage<Impl>       image   ;
+  Impl::CommandRecord        cmd     ;
   int width  ;
   int height ;
   int chan   ;
   
   auto bytes = stbi_load( "test_image.jpeg", &width, &height, &chan, STBI_rgb_alpha ) ;
-  
+  if( !device.initialized() ) return athena::Result::Skip ;
   cmd.initialize      ( graphics_queue, 1 ) ;
   staging.initialize  ( device, static_cast<unsigned>( width * height * 4 ), true, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst ) ;
   staging.copyToDevice( bytes, static_cast<unsigned>( width * height * 4 ) ) ;
@@ -367,7 +427,7 @@ bool imageLoadTest()
   if( !image.initialize( device, static_cast<unsigned>( width ), static_cast<unsigned>( height ), 1 ) ) return false ;
   
   cmd.record() ;
-  image.copy( staging.buffer(), cmd.buffer( 0 ) ) ;
+  image.copy( staging.buffer(), cmd ) ;
   cmd.stop() ;
   
   graphics_queue.submit( cmd ) ;
@@ -377,36 +437,24 @@ bool imageLoadTest()
 
 int main()
 {
-  // Initialize Instance.
-  instance.setApplicationName( "NYX-VKG Test App"                        ) ;
-  instance.addExtension      ( Impl::platformSurfaceInstanceExtensions() ) ;
-  instance.addExtension      ( "VK_KHR_surface"                          ) ;
-  instance.addValidationLayer( "VK_LAYER_KHRONOS_validation"             ) ;
-  instance.addValidationLayer( "VK_LAYER_LUNARG_standard_validation"     ) ;
-  instance.addValidationLayer( "VK_LAYER_RENDERDOC_Capture"              ) ;
-  device  .addValidationLayer( "VK_LAYER_KHRONOS_validation"             ) ;
-  device  .addValidationLayer( "VK_LAYER_RENDERDOC_Capture"              ) ;
-  device  .addValidationLayer( "VK_LAYER_LUNARG_standard_validation"     ) ;
-  device  .addExtension      ( "VK_KHR_swapchain"                        ) ;
-  
-  instance.initialize() ;
-  window.initialize( "Test", 1240, 1024 ) ;
-  device.initialize( instance.device( 0 ), window.context() ) ;
-
-  graphics_queue = device.graphicsQueue() ;
-  
-  swapchain.initialize( graphics_queue, window.context() ) ; 
-
-  manager.add( "1) Array Test"                           , &simpleArrayTest                ) ;
-  manager.add( "2) Array Copy & Synced Submit Test"      , &arrayCopyTest                  ) ;
-  manager.add( "3) Array Copy & Non-Synced Submit Test"  , &arrayCopyNonSyncedTest         ) ;
-  manager.add( "4) Buffer Creation & Allocation"         , &testBufferSingleAllocation     ) ;
-  manager.add( "5) Preallocated Buffer Creation"         , &testBufferPreallocatedSingle   ) ;
-  manager.add( "6) Multiple Preallocated Buffer Creation", &testBufferPreallocatedMultiple ) ;
-  manager.add( "7) Memory Host-GPU Copy"                 , &testMemoryHostGPUCopy          ) ;
-  manager.add( "8) Image Test"                           , &simpleImageTest                ) ;
-  manager.add( "8) Pipeline Test"                        , &shaderTest                     ) ;
-  manager.add( "9) Image Copy Test"                      , &imageLoadTest                  ) ;
+  manager.initialize( "Nyx VULKAN Library" ) ;
+  manager.add( "A1)  Instance Creation Test"               , &instance_initialization_test   ) ;
+  manager.add( "A2)  Window Creation Test"                 , &window_creation_test           ) ;
+  manager.add( "A3)  Device Creation Test"                 , &device_creation_test           ) ;
+  manager.add( "A4)  Graphics Queue Grab Test"             , &graphics_queue_get_test        ) ;
+  manager.add( "A5)  Swapchain Creation Test"              , &swapchain_creation_test        ) ;
+  manager.add( "A6)  Array::initialize Test"               , &array_initialize_test          ) ;
+  manager.add( "A7)  Array::size Test"                     , &array_size_test                ) ;
+  manager.add( "A8)  Array::copy Test"                     , &array_host_copy_test           ) ;
+//  manager.add( "9)  Array Copy & Synced Submit Test"      , &array_copy_test                ) ;
+  manager.add( "B0) Array Copy & Non-Synced Submit Test"  , &arrayCopyNonSyncedTest         ) ;
+  manager.add( "B1) Buffer Creation & Allocation"         , &testBufferSingleAllocation     ) ;
+  manager.add( "B2) Preallocated Buffer Creation"         , &testBufferPreallocatedSingle   ) ;
+  manager.add( "B3) Multiple Preallocated Buffer Creation", &testBufferPreallocatedMultiple ) ;
+  manager.add( "B4) Memory Host-GPU Copy"                 , &testMemoryHostGPUCopy          ) ;
+  manager.add( "B5) Image Test"                           , &simpleImageTest                ) ;
+  manager.add( "B6) Pipeline Test"                        , &shaderTest                     ) ;
+  manager.add( "B7) Image Copy Test"                      , &imageLoadTest                  ) ;
   
   std::cout << "\nTesting VKG Library" << std::endl ;
   

@@ -59,7 +59,9 @@ namespace nyx
        * @param family The family to retrieve an index of.
        * @return The index of the specified family.
        */
-      unsigned index( unsigned family )    ;
+      unsigned index( unsigned family ) ;
+      
+      vk::QueueFlags mask( unsigned family ) ;
     };
     
     /** Structure to manage vulkan queue families.
@@ -155,6 +157,18 @@ namespace nyx
         return this->count++ ;
       }
       return 0 ;
+    }
+    
+    vk::QueueFlags QueueCount::mask( unsigned family )
+    {
+      family = family ;
+      if( this->queues.size() != 0 )
+      {
+        auto prop = std::get<1>( this->queues[ 0 ] ) ;
+        return prop->queueFlags ;
+      }
+      else
+      return static_cast<vk::QueueFlags>( 0 ) ;
     }
 
     unsigned QueueCount::getQueue()
@@ -418,6 +432,11 @@ namespace nyx
     {
       data().features.setRobustBufferAccess( value ) ;
     }
+    
+    bool Device::initialized() const
+    {
+      return data().gpu ;
+    }
 
     void Device::initialize( const ::vk::PhysicalDevice& physical_device )
     {
@@ -453,17 +472,23 @@ namespace nyx
     //TODO These getters for queues are very bad. Do better eventually.
     const nyx::vkg::Queue& Device::graphicsQueue()
     {
+      static const nyx::vkg::Queue dummy ;
       const unsigned family = data().queue_families.graphics.getQueue() ;
-      const unsigned index  = data().queue_families.graphics.index( family ) ;
+//      const unsigned index  = data().queue_families.graphics.index( family ) ;
+      const unsigned mask   = static_cast<unsigned>( data().queue_families.graphics.mask( family ) ) ;
       vk::Queue       vk_queue ;
       nyx::vkg::Queue queue    ;
       
-      vk_queue = data().gpu.getQueue( family, index ) ;
-      queue.initialize( *this, vk_queue, family, data().queues.size() ) ;
+      if( data().gpu )
+      {
+        vk_queue = data().gpu.getQueue( family, 0 ) ;
+        queue.initialize( *this, vk_queue, family, mask ) ;
+        data().queues.push_back( queue ) ;
       
-      data().queues.push_back( queue ) ;
+        return data().queues.back() ;
+      }
       
-      return data().queues.back() ;
+      return dummy ;
     }
     
     const nyx::vkg::Queue& Device::presentQueue()

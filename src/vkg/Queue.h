@@ -74,7 +74,27 @@ namespace nyx
          * @return Whether or not this object is initalized.
          */
         operator bool() const ;
-
+        
+        /** Method to retrieve whether or not this queue is valid.
+         * @return Whether or not this queue is valid.
+         */
+        bool valid() const ;
+        
+        /** Method to check whether or not this queue can do graphics.
+         * @return Whether or not this queue can do graphics.
+         */
+        bool graphics() const ;
+        
+        /** Method to check whether or not this queue can do compute.
+         * @return Whether or not this queue can do compute.
+         */
+        bool compute() const ;
+        
+        /** Method to check whether or not this queue can do compute.
+         * @return Whether or not this queue can do compute.
+         */
+        bool present() const ;
+        
         /** Assignment operator. Assigns this queue to the input.
          * @param queue The queue to assign this object to.
          * @return Reference to this object after assignment.

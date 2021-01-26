@@ -17,6 +17,7 @@
 
 #include "Vulkan.h"
 #include "Device.h"
+#include "library/Image.h"
 #include <algorithm>
 #include <iostream>
 
@@ -117,6 +118,44 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        this->flag = ( flags ) ;
        
        return *this ;
+     }
+
+     vk::Format Vulkan::convert( nyx::ImageFormat format )
+     {
+       switch( format )
+       {
+         case nyx::ImageFormat::R8      : return vk::Format::eR8Srgb             ;
+         case nyx::ImageFormat::RGB8    : return vk::Format::eR8G8B8Srgb         ;
+         case nyx::ImageFormat::BGR8    : return vk::Format::eB8G8R8Srgb         ;
+         case nyx::ImageFormat::RGBA8   : return vk::Format::eR8G8B8A8Srgb       ;
+         case nyx::ImageFormat::BGRA8   : return vk::Format::eB8G8R8A8Srgb       ;
+         case nyx::ImageFormat::R32I    : return vk::Format::eR32Sint            ;
+         case nyx::ImageFormat::RGB32I  : return vk::Format::eR32G32B32Sint      ;
+         case nyx::ImageFormat::RGBA32I : return vk::Format::eR32G32B32A32Sint   ;
+         case nyx::ImageFormat::R32F    : return vk::Format::eR32Sfloat          ;
+         case nyx::ImageFormat::RGB32F  : return vk::Format::eR32G32B32Sfloat    ;
+         case nyx::ImageFormat::RGBA32F : return vk::Format::eR32G32B32A32Sfloat ;
+         default : return vk::Format::eUndefined ;
+       }
+     }
+
+     nyx::ImageFormat Vulkan::convert( vk::Format format )
+     {
+       switch( format )
+       {
+         case vk::Format::eR8Srgb             : return nyx::ImageFormat::R8      ;
+         case vk::Format::eR8G8B8Srgb         : return nyx::ImageFormat::RGB8    ;
+         case vk::Format::eB8G8R8Srgb         : return nyx::ImageFormat::BGR8    ;
+         case vk::Format::eR8G8B8A8Srgb       : return nyx::ImageFormat::RGBA8   ;
+         case vk::Format::eB8G8R8A8Srgb       : return nyx::ImageFormat::BGRA8   ;
+         case vk::Format::eR32Sint            : return nyx::ImageFormat::R32I    ;
+         case vk::Format::eR32G32B32Sint      : return nyx::ImageFormat::RGB32I  ;
+         case vk::Format::eR32G32B32A32Sint   : return nyx::ImageFormat::RGBA32I ;
+         case vk::Format::eR32Sfloat          : return nyx::ImageFormat::R32F    ;
+         case vk::Format::eR32G32B32Sfloat    : return nyx::ImageFormat::RGB32F  ;
+         case vk::Format::eR32G32B32A32Sfloat : return nyx::ImageFormat::RGBA32F ;
+         default : return nyx::ImageFormat::RGB8 ;
+       }
      }
 
      void Vulkan::initialize( const vk::Instance& instance )

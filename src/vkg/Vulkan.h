@@ -18,6 +18,18 @@
 #ifndef NYX_VULKAN_H
 #define NYX_VULKAN_H
 
+#include "Device.h"
+#include "Instance.h"
+#include "Buffer.h"
+#include "Image.h"
+#include "Queue.h"
+#include "CommandBuffer.h"
+#include "Synchronization.h"
+#include "NyxShader.h"
+#include "RenderPass.h"
+#include "Pipeline.h"
+#include "Swapchain.h"
+
 typedef unsigned VkFlags ;
 
 /** Forward declared vulkan-specific objects.
@@ -44,7 +56,14 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second ) ;
 
 namespace nyx
 {
+  /** Forward declared enum for image format.
+   */
+  enum class ImageFormat ;
   
+  /** Forward decalred enum for image layout.
+   */
+  enum class ImageLayout ;
+
   /** Forward declared Memory object for friendship.
    */
   template<typename IMPL>
@@ -57,7 +76,7 @@ namespace nyx
   
   /** Forward declared generic image object.
    */
-  template<typename IMPL, typename TYPE>
+  template<typename IMPL, ImageFormat FORMAT>
   
   class Image ;
   
@@ -155,15 +174,38 @@ namespace nyx
     class Vulkan
     {
       public:
-        using Device         = ::nyx::vkg::Device                        ; ///< TODO
-        using Buffer         = ::nyx::vkg::Buffer                        ; ///< TODO
-        using Image          = ::nyx::vkg::Image                         ; ///< TODO
-        using Memory         = ::vk::DeviceMemory                        ; ///< TODO
-        using CommandRecord  = ::vk::CommandBuffer                       ; ///< TODO
-        using MemoryPropFlag = ::vk::Flags<::vk::MemoryPropertyFlagBits> ; ///< TODO
-        using ImageLayout    = ::vk::ImageLayout                         ; ///< TODO
-        using ImageFormat    = ::vk::Format                              ; ///< TODO
-        using Context        = ::vk::SurfaceKHR                          ; ///< TODO
+        using Buffer          = nyx::vkg::Buffer                            ; 
+        using CommandRecord   = nyx::vkg::CommandBuffer                     ; 
+        using Context         = vk::SurfaceKHR                              ; 
+        using Device          = nyx::vkg::Device                            ; 
+        using RenderPass      = nyx::vkg::RenderPass                        ;
+        using Instance        = nyx::vkg::Instance                          ;
+        using Texture         = nyx::vkg::Image                             ; 
+        using Memory          = vk::DeviceMemory                            ; 
+        using MemoryPropFlag  = vk::Flags<::vk::MemoryPropertyFlagBits>     ; 
+        using Pipeline        = nyx::vkg::Pipeline                          ;
+        using Queue           = nyx::vkg::Queue                             ;
+        using Shader          = nyx::vkg::NyxShader                         ;
+        using Swapchain       = nyx::vkg::Swapchain                         ; 
+        using Synchronization = nyx::vkg::Synchronization                   ;
+
+        template<typename TYPE>
+        using Array  = nyx::Array <nyx::vkg::Vulkan, TYPE> ;
+    
+        template<nyx::ImageFormat FORMAT>
+        using Image = nyx::Image<nyx::vkg::Vulkan, FORMAT> ;
+        
+        /** Static method to convert a library format to the implementation-specific format.
+         * @param format The library format to convert.
+         * @return The implementation-specific format.
+         */
+        static vk::Format convert( nyx::ImageFormat format ) ;
+        
+        /** Static method to convert a library format to the implementation-specific format.
+         * @param format The library format to convert.
+         * @return The implementation-specific format.
+         */
+        static nyx::ImageFormat convert( vk::Format format ) ;
 
         /** Static method to initialize this implementation with a vulkan instance.
          * @param instance
@@ -290,18 +332,6 @@ namespace nyx
          */
         Memory createMemory( const Vulkan::Device& gpu, unsigned size, Vulkan::MemoryFlags mem_flags, unsigned filter = 0xFFFFFFF ) ;
     };
-
-    /** Aliases for parent types.
-     */
-    template<typename TYPE>
-    using VkArray  = nyx::Array <nyx::vkg::Vulkan, TYPE> ;
-
-    template<typename TYPE>
-    using VkImage = nyx::Image<nyx::vkg::Vulkan, TYPE> ;
-
-    using VkMemory     = nyx::Memory<nyx::vkg::Vulkan              > ;
-    using FloatVkImage = nyx::Image<nyx::vkg::Vulkan, float        > ;
-    using CharVkImage  = nyx::Image<nyx::vkg::Vulkan, unsigned char> ;
   }
 }
 

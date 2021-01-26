@@ -89,6 +89,8 @@ int main()
 {
   event.enroll( &obj, &Object::inputB, nyx::Key::B, "OnlyBMethod" ) ;
   event.enroll( &onlyKeyUp, nyx::Key::A, "OnlyA" ) ;
+  
+  manager.initialize( "Nyx Linux Library" ) ;
   manager.add( "1) Linux Event Handler: Method Only Specific Key Events Test."   , &checkMethodInput   ) ;
   manager.add( "2) Linux Event Handler: Function Only Specific Type Events Test.", &checkMethodInput   ) ;
   manager.add( "3) Linux Window Creation Test."                                  , &testWindowCreation ) ;

@@ -60,7 +60,7 @@ namespace nyx
     
     /** Class for managing vulkan shaders & importing KgShaders.
      */
-    class KgShader
+    class NyxShader
     {
       public:
         
@@ -84,22 +84,22 @@ namespace nyx
 
         /** Default constructor.
          */
-        KgShader() ;
+        NyxShader() ;
         
         /** Copy constructor. Assigns this object to the input.
          * @param shader The shader to assign this object to.
          */
-        KgShader( const KgShader& shader ) ;
+        NyxShader( const NyxShader& shader ) ;
         
         /** Default deconstructor.
          */
-        ~KgShader() ;
+        ~NyxShader() ;
         
         /** Assignment operator. Assigns this object to the input.
          * @param shader The shader to assign this object to.
          * @return Reference to this object after assignment.
          */
-        KgShader& operator=( const KgShader& shader ) ;
+        NyxShader& operator=( const NyxShader& shader ) ;
         
         /** Method to initialize this shader with the provided input.
          * @param device The library device to use for all vulkan operations.
@@ -134,7 +134,7 @@ namespace nyx
          * @param format The vulkan format of the attribute.
          * @param offset The offset of the attribute.
          */
-        void addAttribute( unsigned location, unsigned binding, const KgShader::Format& format, unsigned offset ) ;
+        void addAttribute( unsigned location, unsigned binding, const NyxShader::Format& format, unsigned offset ) ;
         
         /** Method to manually add a descriptor to this shader.
          * @param binding The binding number of the entry, corresponds to a resource of the same binding in the shader stages.

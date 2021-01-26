@@ -358,7 +358,7 @@ namespace nyx
       data().instance.destroy() ;
     }
     
-    bool Instance::isInitialized() const
+    bool Instance::initialized() const
     {
       return data().instance ? true : false ;
     }

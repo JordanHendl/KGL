@@ -27,6 +27,7 @@
 #include "Image.h"
 #include "Device.h"
 #include "Queue.h"
+#include "Vulkan.h"
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <queue>
@@ -126,7 +127,7 @@ namespace nyx
       for( unsigned index = 0; index < this->images.size(); index++ )
       {
         this->images[ index ].setFormat( this->surface_format.format ) ;
-        this->images[ index ].initialize( this->present_queue.device(), this->extent.width, this->extent.height, imgs[ index ] ) ;
+        this->images[ index ].initialize( this->present_queue.device(), nyx::vkg::Vulkan::convert( this->surface_format.format ), this->extent.width, this->extent.height, imgs[ index ] ) ;
       }
     }
     

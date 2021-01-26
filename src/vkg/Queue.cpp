@@ -46,8 +46,8 @@ namespace nyx
       vk::Queue        queue  ; ///< The underlying vulkan queue.
       nyx::vkg::Device device ; ///< The device associated with this queue.
       vk::SubmitInfo   submit ; ///< The submit structure created here for cacheing.
+      vk::QueueFlags   mask   ; ///< The ID associated with this queue.
       unsigned         family ; ///< The queue family associated with this queue.
-      unsigned         id     ; ///< The ID associated with this queue.
       
       /** Default constructor.
        */
@@ -57,7 +57,6 @@ namespace nyx
     QueueData::QueueData()
     {
       this->family = UINT32_MAX ;
-      this->id     = UINT32_MAX ;
     }
 
     Queue::Queue()
@@ -79,6 +78,18 @@ namespace nyx
     
     Queue::operator bool() const
     {
+      return this->valid() ;
+    }
+    
+    Queue& Queue::operator=( const Queue& queue )
+    {
+      *this->queue_data = *queue.queue_data ;
+      
+      return *this ;
+    }
+    
+    bool Queue::valid() const
+    {
       if( data().queue && data().family != UINT32_MAX )
       {
         return true ;
@@ -87,11 +98,22 @@ namespace nyx
       return false ;
     }
     
-    Queue& Queue::operator=( const Queue& queue )
+    bool Queue::graphics() const
     {
-      *this->queue_data = *queue.queue_data ;
-      
-      return *this ;
+      if( data().mask & ::vk::QueueFlagBits::eGraphics ) return true ;
+      return false ;
+    }
+    
+    bool Queue::compute() const
+    {
+      if( data().mask & ::vk::QueueFlagBits::eCompute ) return true ;
+      return false ;
+    }
+    
+    bool Queue::present() const
+    {
+      if( data().mask & ::vk::QueueFlagBits::eGraphics ) return true ;
+      return false ;
     }
     
     unsigned Queue::family() const
@@ -208,12 +230,12 @@ namespace nyx
       mutex_map[ data().family ].unlock() ;
     }
 
-    void Queue::initialize( const nyx::vkg::Device& device, const vk::Queue& queue, unsigned queue_family, unsigned queue_id )
+    void Queue::initialize( const nyx::vkg::Device& device, const vk::Queue& queue, unsigned queue_family, unsigned mask )
     {
-      data().device = device       ;
-      data().queue  = queue        ;
-      data().family = queue_family ;
-      data().id     = queue_id     ;
+      data().device = device                              ;
+      data().queue  = queue                               ;
+      data().family = queue_family                        ;
+      data().mask   = static_cast<vk::QueueFlags>( mask ) ;
     }
 
     QueueData& Queue::data()

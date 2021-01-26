@@ -120,6 +120,11 @@ namespace nyx
          */
         operator ::vk::Device() ;
         
+        /** Method to retrieve whether or not this object is initialized.
+         * @return Whether or not this object is initialized.
+         */
+        bool initialized() const ;
+
         /** Method to initialize this object with the input physical device.
          * @param physical_device The physical device to use for this device's definitions.
          */

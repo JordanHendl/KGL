@@ -57,7 +57,7 @@ namespace nyx
       PipelineConfig       config              ; ///< TODO
       nyx::vkg::Device     device              ; ///< TODO
       nyx::vkg::RenderPass render_pass         ; ///< TODO
-      nyx::vkg::KgShader   shader              ; ///< TODO
+      nyx::vkg::NyxShader   shader              ; ///< TODO
       vk::Pipeline         pipeline            ; ///< TODO
       vk::PipelineLayout   layout              ; ///< TODO
       vk::PipelineCache    cache               ; ///< TODO
@@ -241,7 +241,7 @@ namespace nyx
       data().createPipeline() ;
     }
 
-    void Pipeline::initialize( const KgShader& shader )
+    void Pipeline::initialize( const NyxShader& shader )
     {
       data().shader = shader          ;
       data().device = shader.device() ;
@@ -250,7 +250,7 @@ namespace nyx
       data().createPipeline() ;
     }
 
-    void Pipeline::initialize( const nyx::vkg::RenderPass& pass, const KgShader& shader )
+    void Pipeline::initialize( const nyx::vkg::RenderPass& pass, const NyxShader& shader )
     {
       data().render_pass = pass          ;
       data().device      = pass.device() ;

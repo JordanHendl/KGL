@@ -26,6 +26,7 @@
 #include "Device.h"
 #include "Image.h"
 #include "Swapchain.h"
+#include "Vulkan.h"
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <array>
@@ -163,7 +164,9 @@ namespace nyx
       
       for( auto& image : this->images )
       {
-        image.initialize( this->device, this->width, this->height, this->layers ) ;
+        auto format = nyx::vkg::Vulkan::convert( this->attach_descriptions[ 0 ].format ) ;
+        
+        image.initialize( this->device, format, this->width, this->height, this->layers ) ;
 
         view[ 0 ] = image.view() ;
         

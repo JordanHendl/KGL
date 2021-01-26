@@ -75,6 +75,7 @@ int main()
   Impl::initialize() ;
   std::cout << "Testing NYX CUDA Library" << std::endl ;
   
+  manager.initialize( "Nyx CUDA Library" ) ;
   manager.add( "1) Memory Host-GPU Copy", &testMemoryHostGPUCopy ) ;
   manager.add( "2) Testing Cuda Array"  , &simpleArrayTest       ) ;
   

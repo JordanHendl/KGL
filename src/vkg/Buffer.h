@@ -52,7 +52,7 @@ namespace nyx
     class Buffer
     {
       public:
-        
+        friend class nyx::vkg::Vulkan ;
         /** Alias for Vulkan flags.
          */
         using UsageFlags = ::vk::Flags<::vk::BufferUsageFlagBits> ;
@@ -81,7 +81,7 @@ namespace nyx
          * @param srcoffset The offset of the input buffer to start at.
          * @param dstoffset The offset of this buffer to start at.
          */
-        void copy( const Buffer& buffer, unsigned byte_size, ::vk::CommandBuffer cmd_buff, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+        void copy( const Buffer& buffer, unsigned byte_size, const nyx::vkg::CommandBuffer& cmd_buff, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
         
         /** Method to copy an input buffer into this object's data.
          * @param src Host pointer to copy data from.

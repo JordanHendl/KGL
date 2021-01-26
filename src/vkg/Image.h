@@ -40,11 +40,20 @@ namespace nyx
   template<class T>
   class Memory ;
   
+  /** Forward declared image format.
+   */
+  enum class ImageFormat ;
+  
+  /** Forward declared image layout.
+   */
+  enum class ImageLayout ;
+  
   namespace vkg
   {
-    class Vulkan ;
-    class Device ;
-    class Buffer ;
+    class Vulkan        ;
+    class Device        ;
+    class Buffer        ;
+    class CommandBuffer ;
 
     /** Abstraction of a Vulkan Image.
      */
@@ -85,13 +94,13 @@ namespace nyx
          * @param src The image to copy from.
          * @param buffer Reference to a valid vulkan command buffer to record the copy operation to.
          */
-        void copy( const Image& src, const vk::CommandBuffer& buffer ) ;
+        void copy( const Image& src, const nyx::vkg::CommandBuffer& buffer ) ;
         
         /** Method to perform a deep copy on the input image.
          * @param src The image to copy from.
          * @param buffer Reference to a valid vulkan command buffer to record the copy operation to.
          */
-        void copy( const nyx::vkg::Buffer& src, const vk::CommandBuffer& buffer ) ;
+        void copy( const nyx::vkg::Buffer& src, const nyx::vkg::CommandBuffer& buffer ) ;
 
         /** Method to initialize this object with the input parameters.
          * @note Uses any set values from other setters in initialization.
@@ -99,7 +108,7 @@ namespace nyx
          * @param height The height of the image in pixels.
          * @param num_layers The number of layers of the image.
          */
-        bool initialize( const nyx::vkg::Device& gpu, unsigned width, unsigned height, unsigned num_layers = 1 ) ;
+        bool initialize( const nyx::vkg::Device& gpu, nyx::ImageFormat format, unsigned width, unsigned height, unsigned num_layers = 1 ) ;
         
         /** Method to initialize this object with the input parameters.
          * @note Uses any set values from other setters in initialization.
@@ -107,7 +116,7 @@ namespace nyx
          * @param height The height of the image in pixels.
          * @param num_layers The number of layers of the image.
          */
-        bool initialize( const nyx::vkg::Device& gpu, unsigned width, unsigned height, vk::Image prealloc, unsigned num_layers = 1 ) ;
+        bool initialize( const nyx::vkg::Device& gpu, nyx::ImageFormat format, unsigned width, unsigned height, vk::Image prealloc, unsigned num_layers = 1 ) ;
 
         /** Method to initialize this object with the input parameters.
          * @note Uses any set values from other setters in initialization.
@@ -116,8 +125,14 @@ namespace nyx
          * @param height The height of the image in pixels.
          * @param num_layers The number of layers of the image.
          */
-        bool initialize( nyx::Memory<nyx::vkg::Vulkan>& prealloc, unsigned width, unsigned height, unsigned num_layers = 1 ) ;
+        bool initialize( nyx::Memory<nyx::vkg::Vulkan>& prealloc, nyx::ImageFormat format, unsigned width, unsigned height, unsigned num_layers = 1 ) ;
         
+        /** Method to resize this image to the desired image width and height
+         * @note This reallocates the image, so cropping, interpolation is not a part of this operation.
+         * @note If the dimensions are the same, no resizing occurs.
+         */
+        void resize( unsigned width, unsigned height ) ;
+
         /** Method to retrieve the underlying memory of this object.
          * @return The memory representation of this object.
          */
@@ -183,6 +198,16 @@ namespace nyx
          * @return The vulkan sampler associated with this image.
          */
         const ::vk::Sampler& sampler() const ;
+        
+        /** Method to retrieve the size of this object.
+         * @return The size in pixels of this object.
+         */
+        unsigned size() const ;
+        
+        /** Method to retrieve the byte size of this object.
+         * @return The size in bytes of this object.
+         */
+        unsigned byteSize() const ;
 
         /** Method to retrieve this image's width in pixels.
          * @return The image width in pixels.

@@ -105,7 +105,7 @@ namespace nyx
          * @param idx The index of command buffer to retrieve.
          * @return The command buffer at the specified index.
          */
-        const vk::CommandBuffer& buffer( unsigned idx ) const ;
+        const vk::CommandBuffer& buffer( unsigned idx = 0 ) const ;
         
         /** Method to retrieve the level of command buffer this object is.
          * @return The level ( Primary or Secondary ) of this object.

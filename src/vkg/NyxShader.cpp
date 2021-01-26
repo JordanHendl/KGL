@@ -62,7 +62,7 @@ namespace nyx
      * @param format
      * @return 
      */
-    static inline vk::Format formatFromShaderFormat( nyx::vkg::KgShader::Format format ) ;
+    static inline vk::Format formatFromShaderFormat( nyx::vkg::NyxShader::Format format ) ;
 
     /**
      * @param flag
@@ -153,22 +153,22 @@ namespace nyx
       return ::vk::Format::eR32Sfloat ;
     }
 
-    vk::Format formatFromShaderFormat( nyx::vkg::KgShader::Format format )
+    vk::Format formatFromShaderFormat( nyx::vkg::NyxShader::Format format )
     {
       switch( format )
       {
-        case nyx::vkg::KgShader::Format::mat4  : return ::vk::Format::eR32G32B32A32Sfloat ;
-        case nyx::vkg::KgShader::Format::vec4  : return ::vk::Format::eR32G32B32A32Sfloat ;
-        case nyx::vkg::KgShader::Format::ivec4 : return ::vk::Format::eR32G32B32A32Sint   ;
-        case nyx::vkg::KgShader::Format::uvec4 : return ::vk::Format::eR32G32B32A32Uint   ;
-        case nyx::vkg::KgShader::Format::mat3  : return ::vk::Format::eR32G32B32A32Sfloat ;
-        case nyx::vkg::KgShader::Format::vec3  : return ::vk::Format::eR32G32B32A32Sfloat ;
-        case nyx::vkg::KgShader::Format::ivec3 : return ::vk::Format::eR32G32B32A32Sint   ;
-        case nyx::vkg::KgShader::Format::uvec3 : return ::vk::Format::eR32G32B32A32Uint   ;
-        case nyx::vkg::KgShader::Format::mat2  : return ::vk::Format::eR32G32Sfloat       ;
-        case nyx::vkg::KgShader::Format::vec2  : return ::vk::Format::eR32G32Sfloat       ;
-        case nyx::vkg::KgShader::Format::ivec2 : return ::vk::Format::eR32G32Sint         ;
-        case nyx::vkg::KgShader::Format::uvec2 : return ::vk::Format::eR32G32Uint         ;
+        case nyx::vkg::NyxShader::Format::mat4  : return ::vk::Format::eR32G32B32A32Sfloat ;
+        case nyx::vkg::NyxShader::Format::vec4  : return ::vk::Format::eR32G32B32A32Sfloat ;
+        case nyx::vkg::NyxShader::Format::ivec4 : return ::vk::Format::eR32G32B32A32Sint   ;
+        case nyx::vkg::NyxShader::Format::uvec4 : return ::vk::Format::eR32G32B32A32Uint   ;
+        case nyx::vkg::NyxShader::Format::mat3  : return ::vk::Format::eR32G32B32A32Sfloat ;
+        case nyx::vkg::NyxShader::Format::vec3  : return ::vk::Format::eR32G32B32A32Sfloat ;
+        case nyx::vkg::NyxShader::Format::ivec3 : return ::vk::Format::eR32G32B32A32Sint   ;
+        case nyx::vkg::NyxShader::Format::uvec3 : return ::vk::Format::eR32G32B32A32Uint   ;
+        case nyx::vkg::NyxShader::Format::mat2  : return ::vk::Format::eR32G32Sfloat       ;
+        case nyx::vkg::NyxShader::Format::vec2  : return ::vk::Format::eR32G32Sfloat       ;
+        case nyx::vkg::NyxShader::Format::ivec2 : return ::vk::Format::eR32G32Sint         ;
+        case nyx::vkg::NyxShader::Format::uvec2 : return ::vk::Format::eR32G32Uint         ;
         default : return ::vk::Format::eR32Sfloat ;
       }
     }
@@ -335,31 +335,31 @@ namespace nyx
       }
     }
 
-    KgShader::KgShader()
+    NyxShader::NyxShader()
     {
       this->shader_data = new KgShaderData() ;
     }
 
-    KgShader::KgShader( const KgShader& shader )
+    NyxShader::NyxShader( const NyxShader& shader )
     {
       this->shader_data = new KgShaderData() ;
       
       *this->shader_data = *shader.shader_data ;
     }
 
-    KgShader::~KgShader()
+    NyxShader::~NyxShader()
     {
       delete this->shader_data ;
     }
 
-    KgShader& KgShader::operator=( const KgShader& shader )
+    NyxShader& NyxShader::operator=( const NyxShader& shader )
     {
       *this->shader_data = *shader.shader_data ;
       
       return *this ;
     }
 
-    void KgShader::initialize( const nyx::vkg::Device& device, const char* kg_path )
+    void NyxShader::initialize( const nyx::vkg::Device& device, const char* kg_path )
     {
       data().device = device ;
       data().kgfile.load( kg_path ) ;
@@ -370,7 +370,7 @@ namespace nyx
       data().makePipelineShaderInfos() ;
     }
 
-    void KgShader::initialize( const nyx::vkg::Device& device )
+    void NyxShader::initialize( const nyx::vkg::Device& device )
     {
       data().device = device ;
       
@@ -379,22 +379,22 @@ namespace nyx
       data().makePipelineShaderInfos() ;
     }
 
-    unsigned KgShader::numStages() const
+    unsigned NyxShader::numStages() const
     {
       return data().modules.size() ;
     }
 
-    unsigned KgShader::numVertexAttributes() const
+    unsigned NyxShader::numVertexAttributes() const
     {
       return data().attributes.size() ;
     }
 
-    unsigned KgShader::numVertexBindings() const
+    unsigned NyxShader::numVertexBindings() const
     {
       return data().bindings.size() ;
     }
 
-    void KgShader::addAttribute( unsigned location, unsigned binding, const KgShader::Format& format, unsigned offset )
+    void NyxShader::addAttribute( unsigned location, unsigned binding, const NyxShader::Format& format, unsigned offset )
     {
       vk::VertexInputAttributeDescription attr ;
       
@@ -405,7 +405,7 @@ namespace nyx
       
       data().attributes.push_back( attr ) ;
     }
-    void KgShader::addDescriptor( unsigned binding, const vk::DescriptorType& type, unsigned count, const vk::ShaderStageFlags flags )
+    void NyxShader::addDescriptor( unsigned binding, const vk::DescriptorType& type, unsigned count, const vk::ShaderStageFlags flags )
     {
       vk::DescriptorSetLayoutBinding info ;
       
@@ -417,7 +417,7 @@ namespace nyx
       data().descriptors.push_back( info ) ;
     }
     
-    void KgShader::addInputBinding( unsigned binding, unsigned stride, const vk::VertexInputRate& rate )
+    void NyxShader::addInputBinding( unsigned binding, unsigned stride, const vk::VertexInputRate& rate )
     {
       vk::VertexInputBindingDescription bind ;
       
@@ -428,7 +428,7 @@ namespace nyx
       data().bindings.push_back( bind ) ;
     }
         
-    void KgShader::addShaderModule( const vk::ShaderStageFlagBits& flags, const unsigned* spirv, unsigned size )
+    void NyxShader::addShaderModule( const vk::ShaderStageFlagBits& flags, const unsigned* spirv, unsigned size )
     {
       vk::ShaderModuleCreateInfo info ;
       
@@ -438,32 +438,32 @@ namespace nyx
       data().spirv_map[ flags ] = info ;
     }
     
-    const nyx::vkg::Device& KgShader::device() const
+    const nyx::vkg::Device& NyxShader::device() const
     {
       return data().device ;
     }
     
-    const vk::DescriptorSetLayout& KgShader::layout() const
+    const vk::DescriptorSetLayout& NyxShader::layout() const
     {
       return data().layout ;
     }
 
-    const vk::VertexInputAttributeDescription* KgShader::attributes() const
+    const vk::VertexInputAttributeDescription* NyxShader::attributes() const
     {
       return data().attributes.data() ;
     }
 
-    const vk::VertexInputBindingDescription* KgShader::bindings() const
+    const vk::VertexInputBindingDescription* NyxShader::bindings() const
     {
       return data().bindings.data() ;
     }
 
-    const vk::PipelineShaderStageCreateInfo* KgShader::infos() const
+    const vk::PipelineShaderStageCreateInfo* NyxShader::infos() const
     {
       return data().infos.data() ;
     }
 
-    void KgShader::reset()
+    void NyxShader::reset()
     {
       for( auto module : data().modules )
       {
@@ -479,12 +479,12 @@ namespace nyx
       data().infos      .clear() ;
     }
 
-    KgShaderData& KgShader::data()
+    KgShaderData& NyxShader::data()
     {
       return *this->shader_data ;
     }
 
-    const KgShaderData& KgShader::data() const
+    const KgShaderData& NyxShader::data() const
     {
       return *this->shader_data ;
     }

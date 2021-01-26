@@ -3,6 +3,7 @@
 #include "Vulkan.h"
 #include "Buffer.h"
 #include <library/Memory.h>
+#include <library/Image.h>
 #include <vulkan/vulkan.hpp>
 #include <algorithm>
 
@@ -10,10 +11,11 @@ namespace nyx
 {
   namespace vkg
   {
+    using Impl = nyx::vkg::Vulkan ;
     struct ImageData
     {
       vkg::Device                device       ; ///< The library device to use for all vulkan calls.
-      nyx::vkg::VkMemory         memory       ; ///< The underlying memory container.
+      nyx::Memory<Impl>          memory       ; ///< The underlying memory container.
       vk::MemoryRequirements     requirements ; ///< The memory requirements for this image.
       vk::ImageSubresourceLayers subresource  ; ///< The subresource layout describing this image.
       bool                       preallocated ; ///< Whether or not this image was preallocated or not.
@@ -21,15 +23,15 @@ namespace nyx
       unsigned                   height       ; ///< The height of this image in pixels.
       unsigned                   layers       ; ///< The number of layers of this image.
       unsigned                   num_mip      ; ///< The mip level of this image.
-      ::vk::Image                image        ; ///< The raw vulkan image handle.
-      ::vk::ImageView            view         ; ///< The raw vulkan image view handle.
-      ::vk::Sampler              sampler      ; ///< The raw vulkan image sampler.
+      vk::Image                  image        ; ///< The raw vulkan image handle.
+      vk::ImageView              view         ; ///< The raw vulkan image view handle.
+      vk::Sampler                sampler      ; ///< The raw vulkan image sampler.
       mutable ::vk::ImageLayout  layout       ; ///< The current vulkan layout of this image.
       mutable ::vk::ImageLayout  old_layout   ; ///< The old layout of this image.
-      ::vk::Format               format       ; ///< The current vulkan format of this image.
-      ::vk::ImageType            type         ; ///< The vulkan image type for this image
-      ::vk::SampleCountFlagBits  num_samples  ; ///< The number of samples to use for sampling this image.
-      ::vk::ImageUsageFlags      usage_flags  ; ///< The usage flags for this image.
+      vk::Format                 format       ; ///< The current vulkan format of this image.
+      vk::ImageType              type         ; ///< The vulkan image type for this image
+      vk::SampleCountFlagBits    num_samples  ; ///< The number of samples to use for sampling this image.
+      vk::ImageUsageFlags        usage_flags  ; ///< The usage flags for this image.
 
       /** Default constructor.
        */
@@ -173,7 +175,7 @@ namespace nyx
       return *this ;
     }
 
-    void Image::copy( const Image& src, const vk::CommandBuffer& buffer )
+    void Image::copy( const Image& src, const nyx::vkg::CommandBuffer& buffer )
     {
       vk::ImageCopy info    ;
       vk::Extent3D  extent  ;
@@ -188,16 +190,19 @@ namespace nyx
       info.setSrcSubresource( src.data().subresource ) ;
       info.setDstSubresource( data().subresource     ) ;
       
-      this->transition( vk::ImageLayout::eTransferDstOptimal, buffer ) ; 
-      src .transition ( vk::ImageLayout::eTransferSrcOptimal, buffer ) ; 
       
-      buffer.copyImage( src.data().image, src.data().layout, data().image, data().layout, 1, &info ) ;
+      for( unsigned index = 0; index < buffer.size(); index++ )
+      {
+        this->transition( vk::ImageLayout::eTransferDstOptimal, buffer.buffer( index ) ) ; 
+        src .transition ( vk::ImageLayout::eTransferSrcOptimal, buffer.buffer( index ) ) ; 
+        buffer.buffer( index ).copyImage( src.data().image, src.data().layout, data().image, data().layout, 1, &info ) ;
+        src .revertLayout ( buffer.buffer( index ) ) ;
+        this->revertLayout( buffer.buffer( index ) ) ;
+      }
       
-      src .revertLayout ( buffer ) ;
-      this->revertLayout( buffer ) ;
     }
     
-    void Image::copy( const nyx::vkg::Buffer& src, const vk::CommandBuffer& buffer )
+    void Image::copy( const nyx::vkg::Buffer& src, const nyx::vkg::CommandBuffer& buffer )
     {
       vk::BufferImageCopy info   ;
       vk::Extent3D        extent ;
@@ -218,18 +223,24 @@ namespace nyx
       info.setImageSubresource ( data().subresource ) ;
       info.setImageExtent      ( extent             ) ;
       
-      this->transition( vk::ImageLayout::eTransferDstOptimal, buffer ) ; 
-      buffer.copyBufferToImage( src.buffer(), data().image, vk::ImageLayout::eTransferDstOptimal, 1, &info ) ;
-      this->revertLayout( buffer ) ;
+      
+      for( unsigned index = 0; index < buffer.size(); index++ )
+      {
+        this->transition( vk::ImageLayout::eTransferDstOptimal, buffer.buffer( index ) ) ; 
+        buffer.buffer( index ).copyBufferToImage( src.buffer(), data().image, vk::ImageLayout::eTransferDstOptimal, 1, &info ) ;
+        this->revertLayout( buffer.buffer( index ) ) ;
+      }
+
     }
 
-    bool Image::initialize( const vkg::Device& device, unsigned width, unsigned height, unsigned num_layers )
+    bool Image::initialize( const vkg::Device& device, nyx::ImageFormat format, unsigned width, unsigned height, unsigned num_layers )
     {
       data().device = device     ;
       data().width  = width      ;
       data().height = height     ;
       data().layers = num_layers ;
       
+      data().format = nyx::vkg::Vulkan::convert( format ) ;
       data().subresource.setLayerCount( num_layers ) ;
       
       data().image = data().createImage() ;
@@ -254,28 +265,38 @@ namespace nyx
       return false ;
     }
 
-    bool Image::initialize( const nyx::vkg::Device& gpu, unsigned width, unsigned height, vk::Image prealloc, unsigned num_layers )
+    bool Image::initialize( const nyx::vkg::Device& gpu, nyx::ImageFormat format, unsigned width, unsigned height, vk::Image prealloc, unsigned num_layers )
     {
       data().device = gpu        ;
       data().width  = width      ;
       data().height = height     ;
       data().layers = num_layers ;
-
-      data().image   = prealloc               ;
-      data().view    = data().createView ()   ;
-      data().sampler = data().createSampler() ;
+      
+      data().image   = prealloc                            ;
+      data().format  = nyx::vkg::Vulkan::convert( format ) ;
+      data().view    = data().createView ()                ;
+      data().sampler = data().createSampler()              ;
 
       return true ;
     }
     
-    bool Image::initialize( nyx::Memory<nyx::vkg::Vulkan>& prealloc, unsigned width, unsigned height, unsigned num_layers )
+    bool Image::initialize( nyx::Memory<nyx::vkg::Vulkan>& prealloc, nyx::ImageFormat format, unsigned width, unsigned height, unsigned num_layers )
     {
       data().memory       = prealloc ;
       data().preallocated = true     ;
       
-      return this->initialize( prealloc.device(), width, height, num_layers ) ;
+      return this->initialize( prealloc.device(), format, width, height, num_layers ) ;
     }
 
+    void Image::resize( unsigned width, unsigned height )
+    {
+      if( data().width != width && data().height != height )
+      {
+        this->reset() ;
+        this->initialize( data().device, nyx::vkg::Vulkan::convert( data().format ), width, height ) ;
+      }
+    }
+    
     void Image::setUsage( const ::vk::ImageUsageFlagBits& usage )
     {
       data().usage_flags = usage ;
@@ -351,6 +372,16 @@ namespace nyx
       }
     }
     
+    unsigned Image::size() const
+    {
+      return data().width * data().height * data().layers ;
+    }
+    
+    unsigned Image::byteSize() const
+    {
+      return data().memory.size() ;
+    }
+
     const ::vk::Sampler& Image::sampler() const
     {
       return data().sampler ;
@@ -378,7 +409,12 @@ namespace nyx
 
     void Image::reset()
     {
-      data().device.device().destroy( data().image ) ;
+      if( data().image )
+      {
+        data().device.device().destroy( data().sampler ) ;
+        data().device.device().destroy( data().view    ) ;
+        data().device.device().destroy( data().image   ) ;
+      }
       
       if( !data().preallocated )
       {

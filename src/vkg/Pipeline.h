@@ -42,7 +42,7 @@ namespace nyx
     class Device        ;
     class RenderPass    ;
     class CommandBuffer ;
-    class KgShader      ;
+    class NyxShader      ;
     
     class Pipeline
     {
@@ -92,13 +92,13 @@ namespace nyx
         /** Method to initialize this compute pipeline with the input shader.
          * @param shader The shader to use to describe this pipeline.
          */
-        void initialize( const KgShader& shader ) ;
+        void initialize( const NyxShader& shader ) ;
         
         /** Method to initialize this render pipeline with the inpuit render pass and shader.
          * @param pass The render pass to use for this pipeline creation.
          * @param shader The KgShader to describe this pipeline.
          */
-        void initialize( const nyx::vkg::RenderPass& pass, const KgShader& shader ) ;
+        void initialize( const nyx::vkg::RenderPass& pass, const NyxShader& shader ) ;
         
         /** Method to set the push constant size in bytes for this pipeline.
          * @return The push constant size in bytes.

@@ -48,6 +48,11 @@ namespace nyx
        */
       ~BaseWindow() = default ;
       
+      /** Method to retrieve whether or not this object is initialized.
+       * @return Whether or not this object is initialized.
+       */
+      bool initialized() const ;
+
       /** Method to initialize this object.
        * @param window_title The title of the window. 
        * @param width The width of the window in pixels.
@@ -126,6 +131,12 @@ namespace nyx
       typename OS::Window   os_window   ;
       typename API::Context api_context ;
   };
+  
+  template<typename OS, typename API>
+  bool BaseWindow<OS, API>::initialized() const
+  {
+    return os_window.initialized() && this->api_context ;
+  }
   
   template<typename OS, typename API>
   void BaseWindow<OS, API>::initialize( const char* window_title, unsigned width, unsigned height )

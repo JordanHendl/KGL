@@ -164,7 +164,7 @@ namespace nyx
       return data().buffer ;
     }
 
-    void Buffer::copy( const Buffer& buffer, unsigned size, ::vk::CommandBuffer cmd_buff, unsigned srcoffset, unsigned dstoffset )
+    void Buffer::copy( const Buffer& buffer, unsigned size, const nyx::vkg::CommandBuffer& cmd_buff, unsigned srcoffset, unsigned dstoffset )
     { 
       ::vk::BufferCopy region ;
       
@@ -172,7 +172,10 @@ namespace nyx
       region.setSrcOffset( srcoffset ) ;
       region.setDstOffset( dstoffset ) ;
       
-      cmd_buff.copyBuffer( buffer.buffer(), this->buffer(), 1, &region ) ;
+      for( unsigned i = 0; i < cmd_buff.size(); i++ )
+      {
+        cmd_buff.buffer( i ).copyBuffer( buffer.buffer(), this->buffer(), 1, &region ) ;
+      }
     }
     
     void Buffer::copyToDevice( const void* buffer, unsigned byte_size, unsigned srcoffset, unsigned dstoffset )
