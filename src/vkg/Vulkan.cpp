@@ -20,6 +20,7 @@
 #include "library/Image.h"
 #include <algorithm>
 #include <iostream>
+#include <library/Memory.h>
 
 #define VULKAN_HPP_NO_EXCEPTIONS
 
@@ -87,39 +88,6 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        return this->err ;
      }
 
-     nyx::vkg::Vulkan::MemoryFlags::MemoryFlags()
-     {
-       using Flags = ::vk::MemoryPropertyFlagBits ;
-       this->flag = static_cast<unsigned>( ( Flags::eHostCoherent | Flags::eHostVisible ) ) ;
-     }
-     
-     nyx::vkg::Vulkan::MemoryFlags::MemoryFlags( unsigned flags )
-     {
-       this->flag = flags ;
-     }
-     
-     nyx::vkg::Vulkan::MemoryFlags::MemoryFlags( Vulkan::MemoryPropFlag flags )
-     {
-       this->flag = static_cast<unsigned>( flags ) ;
-     }
-     
-     nyx::vkg::Vulkan::MemoryFlags::MemoryFlags( ::vk::MemoryPropertyFlagBits flags )
-     {
-       this->flag = static_cast<unsigned>( flags ) ;
-     }
-
-     Vulkan::MemoryPropFlag nyx::vkg::Vulkan::MemoryFlags::val()
-     {
-       return static_cast<::vk::MemoryPropertyFlags>( this->flag ) ;
-     }
-     
-     Vulkan::MemoryFlags& Vulkan::MemoryFlags::operator=( unsigned flags )
-     {
-       this->flag = ( flags ) ;
-       
-       return *this ;
-     }
-
      vk::Format Vulkan::convert( nyx::ImageFormat format )
      {
        switch( format )
@@ -158,6 +126,96 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        }
      }
 
+     nyx::ImageLayout Vulkan::convert( vk::ImageLayout layout )
+     {
+       switch( layout )
+       {
+         case vk::ImageLayout::eUndefined               : return nyx::ImageLayout::Undefined       ;
+         case vk::ImageLayout::eGeneral                 : return nyx::ImageLayout::General         ;
+         case vk::ImageLayout::eColorAttachmentOptimal  : return nyx::ImageLayout::ColorAttachment ;
+         case vk::ImageLayout::eShaderReadOnlyOptimal   : return nyx::ImageLayout::ShaderRead      ;
+         case vk::ImageLayout::eTransferSrcOptimal      : return nyx::ImageLayout::TransferSrc     ;
+         case vk::ImageLayout::eTransferDstOptimal      : return nyx::ImageLayout::TransferDst     ;
+         case vk::ImageLayout::ePresentSrcKHR           : return nyx::ImageLayout::PresentSrc      ;
+         case vk::ImageLayout::eDepthReadOnlyOptimalKHR : return nyx::ImageLayout::DepthRead       ;
+         
+         default : return nyx::ImageLayout::Undefined ;
+       };
+     }
+     
+     vk::ImageLayout Vulkan::convert( nyx::ImageLayout layout )
+     {
+       switch( layout )
+       {
+         case nyx::ImageLayout::Undefined       : return vk::ImageLayout::eUndefined               ;
+         case nyx::ImageLayout::General         : return vk::ImageLayout::eGeneral                 ;
+         case nyx::ImageLayout::ColorAttachment : return vk::ImageLayout::eColorAttachmentOptimal  ;
+         case nyx::ImageLayout::ShaderRead      : return vk::ImageLayout::eShaderReadOnlyOptimal   ;
+         case nyx::ImageLayout::TransferSrc     : return vk::ImageLayout::eTransferSrcOptimal      ;
+         case nyx::ImageLayout::TransferDst     : return vk::ImageLayout::eTransferDstOptimal      ;
+         case nyx::ImageLayout::PresentSrc      : return vk::ImageLayout::ePresentSrcKHR           ;
+         case nyx::ImageLayout::DepthRead       : return vk::ImageLayout::eDepthReadOnlyOptimalKHR ;
+         
+         default : return vk::ImageLayout::eUndefined ;
+       };
+     }
+
+     nyx::ImageUsage Vulkan::convert( vk::ImageUsageFlagBits usage )
+     {
+       switch( static_cast<vk::ImageUsageFlagBits>( usage ) )
+       {
+         case vk::ImageUsageFlagBits::eTransferSrc            : return nyx::ImageUsage::TransferSrc          ;
+         case vk::ImageUsageFlagBits::eTransferDst            : return nyx::ImageUsage::TransferDst          ;
+         case vk::ImageUsageFlagBits::eSampled                : return nyx::ImageUsage::Sampled              ;
+         case vk::ImageUsageFlagBits::eStorage                : return nyx::ImageUsage::Storage              ;
+         case vk::ImageUsageFlagBits::eColorAttachment        : return nyx::ImageUsage::ColorAttachment      ;
+         case vk::ImageUsageFlagBits::eDepthStencilAttachment : return nyx::ImageUsage::DepthStencil         ;
+         case vk::ImageUsageFlagBits::eInputAttachment        : return nyx::ImageUsage::Input                ;
+         case vk::ImageUsageFlagBits::eShadingRateImageNV     : return nyx::ImageUsage::ShadingRate          ;
+         case vk::ImageUsageFlagBits::eFragmentDensityMapEXT  : return nyx::ImageUsage::VKEXTFragmentDensity ;
+         default: return nyx::ImageUsage::Input ;
+       };
+     }
+     
+     vk::ImageUsageFlagBits Vulkan::convert( nyx::ImageUsage usage )
+     {
+       switch( usage )
+       {
+         case nyx::ImageUsage::TransferSrc          : return vk::ImageUsageFlagBits::eTransferSrc            ;
+         case nyx::ImageUsage::TransferDst          : return vk::ImageUsageFlagBits::eTransferDst            ;
+         case nyx::ImageUsage::Sampled              : return vk::ImageUsageFlagBits::eSampled                ;
+         case nyx::ImageUsage::Storage              : return vk::ImageUsageFlagBits::eStorage                ;
+         case nyx::ImageUsage::ColorAttachment      : return vk::ImageUsageFlagBits::eColorAttachment        ;
+         case nyx::ImageUsage::DepthStencil         : return vk::ImageUsageFlagBits::eDepthStencilAttachment ;
+         case nyx::ImageUsage::Input                : return vk::ImageUsageFlagBits::eInputAttachment        ;
+         case nyx::ImageUsage::ShadingRate          : return vk::ImageUsageFlagBits::eShadingRateImageNV     ;
+         case nyx::ImageUsage::VKEXTFragmentDensity : return vk::ImageUsageFlagBits::eFragmentDensityMapEXT  ;
+         default: return vk::ImageUsageFlagBits::eInputAttachment ;
+       };
+     }
+     
+     nyx::ImageType Vulkan::convert( vk::ImageType type )
+     {
+       switch( type )
+       {
+         case vk::ImageType::e1D : return nyx::ImageType::n1D ;
+         case vk::ImageType::e2D : return nyx::ImageType::n2D ;
+         case vk::ImageType::e3D : return nyx::ImageType::n3D ;
+         default : return nyx::ImageType::n2D ;
+       };
+     }
+     
+     vk::ImageType Vulkan::convert( nyx::ImageType type )
+     {
+       switch( type )
+       {
+         case nyx::ImageType::n1D : return vk::ImageType::e1D ;
+         case nyx::ImageType::n2D : return vk::ImageType::e2D ;
+         case nyx::ImageType::n3D : return vk::ImageType::e3D ;
+         default : return vk::ImageType::e2D ;
+       }; 
+     }
+        
      void Vulkan::initialize( const vk::Instance& instance )
      {
        ::nyx::vkg::vk_instance = instance ;
@@ -226,15 +284,15 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        device.free ( mem ) ;
      }
      
-     Vulkan::Memory Vulkan::createMemory( const Vulkan::Device& gpu, unsigned size, Vulkan::MemoryFlags flags, unsigned filter )
+     Vulkan::Memory Vulkan::createMemory( const Vulkan::Device& gpu, unsigned size, nyx::MemoryFlags flags, unsigned filter )
      {
-       const auto                      device   = gpu.device()         ;
-       const auto                      p_device = gpu.physicalDevice() ;
-       const ::vk::MemoryPropertyFlags flag     = flags.val()          ;
+       const auto                      device   = gpu.device()                                                                                ;
+       const auto                      p_device = gpu.physicalDevice()                                                                        ;
+       const ::vk::MemoryPropertyFlags flag     = static_cast<vk::MemoryPropertyFlags>( static_cast<VkMemoryPropertyFlags>( flags.value() ) ) ;
        Vulkan::Memory           mem    ;
        ::vk::MemoryAllocateInfo info   ;
 
-       info.setAllocationSize ( size                                  ) ;
+       info.setAllocationSize ( size                              ) ;
        info.setMemoryTypeIndex( memType( filter, flag, p_device ) ) ;
        
        mem = device.allocateMemory( info, nullptr ).value ;
@@ -244,10 +302,8 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
      
      Vulkan::Memory Vulkan::createMemory( const Vulkan::Device& gpu, unsigned size, unsigned filter )
      {
-       Vulkan::MemoryFlags flags ;
+       nyx::MemoryFlags flags ;
        
-       flags = static_cast<unsigned>( ::vk::MemoryPropertyFlagBits::eDeviceLocal ) ;
-
        return this->createMemory( gpu, size, flags, filter ) ;
      }
      
@@ -280,7 +336,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
          result = static_cast<vk::Result>( vkCreateWin32SurfaceKHR( nyx::vkg::vk_instance, &info, nullptr, &surface ) ) ;
          if( result != vk::Result::eSuccess )
          {
-           std::cout << "Error creating surface: " << vk::to_string( result ) << "\n" ;
+           std::cout << "Error creating surface: " << vk::to_string( result ) << "\n" ; // TODO convert error.
          }
          vk_surface = surface ;
        }
@@ -308,7 +364,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
          
          if( result != vk::Result::eSuccess )
          {
-           std::cout << "Error creating surface: " << vk::to_string( result ) << "\n" ;
+           std::cout << "Error creating surface: " << vk::to_string( result ) << "\n" ; // TODO convert error.
          }
 
          vk_surface = surface ;

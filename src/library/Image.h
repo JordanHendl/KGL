@@ -30,7 +30,7 @@ namespace nyx
   template<typename IMPL>
   class Memory ;
 
-  enum class ImageFormat
+  enum class ImageFormat : unsigned 
   {
     R8,     ///< Single channel Char.
     R32I,   ///< Single channel Integer.
@@ -45,7 +45,7 @@ namespace nyx
     RGBA32F,///< Four channel Float.
   };
   
-  enum class ImageLayout
+  enum class ImageLayout : unsigned
   {
     Undefined,       ///< Undefined.
     General,         ///< General purpose.
@@ -56,7 +56,28 @@ namespace nyx
     PresentSrc,      ///< Only valid for presenting.
     DepthRead,       ///< Only valid for being read from as depth.
   };
-      
+    
+
+  enum class ImageUsage : unsigned
+  {
+    TransferSrc,          ///<  Transfer Source.
+    TransferDst,          ///<  Transfer Destination.
+    Sampled,              ///<  Image to be sampled.
+    Storage,              ///<  Storage.
+    ColorAttachment,      ///<  Color Attachment.
+    DepthStencil,         ///<  Depth Stencil attachment.
+    Input,                ///<  InputAttachment.
+    ShadingRate,          ///<  Shading rate bit.
+    VKEXTFragmentDensity, ///<  Vulkan Image Fragment Density Map ( EXT only ).
+  };
+  
+  enum class ImageType : unsigned
+  {
+    n1D = 1u,
+    n2D = 2u,
+    n3D = 3u,  
+  };
+
   /** Generic memory object.
    */
   template<typename IMPL, ImageFormat FORMAT = ImageFormat::RGBA8>

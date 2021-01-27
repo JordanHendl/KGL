@@ -191,14 +191,14 @@ namespace nyx
       info.setDstSubresource( data().subresource     ) ;
       
       
+      this->transition( nyx::vkg::Vulkan::convert( vk::ImageLayout::eTransferDstOptimal ), buffer ) ; 
+      src .transition ( nyx::vkg::Vulkan::convert( vk::ImageLayout::eTransferSrcOptimal ), buffer ) ; 
       for( unsigned index = 0; index < buffer.size(); index++ )
       {
-        this->transition( vk::ImageLayout::eTransferDstOptimal, buffer.buffer( index ) ) ; 
-        src .transition ( vk::ImageLayout::eTransferSrcOptimal, buffer.buffer( index ) ) ; 
         buffer.buffer( index ).copyImage( src.data().image, src.data().layout, data().image, data().layout, 1, &info ) ;
-        src .revertLayout ( buffer.buffer( index ) ) ;
-        this->revertLayout( buffer.buffer( index ) ) ;
       }
+      src .revertLayout ( buffer ) ;
+      this->revertLayout( buffer ) ;
       
     }
     
@@ -224,13 +224,12 @@ namespace nyx
       info.setImageExtent      ( extent             ) ;
       
       
+      this->transition( nyx::ImageLayout::TransferDst, buffer ) ; 
       for( unsigned index = 0; index < buffer.size(); index++ )
       {
-        this->transition( vk::ImageLayout::eTransferDstOptimal, buffer.buffer( index ) ) ; 
         buffer.buffer( index ).copyBufferToImage( src.buffer(), data().image, vk::ImageLayout::eTransferDstOptimal, 1, &info ) ;
-        this->revertLayout( buffer.buffer( index ) ) ;
       }
-
+      this->revertLayout( buffer ) ;
     }
 
     bool Image::initialize( const vkg::Device& device, nyx::ImageFormat format, unsigned width, unsigned height, unsigned num_layers )
@@ -297,24 +296,20 @@ namespace nyx
       }
     }
     
-    void Image::setUsage( const ::vk::ImageUsageFlagBits& usage )
+    void Image::setUsage( const nyx::ImageUsage& usage )
     {
-      data().usage_flags = usage ;
+      data().usage_flags = nyx::vkg::Vulkan::convert( usage ) ;
     }
     
-    void Image::setUsage( const Image::UsageFlags& usage )
+    void Image::setType( const nyx::ImageType& type )
     {
-      data().usage_flags = usage ;
+      data().type = nyx::vkg::Vulkan::convert( type ) ;
     }
 
-    void Image::setType( const ::vk::ImageType& type )
+    void Image::setNumSamples( unsigned samples )
     {
-      data().type = type ;
-    }
-
-    void Image::setNumSamples( const ::vk::SampleCountFlagBits& num_samples )
-    {
-      data().num_samples = num_samples ;
+      samples = samples ;
+      data().num_samples = vk::SampleCountFlagBits::e1 ; //TODO make this work.
     }
     
     void Image::setMipLevels( unsigned mip_levels )
@@ -323,24 +318,27 @@ namespace nyx
       data().subresource.setMipLevel( mip_levels ) ;
     }
 
-    void Image::setFormat( const vk::Format& format )
+    void Image::setFormat( const nyx::ImageFormat& format )
     {
-      data().format = format ;
+      data().format = nyx::vkg::Vulkan::convert( format ) ;
     }
 
-    void Image::setLayout( const vk::ImageLayout& layout )
+    void Image::setLayout( const nyx::ImageLayout& layout )
     {
-      data().layout = layout ;
+      data().layout = nyx::vkg::Vulkan::convert( layout ) ;
     }
 
-    void Image::transition( const vk::ImageLayout& layout, const vk::CommandBuffer& cmd_buff ) const
+    void Image::transition( const nyx::ImageLayout& layout, const nyx::vkg::CommandBuffer& cmd_buff ) const
     {
-      vk::ImageMemoryBarrier    barrier   ;
-      vk::ImageSubresourceRange range     ;
-      vk::PipelineStageFlags    src       ;
-      vk::PipelineStageFlags    dst       ;
-      vk::DependencyFlags       dep_flags ;
-
+      vk::ImageMemoryBarrier    barrier    ;
+      vk::ImageSubresourceRange range      ;
+      vk::PipelineStageFlags    src        ;
+      vk::PipelineStageFlags    dst        ;
+      vk::DependencyFlags       dep_flags  ;
+      vk::ImageLayout           new_layout ;
+      
+      new_layout = nyx::vkg::Vulkan::convert( layout ) ;
+      
       range.setBaseArrayLayer( 0                               ) ;
       range.setBaseMipLevel  ( 0                               ) ;
       range.setLevelCount    ( 1                               ) ;
@@ -348,7 +346,7 @@ namespace nyx
       range.setAspectMask    ( vk::ImageAspectFlagBits::eColor ) ;
 
       barrier.setOldLayout       ( data().layout                    ) ;
-      barrier.setNewLayout       ( layout                           ) ;
+      barrier.setNewLayout       ( new_layout                       ) ;
       barrier.setImage           ( data().image                     ) ;
       barrier.setSubresourceRange( range                            ) ;
       barrier.setSrcAccessMask   ( vk::AccessFlagBits::eMemoryWrite ) ;
@@ -358,17 +356,20 @@ namespace nyx
       src       = vk::PipelineStageFlagBits::eAllCommands ;
       dst       = vk::PipelineStageFlagBits::eAllCommands ;
       
-      cmd_buff.pipelineBarrier( src, dst, dep_flags, 0, nullptr, 0, nullptr, 1, &barrier ) ;
+      for( unsigned index = 0; index < cmd_buff.size(); index++ )
+      {
+        cmd_buff.buffer( index ).pipelineBarrier( src, dst, dep_flags, 0, nullptr, 0, nullptr, 1, &barrier ) ;
+      }
       
       data().old_layout = data().layout ;
-      data().layout     = layout        ;
+      data().layout     = new_layout    ;
     }
 
-    void Image::revertLayout( const vk::CommandBuffer& cmd_buff ) const 
+    void Image::revertLayout( const nyx::vkg::CommandBuffer& cmd_buff ) const 
     {
       if( data().old_layout != vk::ImageLayout::eUndefined )
       {
-        this->transition( data().old_layout, cmd_buff ) ;
+        this->transition( nyx::vkg::Vulkan::convert( data().old_layout ), cmd_buff ) ;
       }
     }
     

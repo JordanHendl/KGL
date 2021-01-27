@@ -31,7 +31,7 @@
 #include "Swapchain.h"
 
 typedef unsigned VkFlags ;
-
+typedef VkFlags VkImageUsageFlags ;
 /** Forward declared vulkan-specific objects.
  */
 namespace vk
@@ -39,15 +39,19 @@ namespace vk
        template <typename BitType>
        class Flags ;
        
-       class SurfaceKHR                       ;
-       class Buffer                           ;
-       class DeviceMemory                     ;
-       class CommandBuffer                    ;
-       class Instance                         ;
-  enum class MemoryPropertyFlagBits : VkFlags ;
-  enum class ImageLayout                      ;
-  enum class Format                           ;
-  enum class Result                           ;
+       class SurfaceKHR                             ;
+       class Buffer                                 ;
+       class DeviceMemory                           ;
+       class CommandBuffer                          ;
+       class Instance                               ;
+  enum class MemoryPropertyFlagBits : VkFlags       ;
+  enum class ImageLayout                            ;
+  enum class ImageUsageFlagBits : VkImageUsageFlags ;
+  enum class ImageType                              ;
+  enum class Format                                 ;
+  enum class Result                                 ;
+  
+  using ImageUsageFlags = Flags<ImageUsageFlagBits>;
 }
 
 /** Operator definition for OR'ing a memory property flag bit and an unsigned integer.
@@ -56,13 +60,17 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second ) ;
 
 namespace nyx
 {
+  /** Forward declared reflective enumeration.
+   */
+  class MemoryFlags ;
+
   /** Forward declared enum for image format.
    */
-  enum class ImageFormat ;
+  enum class ImageFormat : unsigned ;
   
   /** Forward decalred enum for image layout.
    */
-  enum class ImageLayout ;
+  enum class ImageLayout : unsigned ;
 
   /** Forward declared Memory object for friendship.
    */
@@ -207,6 +215,42 @@ namespace nyx
          */
         static nyx::ImageFormat convert( vk::Format format ) ;
 
+        /** Static method to convert a vulkan image layout to an implementation layout.
+         * @param layout The layout to convert.
+         * @return The implementation-specific layout converted.
+         */
+        static nyx::ImageLayout convert( vk::ImageLayout layout ) ;
+        
+        /** Static method to convert an implementation image layout to a Vulkan one.
+         * @param layout The layout to convert.
+         * @return The converted layout.
+         */
+        static vk::ImageLayout convert( nyx::ImageLayout layout ) ;
+        
+        /** Static method to convert a vulkan image layout to an implementation layout.
+         * @param layout The layout to convert.
+         * @return The implementation-specific layout converted.
+         */
+        static nyx::ImageUsage convert( vk::ImageUsageFlagBits usage ) ;
+        
+        /** Static method to convert an implementation image layout to a Vulkan one.
+         * @param layout The layout to convert.
+         * @return The converted layout.
+         */
+        static vk::ImageUsageFlagBits convert( nyx::ImageUsage usage ) ;
+        
+        /** Static method to convert a vulkan image layout to an implementation layout.
+         * @param layout The layout to convert.
+         * @return The implementation-specific layout converted.
+         */
+        static nyx::ImageType convert( vk::ImageType layout ) ;
+        
+        /** Static method to convert an implementation image layout to a Vulkan one.
+         * @param layout The layout to convert.
+         * @return The converted layout.
+         */
+        static vk::ImageType convert( nyx::ImageType layout ) ;
+
         /** Static method to initialize this implementation with a vulkan instance.
          * @param instance
          */
@@ -237,47 +281,6 @@ namespace nyx
         
 
       private:
-        
-        /** Class for capturing a vulkan memory property flag.
-         */
-        class MemoryFlags
-        {
-          public:
-            
-            /** Default constructor.
-             */
-            MemoryFlags() ;
-            
-            /** Constructor from an unsigned integer.
-             */
-            MemoryFlags( unsigned flags ) ;
-            
-            /** Constructor from an unsigned integer.
-             */
-            MemoryFlags( ::vk::MemoryPropertyFlagBits flags ) ;
-            
-            /** Constructor from an unsigned integer.
-             */
-            MemoryFlags( MemoryPropFlag flags ) ;
-            
-            /** Method to retrieve the value of this object.
-             */
-            MemoryPropFlag val() ;
-            
-            /** Method to assign this object to a flag.
-             */
-            MemoryFlags& operator=( unsigned flags ) ;
-            
-            /** Method to assign this object to a flag.
-             */
-            MemoryFlags& operator=( MemoryPropFlag flags ) ;
-
-          private:
-
-            /** The internal Vulkan Memory Property Flag represented as an unsigned integer.
-             */
-            unsigned flag ;
-        };
         
         /** Typedef to avoid using void* directly.
          */
@@ -330,7 +333,7 @@ namespace nyx
          * @param mem_flags The memory property flags to use for creation of this memory object.
          * @return Allocated memory on the GPU.
          */
-        Memory createMemory( const Vulkan::Device& gpu, unsigned size, Vulkan::MemoryFlags mem_flags, unsigned filter = 0xFFFFFFF ) ;
+        Memory createMemory( const Vulkan::Device& gpu, unsigned size, nyx::MemoryFlags mem_flags, unsigned filter = 0xFFFFFFF ) ;
     };
   }
 }

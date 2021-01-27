@@ -19,6 +19,7 @@
 #include "Vulkan.h"
 #include "Device.h"
 #include <library/Memory.h> 
+#include <library/Array.h>
 #include <vulkan/vulkan.hpp>
 
 namespace nyx
@@ -121,9 +122,9 @@ namespace nyx
       return this->initialize( prealloc.device(), size == 0 ? prealloc.size() : size ) ;
     }
     
-    bool Buffer::initialize( const nyx::vkg::Device& gpu, unsigned size, bool host_local, UsageFlags flags )
+    bool Buffer::initialize( const nyx::vkg::Device& gpu, unsigned size, bool host_local, nyx::ArrayFlags flags )
     {
-      data().usage_flags = flags ;
+      data().usage_flags = static_cast<vk::BufferUsageFlags>( static_cast<VkBufferUsageFlags>( flags.value() ) ) ;
       
       return this->initialize( gpu, size, host_local ) ;
     }
@@ -140,7 +141,7 @@ namespace nyx
       if( !data().preallocated )
       {
         if( host_local )
-          data().internal_memory.initialize( gpu, data().requirements.size, data().requirements.memoryTypeBits, host_local, ::vk::MemoryPropertyFlagBits::eHostVisible | ::vk::MemoryPropertyFlagBits::eHostCoherent ) ;
+          data().internal_memory.initialize( gpu, data().requirements.size, data().requirements.memoryTypeBits, host_local, nyx::MemoryFlags::HostVisible | nyx::MemoryFlags::HostCoherent ) ;
         else
           data().internal_memory.initialize( gpu, data().requirements.size, data().requirements.memoryTypeBits, host_local ) ;
       }
@@ -180,7 +181,10 @@ namespace nyx
     
     void Buffer::copyToDevice( const void* buffer, unsigned byte_size, unsigned srcoffset, unsigned dstoffset )
     { 
-      data().internal_memory.copyToDevice( buffer, byte_size, srcoffset, dstoffset ) ;
+      if( data().host_local )
+      {
+        data().internal_memory.copyToDevice( buffer, byte_size, srcoffset, dstoffset ) ;
+      }
     }
     
     const nyx::vkg::Device& Buffer::device()
@@ -203,16 +207,11 @@ namespace nyx
       return data().internal_memory ;
     }
 
-    void Buffer::setUsage( vk::BufferUsageFlagBits flag  )
+    void Buffer::setUsage( nyx::ArrayFlags flag  )
     {
-      data().usage_flags = flag ;
+      data().usage_flags = static_cast<vk::BufferUsageFlagBits>( static_cast<VkBufferUsageFlagBits>( flag.value() ) ) ;
     }
     
-    void Buffer::setUsage( Buffer::UsageFlags flag  )
-    {
-      data().usage_flags = flag ;
-    }
-
     BufferData& Buffer::data()
     {
       return *this->buffer_data ;

@@ -126,7 +126,7 @@ namespace nyx
       this->images.resize( imgs.size() ) ;
       for( unsigned index = 0; index < this->images.size(); index++ )
       {
-        this->images[ index ].setFormat( this->surface_format.format ) ;
+        this->images[ index ].setFormat( nyx::vkg::Vulkan::convert( this->surface_format.format ) ) ;
         this->images[ index ].initialize( this->present_queue.device(), nyx::vkg::Vulkan::convert( this->surface_format.format ), this->extent.width, this->extent.height, imgs[ index ] ) ;
       }
     }

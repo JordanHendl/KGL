@@ -25,9 +25,6 @@
 #ifndef NYX_VKG_RENDERPASS_H
 #define NYX_VKG_RENDERPASS_H
 
-#include "Image.h"
-
-
 typedef unsigned VkFlags ;
 
 /** Vulkan forward declares.
@@ -59,7 +56,7 @@ namespace nyx
   {
     class Device    ;
     class Swapchain ;
-
+    class Image     ;
     /** Class to abstract a vulkan render pass.
      *  By default, this render pass describes a simple RGBA8 Render Pass with one color attachment.
      */

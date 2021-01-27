@@ -38,6 +38,60 @@ namespace nyx
     return( first | combine( types... ) ) ;
   }
   
+  class MemoryFlags
+  {
+    public:
+      
+      enum
+      {
+        DeviceLocal   = 0x00000001,
+        HostVisible   = 0x00000002,
+        HostCoherent  = 0x00000004,
+        HostCached    = 0x00000008,
+      };
+      
+      /** Default constructor.
+       */
+      MemoryFlags() ;
+      
+      /** Copy constructor. Copies input into this object.
+       * @param flags The object to copy into this one.
+       */
+      MemoryFlags( int flags ) ;
+      
+      /** Assignment operator. Assigns this object to the input. 
+       * @param flag The flag to assign this object to.
+       * @return Reference to this object after assignment.
+       */
+      MemoryFlags& operator=( int flag ) ;
+      
+      /** OR operator. Bitwise OR's this obect with the input.
+       * @param flag The flag to bitwise OR this object with.
+       * @return Reference to this object after the operation.
+       */
+      MemoryFlags& operator|( int flag ) ;
+      
+      /** Static conversion operator.
+       * @return The underlying value of this object.
+       */
+      operator int() const ;
+      
+      /** Method to retrieve this object's enumeration.
+       * @return This object's enumeration.
+       */
+      int value() const ;
+      
+      /** Method to set this object's enumeration value.
+       * @param value The value to set this object's' enumeration to.
+       */
+      void set( int value ) ;
+    private:
+      
+      /** The underlying enumeration bit.
+       */
+      int bit ;
+  };
+
   /** Class to manage memory on the GPU & CPU.
    */
   template<typename IMPL>
@@ -85,6 +139,11 @@ namespace nyx
        */
       operator typename IMPL::Memory() ;
         
+      /** Method to retrieve whether or not this object is initialized.
+       * @return Whether or not this object is initialized.
+       */
+      bool initialized() const ;
+
       /** Method to initialize this memory object with the input parameters.
        * @param sz The size in bytes to store in this object.
        * @param gpu The implementation-specific GPU to use for all gpu operations.
@@ -300,13 +359,19 @@ namespace nyx
   }
 
   template<typename IMPL>
+  bool Memory<IMPL>::initialized() const
+  {
+    return ( this->memory_ptr ) ;
+  }
+
+  template<typename IMPL>
   template< typename ... MEMORY_FLAGS>
   void Memory<IMPL>::initialize( const typename IMPL::Device& gpu, unsigned sz, bool host_alloc, MEMORY_FLAGS... mem_flags ) 
   {
     this->byte_size  = sz  ;
     this->gpu        = gpu ;
     
-    this->memory_ptr = impl.createMemory( gpu, sz, static_cast<typename IMPL::MemoryFlags>( ::nyx::combine( mem_flags... ) ) ) ;
+    this->memory_ptr = impl.createMemory( gpu, sz, static_cast<nyx::MemoryFlags>( nyx::combine( mem_flags... ) ) ) ;
     
     if( host_alloc )
     {
@@ -335,7 +400,7 @@ namespace nyx
     this->byte_size  = sz  ;
     this->gpu        = gpu ;
     
-    this->memory_ptr = impl.createMemory( gpu, sz, static_cast<typename IMPL::MemoryFlags>( ::nyx::combine( mem_flags... ) ), filter ) ;
+    this->memory_ptr = impl.createMemory( gpu, sz, ::nyx::combine( mem_flags... ), filter ) ;
     
     if( host_alloc )
     {

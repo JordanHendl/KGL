@@ -22,13 +22,7 @@ typedef unsigned VkFlags ;
 
 namespace vk
 {
-       template <typename BitType>
-       class Flags ;
-       
-       class Buffer                        ;
-       class CommandBuffer                 ;
-  enum class BufferUsageFlagBits : VkFlags ;
-  using VKGBufferFlags = ::vk::Flags<::vk::BufferUsageFlagBits> ;
+  class Buffer ;
 }
 
 
@@ -37,26 +31,19 @@ namespace nyx
   template<class T>
   class Memory ;
   
+  class ArrayFlags ;
+  
   namespace vkg
   {
     class Vulkan        ;
     class Device        ;
     class CommandBuffer ;
 
-    template<typename T>
-    vk::VKGBufferFlags convert( T flag ) ;
-
-    template<typename T, typename... TYPES>
-    vk::VKGBufferFlags convert( T flag, TYPES... types ) ;
-
     class Buffer
     {
       public:
         friend class nyx::vkg::Vulkan ;
-        /** Alias for Vulkan flags.
-         */
-        using UsageFlags = ::vk::Flags<::vk::BufferUsageFlagBits> ;
-
+        
         /** Default Constructor.
          */
         Buffer() ;
@@ -100,15 +87,6 @@ namespace nyx
          */
         void copyToHost( const void* src, unsigned size, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
 
-        /** Method to copy an input buffer into this object's data.
-         * @param size The size in bytes to copy.
-         * @param buffer The buffer to copy from.
-         * @param cmd_buff The command buffer to record the copy operation to.
-         * @param srcoffset The offset of the input buffer to start at.
-         * @param dstoffset The offset of this buffer to start at.
-         */
-        void copyToHost( const void* src, unsigned size, ::vk::CommandBuffer cmd_buff, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
-        
         /** Method to retrieve whether or not this object is initialized.
          * @return Whether or not this buffer is initialized
          */
@@ -135,7 +113,7 @@ namespace nyx
          * @param host_local Whether to allocate a host-copy of this data.
          * @return Whether or not this buffer was successfully initialized.
          */
-        bool initialize( const nyx::vkg::Device& gpu, unsigned size, bool host_local, UsageFlags flags ) ;
+        bool initialize( const nyx::vkg::Device& gpu, unsigned size, bool host_local, nyx::ArrayFlags flags ) ;
         
         /** Method to return the size of this object on the GPU.
          * @return The size in bytes of this object on the GPU.
@@ -178,12 +156,7 @@ namespace nyx
         /** Method to set the Vulkan usage for this buffer.
          * @param flag The Vulkan usage flag to use for this object.
          */
-        void setUsage( vk::BufferUsageFlagBits flag  ) ;
-        
-        /** Method to set the Vulkan usage for this buffer.
-         * @param flag The Vulkan usage flag to use for this object.
-         */
-        void setUsage( Buffer::UsageFlags flag  ) ;
+        void setUsage( nyx::ArrayFlags flag  ) ;
         
       private:
         

@@ -184,6 +184,79 @@ athena::Result array_initialize_test()
   return true ;
 }
 
+athena::Result test_memory_initialize()
+{
+  nyx::Memory<Impl> memory ;
+  
+  if( !device.initialized() ) return athena::Result::Skip ;
+  memory.initialize( device, sizeof( unsigned ) * 200, true ) ;
+  
+  if( !memory.initialized() ) return false ;
+  return true ;
+}
+
+athena::Result test_memory_size()
+{
+  nyx::Memory<Impl> memory ;
+  
+  if( !device.initialized() ) return athena::Result::Skip ;
+  memory.initialize( device, sizeof( unsigned ) * 200, true ) ;
+  
+  if( memory.size() != ( sizeof( unsigned ) * 200 ) ) return false ;
+  return true ;
+}
+
+athena::Result test_memory_offset()
+{
+  nyx::Memory<Impl> memory1 ;
+  nyx::Memory<Impl> memory2 ;
+  
+  if( !device.initialized() ) return athena::Result::Skip ;
+  memory1.initialize( device, sizeof( unsigned ) * 200, true ) ;
+  memory2 = memory1 + ( sizeof( unsigned ) * 100 ) ;
+  
+  if( !memory2.initialized() || ( memory2.size() - memory2.offset() ) != ( sizeof( unsigned ) * 100 ) ) return false ;
+  return true ;
+}
+
+athena::Result test_memory_device()
+{
+  nyx::Memory<Impl> memory; 
+  
+  if( !device.initialized() ) return athena::Result::Skip ;
+  memory.initialize( device, sizeof( unsigned ) * 200, true ) ;
+  
+  if( !memory.device().initialized() ) return false ;
+  return true ;
+}
+
+athena::Result test_memory_sync_to_host_copy()
+{
+  nyx::Memory<Impl>     memory   ;
+  std::vector<unsigned> host_mem ;
+  
+  if( !device.initialized() ) return athena::Result::Skip ;
+  memory.initialize( device, sizeof( unsigned ) * 200, true, nyx::MemoryFlags::HostVisible | nyx::MemoryFlags::HostCoherent ) ;
+  host_mem.resize( 200 ) ;
+  std::fill( host_mem.begin(), host_mem.end(), 2503 ) ;
+  
+  memory.copyToDevice( host_mem.data(), sizeof( unsigned ) * 200 ) ;
+  memory.syncToHost() ;
+  
+  for( unsigned i = 0; i < 200; i++ )
+  {
+    auto array= static_cast<const unsigned*>( memory.hostData() ) ;
+    if( array[ i ] != 2503 )
+    {
+      memory.deallocate() ;
+      return false ;
+    }
+  }
+  
+  memory.deallocate() ;
+  return true ;
+}
+
 athena::Result array_size_test()
 {
   Impl::Array<float> array ;
@@ -222,34 +295,34 @@ athena::Result array_host_copy_test()
   return true ;
 }
 
-athena::Result testMemoryHostGPUCopy()
+athena::Result test_array_copy_non_wait()
 {
-  nyx::Memory<Impl>     memory   ;
-  std::vector<unsigned> host_mem ;
+  Impl::CommandRecord   cmd      ;
+  Impl::Array<unsigned> buffer_1 ;
+  Impl::Array<unsigned> buffer_2 ; 
+  Impl::Synchronization sync     ;
   
+  test_array.resize( 500 ) ;
+  std::fill( test_array.begin(), test_array.end(), 76006 ) ;
   if( !device.initialized() ) return athena::Result::Skip ;
-  memory.initialize( device, sizeof( unsigned ) * 200, true, ::vk::MemoryPropertyFlagBits::eHostVisible | ::vk::MemoryPropertyFlagBits::eHostCoherent ) ;
-  host_mem.resize( 200 ) ;
-  std::fill( host_mem.begin(), host_mem.end(), 2503 ) ;
+  buffer_1.initialize( device, 500, true  ) ;
+  buffer_2.initialize( device, 500, false ) ;
+  cmd     .initialize( graphics_queue, 1  ) ;
+  sync    .initialize( device             ) ;
+  if( cmd.size() != 1 ) return false ;
   
-  memory.copyToDevice( host_mem.data(), sizeof( unsigned ) * 200 ) ;
-  memory.syncToHost() ;
+  // Record copy command.
+  cmd.record() ;
+  buffer_1.copyToDevice( test_array.data(), 500 ) ;
+  buffer_2.copy( buffer_1, cmd ) ;
+  cmd.stop() ;
   
-  for( unsigned i = 0; i < 200; i++ )
-  {
-    auto array= static_cast<const unsigned*>( memory.hostData() ) ;
-    if( array[ i ] != 2503 )
-    {
-      memory.deallocate() ;
-      return false ;
-    }
-  }
-  
-  memory.deallocate() ;
+  // Submit & Sync.
+  graphics_queue.submit( cmd, sync ) ;
   return true ;
 }
 
-athena::Result testBufferSingleAllocation()
+athena::Result test_buffer_initialize()
 {
   Impl::Buffer buffer ;
   
@@ -266,7 +339,7 @@ athena::Result testBufferSingleAllocation()
   return false ;
 }
 
-athena::Result testBufferPreallocatedSingle()
+athena::Result test_buffer_preallocated_initialize()
 {
   const unsigned buffer_size = sizeof( unsigned ) * 200 ;
   Impl::Buffer      buffer ;
@@ -290,7 +363,7 @@ athena::Result testBufferPreallocatedSingle()
   return false ;
 }
 
-athena::Result testBufferPreallocatedMultiple()
+athena::Result test_multiple_buffer_preallocated_initialize()
 {
   const unsigned buffer_size = sizeof( unsigned ) * 200 ;
   Impl::Buffer      buffer_one ;
@@ -320,6 +393,17 @@ athena::Result testBufferPreallocatedMultiple()
   return false ;
 }
 
+athena::Result test_buffer_size()
+{
+  Impl::Buffer buffer ;
+  
+  if( !device.initialized() ) return athena::Result::Skip ;
+  buffer.initialize( device, 500 * sizeof( unsigned ) ) ;
+  
+  if( buffer.size() < 500 * sizeof( unsigned ) ) return false ;
+  return true ;
+}
+
 athena::Result simpleImageTest()
 {
   Impl::Image<nyx::ImageFormat::RGBA8> image ;
@@ -334,33 +418,6 @@ athena::Result simpleImageTest()
   return false ;
 }
 
-athena::Result arrayCopyNonSyncedTest()
-{
-  Impl::CommandRecord   cmd      ;
-  Impl::Array<unsigned> buffer_1 ;
-  Impl::Array<unsigned> buffer_2 ; 
-  Impl::Synchronization sync     ;
-  
-  test_array.resize( 500 ) ;
-  std::fill( test_array.begin(), test_array.end(), 76006 ) ;
-  if( !device.initialized() ) return athena::Result::Skip ;
-  buffer_1.initialize( device, 500, true  ) ;
-  buffer_2.initialize( device, 500, false ) ;
-  cmd     .initialize( graphics_queue, 1  ) ;
-  sync    .initialize( device             ) ;
-  if( cmd.size() != 1 ) return false ;
-  
-  // Record copy command.
-  cmd.record() ;
-  buffer_1.copyToDevice( test_array.data(), 500 ) ;
-  buffer_2.copy( buffer_1, cmd ) ;
-  cmd.stop() ;
-  
-  // Submit & Sync.
-  graphics_queue.submit( cmd, sync ) ;
-  return true ;
-}
-
 athena::Result shaderTest()
 {
   Impl::Shader        shader   ;
@@ -372,7 +429,7 @@ athena::Result shaderTest()
   
   if( !device.initialized() ) return athena::Result::Skip ;
   // Add shaders.
-  shader.addAttribute   ( 0, 0, Impl::Shader::Format::vec4, 0                                    ) ;
+  shader.addAttribute   ( 0, 0, Impl::Shader::Format::vec4, 0                                          ) ;
   shader.addInputBinding( 0, sizeof( float ) * 3, vk::VertexInputRate::eVertex                         ) ;
   shader.addDescriptor  ( 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eFragment ) ;
   shader.addShaderModule( vk::ShaderStageFlagBits::eVertex  , test_vert, sizeof( test_vert )           ) ;
@@ -421,7 +478,7 @@ athena::Result imageLoadTest()
   auto bytes = stbi_load( "test_image.jpeg", &width, &height, &chan, STBI_rgb_alpha ) ;
   if( !device.initialized() ) return athena::Result::Skip ;
   cmd.initialize      ( graphics_queue, 1 ) ;
-  staging.initialize  ( device, static_cast<unsigned>( width * height * 4 ), true, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst ) ;
+  staging.initialize  ( device, static_cast<unsigned>( width * height * 4 ), true, nyx::ArrayFlags::TransferSrc | nyx::ArrayFlags::TransferDst ) ;
   staging.copyToDevice( bytes, static_cast<unsigned>( width * height * 4 ) ) ;
   
   if( !image.initialize( device, static_cast<unsigned>( width ), static_cast<unsigned>( height ), 1 ) ) return false ;
@@ -438,25 +495,27 @@ athena::Result imageLoadTest()
 int main()
 {
   manager.initialize( "Nyx VULKAN Library" ) ;
-  manager.add( "A1)  Instance Creation Test"               , &instance_initialization_test   ) ;
-  manager.add( "A2)  Window Creation Test"                 , &window_creation_test           ) ;
-  manager.add( "A3)  Device Creation Test"                 , &device_creation_test           ) ;
-  manager.add( "A4)  Graphics Queue Grab Test"             , &graphics_queue_get_test        ) ;
-  manager.add( "A5)  Swapchain Creation Test"              , &swapchain_creation_test        ) ;
-  manager.add( "A6)  Array::initialize Test"               , &array_initialize_test          ) ;
-  manager.add( "A7)  Array::size Test"                     , &array_size_test                ) ;
-  manager.add( "A8)  Array::copy Test"                     , &array_host_copy_test           ) ;
-//  manager.add( "9)  Array Copy & Synced Submit Test"      , &array_copy_test                ) ;
-  manager.add( "B0) Array Copy & Non-Synced Submit Test"  , &arrayCopyNonSyncedTest         ) ;
-  manager.add( "B1) Buffer Creation & Allocation"         , &testBufferSingleAllocation     ) ;
-  manager.add( "B2) Preallocated Buffer Creation"         , &testBufferPreallocatedSingle   ) ;
-  manager.add( "B3) Multiple Preallocated Buffer Creation", &testBufferPreallocatedMultiple ) ;
-  manager.add( "B4) Memory Host-GPU Copy"                 , &testMemoryHostGPUCopy          ) ;
-  manager.add( "B5) Image Test"                           , &simpleImageTest                ) ;
-  manager.add( "B6) Pipeline Test"                        , &shaderTest                     ) ;
-  manager.add( "B7) Image Copy Test"                      , &imageLoadTest                  ) ;
-  
-  std::cout << "\nTesting VKG Library" << std::endl ;
+  manager.add( "01) Instance Creation Test"                 , &instance_initialization_test                 ) ;
+  manager.add( "02) Window Creation Test"                   , &window_creation_test                         ) ;
+  manager.add( "03) Device Creation Test"                   , &device_creation_test                         ) ;
+  manager.add( "04) Graphics Queue Grab Test"               , &graphics_queue_get_test                      ) ;
+  manager.add( "05) Swapchain Creation Test"                , &swapchain_creation_test                      ) ;
+  manager.add( "06) Memory::initialize Test"                , &test_memory_initialize                       ) ;
+  manager.add( "07) Memory::size Test"                      , &test_memory_size                             ) ;
+  manager.add( "08) Memory::offset Test"                    , &test_memory_offset                           ) ;
+  manager.add( "09) Memory::device Test"                    , &test_memory_device                           ) ;
+  manager.add( "10) Memory::syncToHost Test"                , &test_memory_sync_to_host_copy                ) ;
+  manager.add( "11) Buffer::initialize Test"                , &test_buffer_initialize                       ) ;
+  manager.add( "12) Buffer::preallocated init Test"         , &test_buffer_preallocated_initialize          ) ;
+  manager.add( "13) Buffer::multiple preallocated init Test", &test_multiple_buffer_preallocated_initialize ) ;
+  manager.add( "14) Buffer::size Test"                      , &test_buffer_size                             ) ;
+  manager.add( "15) Array::initialize Test"                 , &array_initialize_test                        ) ;
+  manager.add( "16) Array::size Test"                       , &array_size_test                              ) ;
+  manager.add( "17) Array::copy Test"                       , &array_host_copy_test                         ) ;
+  manager.add( "18) Array::copy Test ( No waiting )"        , &test_array_copy_non_wait                     ) ;
+  manager.add( "19) Image Test"                             , &simpleImageTest                              ) ;
+  manager.add( "20) Pipeline Test"                          , &shaderTest                                   ) ;
+  manager.add( "21) Image Copy Test"                        , &imageLoadTest                                ) ;
   
   return manager.test( athena::Output::Verbose ) ;
 }

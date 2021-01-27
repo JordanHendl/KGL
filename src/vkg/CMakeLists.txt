@@ -39,6 +39,7 @@ IF( ${Vulkan_FOUND} )
 
     SET( NYX_VULKAN_LIBRARIES
          ${Vulkan_LIBRARIES}
+         nyx_library
          nyxfile 
         )
     

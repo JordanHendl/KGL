@@ -17,22 +17,13 @@
 
 #ifndef NYX_VKG_IMAGE_H
 #define NYX_VKG_IMAGE_H
-typedef unsigned VkFlags ;
 
 namespace vk
 {
-   template <typename BitType>
-   class Flags ;
-
-       class CommandBuffer                 ;
-       class Sampler                       ;
-       class ImageView                     ;
-       class Image                         ;
-  enum class ImageLayout                   ;
-  enum class ImageType                     ;
-  enum class Format                        ;
-  enum class ImageUsageFlagBits  : VkFlags ;
-  enum class SampleCountFlagBits : VkFlags ;
+  class CommandBuffer ;
+  class Sampler       ;
+  class ImageView     ;
+  class Image         ;
 }
 
 namespace nyx
@@ -42,34 +33,40 @@ namespace nyx
   
   /** Forward declared image format.
    */
-  enum class ImageFormat ;
+  enum class ImageFormat : unsigned ;
   
   /** Forward declared image layout.
    */
-  enum class ImageLayout ;
+  enum class ImageLayout : unsigned ;
   
+  /** Forward declared image usage.
+   */
+  enum class ImageUsage : unsigned ;
+  
+  /** Forward declared image type.
+   */
+  enum class ImageType : unsigned ;
+  
+  /** Forward declared generic template object.
+   */
+  template<typename IMPL, ImageFormat FORMAT>
+  class Image ;
+
   namespace vkg
   {
     class Vulkan        ;
     class Device        ;
     class Buffer        ;
     class CommandBuffer ;
-
+    class RenderPass    ;
+    class Swapchain     ;
+    
     /** Abstraction of a Vulkan Image.
      */
     class Image 
     {
       public:
-        
-        /** Alias for Vulkan Usage flags.
-         */
-        using UsageFlags = ::vk::Flags<::vk::ImageUsageFlagBits> ;
-        
-        /** Alias for Vulkan Sample flags.
-         */
-        using SampleFlags = ::vk::Flags<::vk::SampleCountFlagBits> ;
-
-        /** Constructor
+         /** Constructor
          */
         Image() ;
         
@@ -90,6 +87,18 @@ namespace nyx
          */
         Image& operator=( const Image& src ) ;
         
+      private:
+        
+        /** Friend decleration for templated image.
+         */
+        template<typename IMPL, nyx::ImageFormat FORMAT>
+        friend class ::nyx::Image ;
+        
+        friend class RenderPassData ; ///< Friend class for render pass data object.
+        friend class SwapchainData  ; ///< Friend class for swapchain data object.
+        friend class RenderPass     ; ///< Friend class for render pass.
+        friend class Swapchain      ; ///< Friend class for swapchain.
+
         /** Method to perform a deep copy on the input image.
          * @param src The image to copy from.
          * @param buffer Reference to a valid vulkan command buffer to record the copy operation to.
@@ -146,22 +155,17 @@ namespace nyx
         /** Method to set this image's vulkan usage.
          * @param usage The Vulkan usage of the image.
          */
-        void setUsage( const ::vk::ImageUsageFlagBits& usage ) ;
-        
-        /** Method to set this image's vulkan usage.
-         * @param usage The Vulkan usage of the image.
-         */
-        void setUsage( const Image::UsageFlags& usage ) ;
+        void setUsage( const nyx::ImageUsage& usage ) ;
         
         /** Method to set the type of image this is.
          * @param The vulkan type of image.
          */
-        void setType( const ::vk::ImageType& type ) ;
+        void setType( const nyx::ImageType& type ) ;
         
         /** Method to set the number of samples to use for this image.
          * @param num_samples Numer of mip-levels to use for this image.
          */
-        void setNumSamples( const ::vk::SampleCountFlagBits& num_samples ) ;
+        void setNumSamples( unsigned num_samples ) ;
         
         /** Method to set the number of mip-levels to use for this image.
          * @param mip_levels The number of mip-levels to use for this image.
@@ -171,33 +175,33 @@ namespace nyx
         /** Method to set the format of this object. 
          * @param format The Vulkan format to set this image to.
          */
-        void setFormat( const vk::Format& format ) ;
+        void setFormat( const nyx::ImageFormat& format ) ;
         
         /** Method to set the layout of this image.
          * @param layout The Vulkan layour to set this image to.
          */
-        void setLayout( const vk::ImageLayout& layout ) ;
+        void setLayout( const nyx::ImageLayout& layout ) ;
         
         /** Method to transition this object's layout to the specified one on the GPU.
          * @param layout The layout to transition this image to.
          * @param cmd_buff The Vulkan command buffer to record the transition operation to.
          */
-        void transition( const vk::ImageLayout& layout, const vk::CommandBuffer& cmd_buff ) const ;
+        void transition( const nyx::ImageLayout& layout, const nyx::vkg::CommandBuffer& cmd_buff ) const ;
         
         /** Method to transition the image back to it's last known layout.
          * @param cmd_buff The Vulkan command buffer to record the transition operation to.
          */
-        void revertLayout( const vk::CommandBuffer& cmd_buff ) const ;
+        void revertLayout( const nyx::vkg::CommandBuffer& cmd_buff ) const ;
         
         /** Method to retrieve the vulkan image view associated with this image.
          * @return The vulkan image view associated with this image.
          */ 
-        const ::vk::ImageView& view() const ;
+        const vk::ImageView& view() const ;
         
         /** Method to retrieve the vulkan sampler associated with this image.
          * @return The vulkan sampler associated with this image.
          */
-        const ::vk::Sampler& sampler() const ;
+        const vk::Sampler& sampler() const ;
         
         /** Method to retrieve the size of this object.
          * @return The size in pixels of this object.

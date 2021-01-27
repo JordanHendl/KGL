@@ -23,6 +23,65 @@ namespace nyx
   template<typename IMPL>
   class Memory ;
   
+  /** Reflective enumeration for array flags.
+   */
+  class ArrayFlags
+  {
+    public:
+      
+      enum
+      {
+        TransferSrc   = 0x00000001,
+        TransferDst   = 0x00000002,
+        UniformBuffer = 0x00000010,
+        StorageBuffer = 0x00000020,
+        Index         = 0x00000040,
+        Vertex        = 0x00000080,
+        DeviceAddress = 0x00020000
+      };
+      
+      /** Default constructor.
+       */
+      ArrayFlags() ;
+      
+      /** Copy constructor. Copies input into this object.
+       * @param flags The object to copy into this one.
+       */
+      ArrayFlags( unsigned flags ) ;
+      
+      /** Assignment operator. Assigns this object to the input. 
+       * @param flag The flag to assign this object to.
+       * @return Reference to this object after assignment.
+       */
+      ArrayFlags& operator=( unsigned flag ) ;
+      
+      /** OR operator. Bitwise OR's this obect with the input.
+       * @param flag The flag to bitwise OR this object with.
+       * @return Reference to this object after the operation.
+       */
+      ArrayFlags& operator|( unsigned flag ) ;
+      
+      /** Static conversion operator.
+       * @return The underlying value of this object.
+       */
+      operator unsigned() const ;
+      
+      /** Method to retrieve this object's enumeration.
+       * @return This object's enumeration.
+       */
+      unsigned value() const ;
+      
+      /** Method to set this object's enumeration value.
+       * @param value The value to set this object's' enumeration to.
+       */
+      void set( unsigned value ) ;
+    private:
+      
+      /** The underlying enumeration bit.
+       */
+      unsigned bit ;
+  };
+  
   template<typename IMPL, class TYPE>
   class Array
   {
@@ -154,8 +213,8 @@ namespace nyx
        * @param mem_flags The implementation-specific memory flags to use for the memory creation.
        * @param buffer_flags The implementation-specific buffer flags to use for buffer creation.
        */
-      template<typename ... BUFFER_FLAGS>
-      void initialize( const typename IMPL::Device& device, unsigned size, bool host_alloc, BUFFER_FLAGS... buffer_flags ) ;
+      template<typename ... ARRAY_FLAGS>
+      void initialize( const typename IMPL::Device& device, unsigned size, bool host_alloc, ARRAY_FLAGS... array_flags ) ;
       
       /** Method to retrieve a const reference to this object's implementation-specific buffer.
        * @return Const-reference to this object's internal buffer.
@@ -307,11 +366,11 @@ namespace nyx
   }
 
   template<typename IMPL, class TYPE>
-  template<typename ... BUFFER_FLAGS>
-  void Array<IMPL, TYPE>::initialize( const typename IMPL::Device& device, unsigned size, bool host_alloc, BUFFER_FLAGS... buffer_flags )
+  template<typename ... ARRAY_FLAGS>
+  void Array<IMPL, TYPE>::initialize( const typename IMPL::Device& device, unsigned size, bool host_alloc, ARRAY_FLAGS... array_flags )
   {
     this->count = size ;
-    this->arr_buffer.initialize( device, size * sizeof( TYPE ), host_alloc, buffer_flags... ) ;
+    this->arr_buffer.initialize( device, size * sizeof( TYPE ), host_alloc, array_flags... ) ;
   }
 
   template<typename IMPL, class TYPE>

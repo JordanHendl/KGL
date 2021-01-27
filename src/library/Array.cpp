@@ -17,3 +17,45 @@
 
 #include "Array.h"
 
+namespace nyx
+{
+  ArrayFlags::ArrayFlags()
+  {
+    this->bit = ArrayFlags::TransferDst | ArrayFlags::TransferSrc ;
+  }
+  
+  ArrayFlags::ArrayFlags( unsigned flags )
+  {
+    this->set( flags ) ;
+  }
+
+  ArrayFlags& ArrayFlags::operator=( unsigned flag )
+  {
+    this->set( flag ) ;
+    
+    return *this ;
+  }
+  
+  ArrayFlags& ArrayFlags::operator|( unsigned flag )
+  {
+    this->set( this->bit | flag ) ;
+    
+    return *this ;
+  }
+  
+  ArrayFlags::operator unsigned() const
+  {
+    return this->value() ;
+  }
+  
+  unsigned ArrayFlags::value() const
+  {
+    return this->bit ;
+  }
+  
+  void ArrayFlags::set( unsigned value )
+  {
+    this->bit = value ;
+  }
+}      
+

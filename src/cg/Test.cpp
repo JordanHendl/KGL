@@ -34,7 +34,7 @@
 using Impl = ::nyx::cg::Cuda ;
 const unsigned device = 0 ;
 
-bool testMemoryHostGPUCopy()
+bool test_memory_sync_to_host_copy()
 {
   nyx::Memory<Impl>     memory   ;
   std::vector<unsigned> host_mem ;
@@ -76,7 +76,7 @@ int main()
   std::cout << "Testing NYX CUDA Library" << std::endl ;
   
   manager.initialize( "Nyx CUDA Library" ) ;
-  manager.add( "1) Memory Host-GPU Copy", &testMemoryHostGPUCopy ) ;
+  manager.add( "1) Memory Host-GPU Copy", &test_memory_sync_to_host_copy ) ;
   manager.add( "2) Testing Cuda Array"  , &simpleArrayTest       ) ;
   
   return manager.test( athena::Output::Verbose ) ;
