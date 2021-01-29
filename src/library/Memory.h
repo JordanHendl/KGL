@@ -94,7 +94,7 @@ namespace nyx
 
   /** Class to manage memory on the GPU & CPU.
    */
-  template<typename IMPL>
+  template<typename Framework>
   class Memory
   {
     public:
@@ -106,7 +106,7 @@ namespace nyx
       /** Copy constructor. Copies the values of the input, does not perform a deep copy.
        * @param src The input to copy.
        */
-      Memory( const Memory<IMPL>& src ) ;
+      Memory( const Memory<Framework>& src ) ;
       
       /** Default Deconstructor.
        */
@@ -116,28 +116,28 @@ namespace nyx
        * @param src The memory to copy.
        * @return Reference to this object after the assignment.
        */
-      Memory<IMPL>& operator=( const Memory<IMPL>& src ) ;
+      Memory<Framework>& operator=( const Memory<Framework>& src ) ;
       
       /** Operator to return a copy of this object at the specified offset
        * @param offset The amount to offset this object into the memory.
        */
-      Memory<IMPL> operator+( unsigned offset ) const ;
+      Memory<Framework> operator+( unsigned offset ) const ;
 
       /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
        */
-      operator const typename IMPL::Memory&() const ;
+      operator const typename Framework::Memory&() const ;
       
       /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
        */
-      operator typename IMPL::Memory() const ;
+      operator typename Framework::Memory() const ;
       
       /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
        */
-      operator const typename IMPL::Memory&() ;
+      operator const typename Framework::Memory&() ;
       
       /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
        */
-      operator typename IMPL::Memory() ;
+      operator typename Framework::Memory() ;
         
       /** Method to retrieve whether or not this object is initialized.
        * @return Whether or not this object is initialized.
@@ -151,14 +151,14 @@ namespace nyx
        * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
        */
       template<typename ... MEMORY_FLAGS>
-      void initialize( const typename IMPL::Device& gpu, unsigned sz, bool host_alloc, MEMORY_FLAGS... mem_flags ) ;
+      void initialize( const typename Framework::Device& gpu, unsigned sz, bool host_alloc, MEMORY_FLAGS... mem_flags ) ;
       
       /** Method to initialize this memory object with the input parameters.
        * @param sz The size in bytes to store in this object.
        * @param gpu The implementation-specific GPU to use for all gpu operations.
        * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
        */      
-      void initialize( const typename IMPL::Device& gpu, unsigned sz, bool host_alloc = true ) ;
+      void initialize( const typename Framework::Device& gpu, unsigned sz, bool host_alloc = true ) ;
       
       /** Method to initialize this memory object with the input parameters.
        * @param sz The size in bytes to store in this object.
@@ -167,14 +167,14 @@ namespace nyx
        * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
        */
       template<typename ... MEMORY_FLAGS>
-      void initialize( const typename IMPL::Device& gpu, unsigned sz, unsigned filter, bool host_alloc, MEMORY_FLAGS... mem_flags ) ;
+      void initialize( const typename Framework::Device& gpu, unsigned sz, unsigned filter, bool host_alloc, MEMORY_FLAGS... mem_flags ) ;
       
       /** Method to initialize this memory object with the input parameters.
        * @param sz The size in bytes to store in this object.
        * @param gpu The implementation-specific GPU to use for all gpu operations.
        * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
        */      
-      void initialize( const typename IMPL::Device& gpu, unsigned sz, unsigned filter, bool host_alloc = true ) ;
+      void initialize( const typename Framework::Device& gpu, unsigned sz, unsigned filter, bool host_alloc = true ) ;
         
       /** Method to retrieve the host buffer of this object's data.
        * @return The host-buffer containing this object's data.
@@ -184,7 +184,7 @@ namespace nyx
       /** Method to retrieve the implementation-specific device used by this object.
        * @return The implementation-specific device used by the object.
        */
-      const typename IMPL::Device& device() const ;
+      const typename Framework::Device& device() const ;
 
       /** Method to retrieve the offset into the memory handle this object's allowed to use.
        * @return The offset into the memory handle this object is allowed to use.
@@ -197,7 +197,7 @@ namespace nyx
        * @param srcoffset The offset into the input memory object to start copying at. Defaults to the start.
        * @param dstoffset The offset into the output memory object to start copying at. Defaults to the start.
        */
-      void copy( const Memory<IMPL>& src, unsigned amt_to_copy = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+      void copy( const Memory<Framework>& src, unsigned amt_to_copy = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
       
       /** Method to copy the input host ( CPU-side ) data into this object's host & GPU copies.
        * @param src Pointer to the input data to copy from.
@@ -229,7 +229,7 @@ namespace nyx
       /** Method to retrieve a const reference to this object's internal implementation-specific memory.
        * @return 
        */
-      const typename IMPL::Memory& memory() const ;
+      const typename Framework::Memory& memory() const ;
       
       /** Function to deallocate all memory allocated by this object.
        */
@@ -268,13 +268,13 @@ namespace nyx
       Data                  data       ;
       Size                  byte_size  ;
       Size                  mem_offset ;
-      IMPL                  impl       ;
-      typename IMPL::Device gpu        ;
-      typename IMPL::Memory memory_ptr ;
+      Framework                  impl       ;
+      typename Framework::Device gpu        ;
+      typename Framework::Memory memory_ptr ;
   };
   
-  template<typename IMPL>
-  Memory<IMPL>::Memory()
+  template<typename Framework>
+  Memory<Framework>::Memory()
   {
     this->dirty_bit  = false   ;
     this->data       = nullptr ;
@@ -284,14 +284,14 @@ namespace nyx
     this->host_alloc = false   ;
   }
   
-  template<typename IMPL>
-  Memory<IMPL>::Memory( const Memory<IMPL>& src )
+  template<typename Framework>
+  Memory<Framework>::Memory( const Memory<Framework>& src )
   {
     *this = src ;
   }
   
-  template<typename IMPL>
-  Memory<IMPL>& Memory<IMPL>::operator=( const Memory<IMPL>& src )
+  template<typename Framework>
+  Memory<Framework>& Memory<Framework>::operator=( const Memory<Framework>& src )
   {
     this->dirty_bit  = src.dirty_bit  ;
     this->data       = src.data       ;
@@ -305,17 +305,17 @@ namespace nyx
     return *this ;
   }
   
-  template<typename IMPL>
-  const void* Memory<IMPL>::hostData() const
+  template<typename Framework>
+  const void* Memory<Framework>::hostData() const
   {
     return static_cast<const void*>( this->data ) ;
   }
 
-  template<typename IMPL>
-  Memory<IMPL> Memory<IMPL>::operator+( unsigned offset ) const
+  template<typename Framework>
+  Memory<Framework> Memory<Framework>::operator+( unsigned offset ) const
   {
     const unsigned next_offset = this->mem_offset + offset ;
-    Memory<IMPL> memory ;
+    Memory<Framework> memory ;
     
     memory            = *this                                                     ;
     memory.mem_offset = next_offset >= this->size() ? this->size() :  next_offset ;
@@ -323,32 +323,32 @@ namespace nyx
     return memory ;
   }
   
-  template<typename IMPL>
-  Memory<IMPL>::operator const typename IMPL::Memory&() const
+  template<typename Framework>
+  Memory<Framework>::operator const typename Framework::Memory&() const
   {
     return this->memory_ptr ;
   }
   
-  template<typename IMPL>
-  Memory<IMPL>::operator typename IMPL::Memory() const
+  template<typename Framework>
+  Memory<Framework>::operator typename Framework::Memory() const
   {
     return this->memory_ptr ;
   }
   
-  template<typename IMPL>
-  Memory<IMPL>::operator const typename IMPL::Memory&()
+  template<typename Framework>
+  Memory<Framework>::operator const typename Framework::Memory&()
   {
     return this->memory_ptr ;
   }
   
-  template<typename IMPL>
-  Memory<IMPL>::operator typename IMPL::Memory()
+  template<typename Framework>
+  Memory<Framework>::operator typename Framework::Memory()
   {
     return this->memory_ptr ;
   }
 
-  template<typename IMPL>
-  void Memory<IMPL>::deallocate()
+  template<typename Framework>
+  void Memory<Framework>::deallocate()
   {
     if( this->data )
     {
@@ -358,15 +358,15 @@ namespace nyx
     impl.free( this->memory_ptr, this->gpu ) ;
   }
 
-  template<typename IMPL>
-  bool Memory<IMPL>::initialized() const
+  template<typename Framework>
+  bool Memory<Framework>::initialized() const
   {
     return ( this->memory_ptr ) ;
   }
 
-  template<typename IMPL>
+  template<typename Framework>
   template< typename ... MEMORY_FLAGS>
-  void Memory<IMPL>::initialize( const typename IMPL::Device& gpu, unsigned sz, bool host_alloc, MEMORY_FLAGS... mem_flags ) 
+  void Memory<Framework>::initialize( const typename Framework::Device& gpu, unsigned sz, bool host_alloc, MEMORY_FLAGS... mem_flags ) 
   {
     this->byte_size  = sz  ;
     this->gpu        = gpu ;
@@ -379,8 +379,8 @@ namespace nyx
     }
   }
 
-  template<typename IMPL>
-  void Memory<IMPL>::initialize( const typename IMPL::Device& gpu, unsigned sz, bool host_alloc ) 
+  template<typename Framework>
+  void Memory<Framework>::initialize( const typename Framework::Device& gpu, unsigned sz, bool host_alloc ) 
   {
     this->byte_size  = sz  ;
     this->gpu        = gpu ;
@@ -393,9 +393,9 @@ namespace nyx
     }
   }
 
-  template<typename IMPL>
+  template<typename Framework>
   template< typename ... MEMORY_FLAGS>
-  void Memory<IMPL>::initialize( const typename IMPL::Device& gpu, unsigned sz, unsigned filter, bool host_alloc, MEMORY_FLAGS... mem_flags ) 
+  void Memory<Framework>::initialize( const typename Framework::Device& gpu, unsigned sz, unsigned filter, bool host_alloc, MEMORY_FLAGS... mem_flags ) 
   {
     this->byte_size  = sz  ;
     this->gpu        = gpu ;
@@ -408,8 +408,8 @@ namespace nyx
     }
   }
 
-  template<typename IMPL>
-  void Memory<IMPL>::initialize( const typename IMPL::Device& gpu, unsigned sz, unsigned filter, bool host_alloc ) 
+  template<typename Framework>
+  void Memory<Framework>::initialize( const typename Framework::Device& gpu, unsigned sz, unsigned filter, bool host_alloc ) 
   {
     this->byte_size  = sz  ;
     this->gpu        = gpu ;
@@ -422,69 +422,69 @@ namespace nyx
     }
   }
 
-  template<typename IMPL>
-  void Memory<IMPL>::copy( const Memory<IMPL>& src, unsigned amt_to_copy, unsigned srcoffset, unsigned dstoffset )
+  template<typename Framework>
+  void Memory<Framework>::copy( const Memory<Framework>& src, unsigned amt_to_copy, unsigned srcoffset, unsigned dstoffset )
   {
     this->impl.copyTo( src.memory_ptr, this->memory_ptr, offset ) ;
   }
   
-  template<typename IMPL>
+  template<typename Framework>
   template<typename TYPE>
-  void Memory<IMPL>::copySynced( const TYPE* src, unsigned amt, unsigned offset, unsigned src_offset, unsigned dstoffset )
+  void Memory<Framework>::copySynced( const TYPE* src, unsigned amt, unsigned offset, unsigned src_offset, unsigned dstoffset )
   {
     this->copyToDevice( src, amt, offset, src_offset ) ;
     this->copyToHost  ( src, amt, offset, src_offset ) ;
   }
 
-  template<typename IMPL>
+  template<typename Framework>
   template<typename TYPE>
-  void Memory<IMPL>::copyToHost( const TYPE* src, unsigned token_amt, unsigned offset, unsigned src_offset, unsigned dstoffset )
+  void Memory<Framework>::copyToHost( const TYPE* src, unsigned token_amt, unsigned offset, unsigned src_offset, unsigned dstoffset )
   {
     auto amt = token_amt > this->byte_size ? this->byte_size : token_amt ;
     
     memcpy( this->data, src, amt * this->element_sz ) ;
   }
 
-  template<typename IMPL>
+  template<typename Framework>
   template<typename TYPE>
-  void Memory<IMPL>::copyToDevice( const TYPE* src, unsigned byte_amt, unsigned src_offset, unsigned dst_offset )
+  void Memory<Framework>::copyToDevice( const TYPE* src, unsigned byte_amt, unsigned src_offset, unsigned dst_offset )
   {
     auto amt = byte_amt > this->byte_size ? this->byte_size : byte_amt ;
     this->impl.copyToDevice( static_cast<const void*>( src ), this->memory_ptr, this->gpu, amt, src_offset, dst_offset ) ;
   }
 
-  template<typename IMPL>
-  const typename IMPL::Device& Memory<IMPL>::device() const
+  template<typename Framework>
+  const typename Framework::Device& Memory<Framework>::device() const
   {
     return this->gpu ;
   }
   
-  template<typename IMPL>
-  unsigned Memory<IMPL>::offset() const
+  template<typename Framework>
+  unsigned Memory<Framework>::offset() const
   {
     return this->mem_offset ;
   }
   
-  template<typename IMPL>
-  const typename IMPL::Memory& Memory<IMPL>::memory() const
+  template<typename Framework>
+  const typename Framework::Memory& Memory<Framework>::memory() const
   {
     return this->memory_ptr ;
   }
   
-  template<typename IMPL>
-  void Memory<IMPL>::syncToDevice() 
+  template<typename Framework>
+  void Memory<Framework>::syncToDevice() 
   {
     this->impl.copyToDevice( this->data, this->memory_ptr, this->gpu, this->element_sz * this->byte_size ) ;
   }
   
-  template<typename IMPL>
-  void Memory<IMPL>::syncToHost() 
+  template<typename Framework>
+  void Memory<Framework>::syncToHost() 
   {
-    this->impl.copyToHost( static_cast<typename IMPL::Memory>( this->memory_ptr ), this->data, this->gpu, this->byte_size ) ;
+    this->impl.copyToHost( static_cast<typename Framework::Memory>( this->memory_ptr ), this->data, this->gpu, this->byte_size ) ;
   } 
 
-  template<typename IMPL>
-  unsigned Memory<IMPL>::size() const
+  template<typename Framework>
+  unsigned Memory<Framework>::size() const
   {
     return this->byte_size ;
   }

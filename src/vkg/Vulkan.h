@@ -30,8 +30,10 @@
 #include "Pipeline.h"
 #include "Swapchain.h"
 
-typedef unsigned VkFlags ;
-typedef VkFlags VkImageUsageFlags ;
+typedef unsigned VkFlags            ;
+typedef VkFlags  VkImageUsageFlags  ;
+typedef VkFlags  VkShaderStageFlags ;
+
 /** Forward declared vulkan-specific objects.
  */
 namespace vk
@@ -39,19 +41,19 @@ namespace vk
        template <typename BitType>
        class Flags ;
        
-       class SurfaceKHR                             ;
-       class Buffer                                 ;
-       class DeviceMemory                           ;
-       class CommandBuffer                          ;
-       class Instance                               ;
-  enum class MemoryPropertyFlagBits : VkFlags       ;
-  enum class ImageLayout                            ;
-  enum class ImageUsageFlagBits : VkImageUsageFlags ;
-  enum class ImageType                              ;
-  enum class Format                                 ;
-  enum class Result                                 ;
+       class SurfaceKHR                                  ;
+       class DeviceMemory                                ;
+       class Instance                                    ;
+  enum class ImageLayout                                 ;
+  enum class MemoryPropertyFlagBits : VkFlags            ;
+  enum class ImageUsageFlagBits     : VkImageUsageFlags  ;
+  enum class ShaderStageFlagBits    : VkShaderStageFlags ;
+  enum class ImageType                                   ;
+  enum class Format                                      ;
+  enum class Result                                      ;
   
-  using ImageUsageFlags = Flags<ImageUsageFlagBits>;
+  using ImageUsageFlags  = Flags<ImageUsageFlagBits > ;
+  using ShaderStageFlags = Flags<ShaderStageFlagBits> ;
 }
 
 /** Operator definition for OR'ing a memory property flag bit and an unsigned integer.
@@ -101,6 +103,14 @@ namespace nyx
   {
     class Window ;
   }
+  
+    enum class PipelineStage
+  {
+    Vertex,
+    Fragment,
+    Compute,
+    TessC,
+  };
   
   namespace vkg
   {
@@ -182,20 +192,20 @@ namespace nyx
     class Vulkan
     {
       public:
-        using Buffer          = nyx::vkg::Buffer                            ; 
-        using CommandRecord   = nyx::vkg::CommandBuffer                     ; 
-        using Context         = vk::SurfaceKHR                              ; 
-        using Device          = nyx::vkg::Device                            ; 
-        using RenderPass      = nyx::vkg::RenderPass                        ;
-        using Instance        = nyx::vkg::Instance                          ;
-        using Texture         = nyx::vkg::Image                             ; 
-        using Memory          = vk::DeviceMemory                            ; 
-        using MemoryPropFlag  = vk::Flags<::vk::MemoryPropertyFlagBits>     ; 
-        using Pipeline        = nyx::vkg::Pipeline                          ;
-        using Queue           = nyx::vkg::Queue                             ;
-        using Shader          = nyx::vkg::NyxShader                         ;
-        using Swapchain       = nyx::vkg::Swapchain                         ; 
-        using Synchronization = nyx::vkg::Synchronization                   ;
+        using Buffer          = nyx::vkg::Buffer                        ; ///< The object to handle vulkan buffer creation.
+        using CommandRecord   = nyx::vkg::CommandBuffer                 ; ///< The object to handle recording of vulkan commands.
+        using Context         = vk::SurfaceKHR                          ; ///< The object to handle a window's context.
+        using Device          = nyx::vkg::Device                        ; ///< The object to manage a hardware-accelerated device.
+        using DeviceAddress   = unsigned long long                      ; ///< The type of device address this library uses.
+        using RenderPass      = nyx::vkg::RenderPass                    ; ///< The object to manage a render pass.
+        using Instance        = nyx::vkg::Instance                      ; ///< The object to manage vulkan instance creation.
+        using Texture         = nyx::vkg::Image                         ; ///< The object to handle all image creation/memory management.
+        using Memory          = vk::DeviceMemory                        ; ///< The Framework-specific handle for Device Memory.
+        using Pipeline        = nyx::vkg::Pipeline                      ; ///< The object to manage pipeline creation & handling.
+        using Queue           = nyx::vkg::Queue                         ; ///< The object to manage vulkan queues.
+        using Shader          = nyx::vkg::NyxShader                     ; ///< The object to manage an individual vulkan shader.
+        using Swapchain       = nyx::vkg::Swapchain                     ; ///< The object to manage a window's framebuffers.
+        using Synchronization = nyx::vkg::Synchronization               ; ///< The object used to manage synchronization in this library.
 
         template<typename TYPE>
         using Array  = nyx::Array <nyx::vkg::Vulkan, TYPE> ;
@@ -203,6 +213,12 @@ namespace nyx
         template<nyx::ImageFormat FORMAT>
         using Image = nyx::Image<nyx::vkg::Vulkan, FORMAT> ;
         
+        /** Static method to convert a library format to the implementation-specific format.
+         * @param stage The library stage to convert.
+         * @return The vulkan-library specific version.
+         */
+        static vk::ShaderStageFlags convert( nyx::PipelineStage stage ) ;
+
         /** Static method to convert a library format to the implementation-specific format.
          * @param format The library format to convert.
          * @return The implementation-specific format.
@@ -251,17 +267,17 @@ namespace nyx
          */
         static vk::ImageType convert( nyx::ImageType layout ) ;
 
+        /** Static method to convert a vulkan error to an error of the library.
+         * @param error An error defined by vulkan.
+         * @return An error defined by the library.
+         */
+        static Error convert( vk::Result error ) ;
+
         /** Static method to initialize this implementation with a vulkan instance.
          * @param instance
          */
         static void initialize( const ::vk::Instance& instance ) ;
         
-        /** Static method to convert a vulkan error to an error of the library.
-         * @param error An error defined by vulkan.
-         * @return An error defined by the library.
-         */
-        static Error convertError( vk::Result error ) ;
-
         /** Static method for retrieving a vulkan surface from a window's window.
          * @param window The Win32 window to get a surface from.
          * @return A Valid vulkan surface.
@@ -278,7 +294,6 @@ namespace nyx
          * @return String names of the platform-specific extensions needed by this system for a vulkan surface.
          */
         static const char* platformSurfaceInstanceExtensions() ;
-        
 
       private:
         

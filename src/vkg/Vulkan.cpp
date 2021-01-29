@@ -88,6 +88,18 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        return this->err ;
      }
 
+     vk::ShaderStageFlags Vulkan::convert( nyx::PipelineStage stage )
+     {
+       switch( stage )
+       {
+         case nyx::PipelineStage::Vertex   : return vk::ShaderStageFlagBits::eVertex              ;
+         case nyx::PipelineStage::Fragment : return vk::ShaderStageFlagBits::eFragment            ;
+         case nyx::PipelineStage::Compute  : return vk::ShaderStageFlagBits::eCompute             ;
+         case nyx::PipelineStage::TessC    : return vk::ShaderStageFlagBits::eTessellationControl ;
+         default : return vk::ShaderStageFlagBits::eVertex ;
+       }
+     }
+     
      vk::Format Vulkan::convert( nyx::ImageFormat format )
      {
        switch( format )
@@ -221,7 +233,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        ::nyx::vkg::vk_instance = instance ;
      }
 
-     vkg::Error Vulkan::convertError( vk::Result error )
+     vkg::Error Vulkan::convert( vk::Result error )
      {
        switch( error )
        {

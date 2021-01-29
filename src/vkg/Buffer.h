@@ -25,13 +25,14 @@ namespace vk
   class Buffer ;
 }
 
-
 namespace nyx
 {
   template<class T>
   class Memory ;
   
   class ArrayFlags ;
+  
+  using DeviceAddress = unsigned long ;
   
   namespace vkg
   {
@@ -91,13 +92,26 @@ namespace nyx
          * @return Whether or not this buffer is initialized
          */
         bool initialized() const ;
-
+        
+        /** If the system supports it, returns a 64-bit address of the start of this buffer on the device.
+         * @param offset The offset in bytes to start the address at.
+         * @return The Device address starting at the beginning of this buffer.
+         */
+        nyx::DeviceAddress address( unsigned offset = 0 ) const ;
+        
         /** Method to initialize this object using the input pre-allocated memory object. Does not allocate any extra data.
          * @param prealloc The pre-allocated memory object to use for this object's internal memory.
          * @param size The mount of the preallocated memory to use.
          * @return Whether or not this object was successfully initialized.
          */
-        bool initialize( nyx::Memory<nyx::vkg::Vulkan>& prealloc, unsigned size = 0 ) ;
+        bool initialize( nyx::Memory<nyx::vkg::Vulkan>& prealloc, unsigned size ) ;
+        
+        /** Method to initialize this object using the input pre-allocated memory object. Does not allocate any extra data.
+         * @param prealloc The pre-allocated memory object to use for this object's internal memory.
+         * @param size The mount of the preallocated memory to use.
+         * @return Whether or not this object was successfully initialized.
+         */
+        bool initialize( nyx::Memory<nyx::vkg::Vulkan>& prealloc, nyx::ArrayFlags, unsigned size ) ;
         
         /** Method to initialize this object using the input parameters.
          * @param gpu The device to use for all GPU calls.

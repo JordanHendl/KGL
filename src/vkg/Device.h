@@ -77,6 +77,12 @@ namespace nyx
          */
         void reset() ;
         
+        /** Method to query this device to see if an extension is loaded.
+         * @param ext_name The name of the extension to be checked for.
+         * @return Whether or not this device has the extension loaded.
+         */
+        bool hasExtension( const char* ext_name ) const ;
+
         /** Method to set the priority of the input queue id.
          * @param queue_index the index of queue in this family to set the priority of.
          * @param priority The 0.0 - 1.0 priority for this queue.

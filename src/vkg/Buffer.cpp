@@ -21,6 +21,7 @@
 #include <library/Memory.h> 
 #include <library/Array.h>
 #include <vulkan/vulkan.hpp>
+#include <string>
 
 namespace nyx
 {
@@ -28,6 +29,8 @@ namespace nyx
   {
     using IMPL = nyx::vkg::Vulkan ;
     
+    constexpr char* BUFFER_ADDRESS_EXT_NAME = VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME ;
+
     /** Structure to encompass a vulkan buffer's internal data.
      */
     struct BufferData
@@ -35,12 +38,17 @@ namespace nyx
       nyx::Memory<IMPL>      internal_memory ;
       ::nyx::vkg::Device     device          ;
       vk::MemoryRequirements requirements    ;
+      vk::DeviceAddress      address         ;
       vk::BufferUsageFlags   usage_flags     ;
       vk::Buffer             buffer          ;
       bool                   preallocated    ;
       bool                   host_local      ;
       bool                   initialized     ;
       unsigned               device_size     ;
+
+      /** Helper method to create the device address, if available.
+       */
+      void makeDeviceAddress() ;
 
       /** Method to create a vulkan buffer and return it.
        * @param size The byte size of buffer to make.
@@ -52,15 +60,27 @@ namespace nyx
        */
       BufferData() ;
     };
+    
+    void BufferData::makeDeviceAddress()
+    {
+      vk::BufferDeviceAddressInfo info ;
+      
+      info.setBuffer( this->buffer ) ;
+      
+      if( this->device.hasExtension( nyx::vkg::BUFFER_ADDRESS_EXT_NAME ) )
+      {
+        this->address = this->device.device().getBufferAddress( &info ) ;
+      }
+    }
 
     ::vk::Buffer BufferData::createBuffer( unsigned size )
     {
       ::vk::BufferCreateInfo info   ;
       ::vk::Buffer           buffer ;
       
-      info.setSize       ( size                          ) ;
-      info.setUsage      ( this->usage_flags             ) ;
-      info.setSharingMode( ::vk::SharingMode::eExclusive ) ;
+      info.setSize       ( size                                                                 ) ;
+      info.setUsage      ( this->usage_flags | vk::BufferUsageFlagBits::eShaderDeviceAddressEXT ) ;
+      info.setSharingMode( ::vk::SharingMode::eExclusive                                        ) ;
       
       buffer = this->device.device().createBuffer( info, nullptr ) ;
       
@@ -114,6 +134,11 @@ namespace nyx
       return data().initialized ;
     }
     
+    nyx::DeviceAddress Buffer::address( unsigned offset ) const
+    {
+      return data().address + offset ;
+    }
+
     bool Buffer::initialize( nyx::Memory<nyx::vkg::Vulkan>& prealloc, unsigned size )
     {
       data().internal_memory = prealloc ;
@@ -151,6 +176,7 @@ namespace nyx
       if( data().requirements.size <= needed_size )
       {
         data().device.device().bindBufferMemory( data().buffer, data().internal_memory.memory(), data().internal_memory.offset() ) ;
+        data().makeDeviceAddress() ;
         data().initialized = true ;
         return true ;
       }

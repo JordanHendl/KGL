@@ -87,6 +87,12 @@ namespace nyx
          */
         Image& operator=( const Image& src ) ;
         
+        /** Method to perform a deep copy on the input image.
+         * @param src The image to copy from.
+         * @param buffer Reference to a valid vulkan command buffer to record the copy operation to.
+         */
+        void copy( const Image& src, const nyx::vkg::CommandBuffer& buffer ) ;
+
       private:
         
         /** Friend decleration for templated image.
@@ -99,11 +105,6 @@ namespace nyx
         friend class RenderPass     ; ///< Friend class for render pass.
         friend class Swapchain      ; ///< Friend class for swapchain.
 
-        /** Method to perform a deep copy on the input image.
-         * @param src The image to copy from.
-         * @param buffer Reference to a valid vulkan command buffer to record the copy operation to.
-         */
-        void copy( const Image& src, const nyx::vkg::CommandBuffer& buffer ) ;
         
         /** Method to perform a deep copy on the input image.
          * @param src The image to copy from.

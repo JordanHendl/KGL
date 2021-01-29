@@ -32,6 +32,7 @@ namespace vk
 
 namespace nyx
 {
+  enum class PipelineStage ;
   namespace vkg
   {
     /** Forward declared library objects.
@@ -40,6 +41,7 @@ namespace nyx
     class Device     ;
     class Buffer     ;
     class RenderPass ;
+    class Pipeline   ;
 
     /** Class for handling command buffer generation & management.
      */
@@ -67,6 +69,18 @@ namespace nyx
         /** Default deconstructor.
          */
         ~CommandBuffer() ;
+        
+        /** Method to push a value onto the command buffer as a push constant.
+         * @param value The value to push.
+         * @param stage The stage of the pipeline that the constant is used in.
+         */
+        template<typename Type>
+        void pushConstant( const Type& value, nyx::PipelineStage stage ) ;
+        
+        /** Method to bind a pipeline to this command buffer.
+         * @param pipeline The pipeline to bind.
+         */
+        void bind( const nyx::vkg::Pipeline& pipeline ) ;
         
         /** Assignment operator. Assigns this object to the input.
          * @param cmd The command buffer to assign this object to.
@@ -172,6 +186,13 @@ namespace nyx
         
       private:
         
+        /** Private method for pushing a value as a push-constant to this command buffer.
+         * @param value The pointer value to push onto the Device.
+         * @param byte_size The size in bytes of the object being pushed.
+         * @param stage_flags The stage that the push constant is used on.
+         */
+        void pushConstantBase( const void* value, unsigned byte_size, nyx::PipelineStage stage_flags ) ;
+
         /** Forward declared structure containing this object's data.
          */
         struct CommandBufferData *cmd_data ;
@@ -186,6 +207,12 @@ namespace nyx
          */
         const CommandBufferData& data() const ;
     };
+    
+    template<typename Type>
+    void CommandBuffer::pushConstant( const Type& value, nyx::PipelineStage stage )
+    {
+      this->pushConstantBase( static_cast<const void*>( value ), sizeof( Type ), stage ) ;
+    }
   }
 }
 

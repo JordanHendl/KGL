@@ -125,7 +125,7 @@ namespace nyx
 
     PipelineData::PipelineData()
     {
-      this->push_constant_size  = 0                                ;
+      this->push_constant_size  = 256                              ;
       this->push_constant_flags = vk::ShaderStageFlagBits::eVertex ;
     }
 
@@ -143,7 +143,7 @@ namespace nyx
       
       info.setSetLayoutCount        ( 1                                     ) ;
       info.setPSetLayouts           ( &desc_layout                          ) ;
-      info.setPushConstantRangeCount( this->push_constant_size != 0 ? 1 : 0 ) ;
+      info.setPushConstantRangeCount( 1                                     ) ;
       info.setPPushConstantRanges   ( &range                                ) ;
       
       this->layout = this->device.device().createPipelineLayout( info, nullptr ) ;
@@ -239,6 +239,11 @@ namespace nyx
       
       data().createLayout() ;
       data().createPipeline() ;
+    }
+    
+    bool Pipeline::isGraphics() const
+    {
+      return data().render_pass.initialized() ;
     }
 
     void Pipeline::initialize( const NyxShader& shader )

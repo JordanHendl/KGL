@@ -36,7 +36,6 @@
 #include <Athena/Manager.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-
 using Impl = nyx::vkg::Vulkan ;
 
 static Impl::Instance      instance       ;
@@ -174,12 +173,15 @@ athena::Result swapchain_creation_test()
   return true ;
 }
 
-athena::Result array_initialize_test()
+athena::Result test_array_initialize()
 {
-  Impl::Array<float> array ;
+  Impl::Array<float>         array ;
+  nyx::Iterator<Impl, float> iter  ;
   
   if( !device.initialized() ) return athena::Result::Skip ;
   array.initialize( device, 500, true ) ;
+  iter = array.iterator() ;
+  
   array.reset() ;
   return true ;
 }
@@ -257,7 +259,7 @@ athena::Result test_memory_sync_to_host_copy()
   return true ;
 }
 
-athena::Result array_size_test()
+athena::Result test_array_size()
 {
   Impl::Array<float> array ;
   
@@ -267,7 +269,7 @@ athena::Result array_size_test()
   
   return true ;
 }
-athena::Result array_host_copy_test()
+athena::Result test_array_host_copy()
 {
   Impl::CommandRecord   cmd      ;
   Impl::Array<unsigned> buffer_1 ;
@@ -322,89 +324,23 @@ athena::Result test_array_copy_non_wait()
   return true ;
 }
 
-athena::Result test_buffer_initialize()
+athena::Result test_array_prealloc_init()
 {
-  Impl::Buffer buffer ;
+  Impl::Array<unsigned> array_1 ;
+  Impl::Array<unsigned> array_2 ; 
+  nyx::Memory<Impl>     memory  ;
   
   if( !device.initialized() ) return athena::Result::Skip ;
-  buffer.initialize( device, 200, false ) ;
-
-  if( buffer.buffer() && buffer.memory().memory() ) 
-  {
-    buffer.reset() ;
-    return true ;
-  }
-
-  buffer.reset() ;
-  return false ;
-}
-
-athena::Result test_buffer_preallocated_initialize()
-{
-  const unsigned buffer_size = sizeof( unsigned ) * 200 ;
-  Impl::Buffer      buffer ;
-  nyx::Memory<Impl> memory ;
-  unsigned          binded ;
   
-  binded = 0 ;
+  memory.initialize( device, sizeof( unsigned ) * 1000 ) ;
   
-  if( !device.initialized() ) return athena::Result::Skip ;
-            memory.initialize( device, sizeof( unsigned ) * 1000 ) ;
-  binded += buffer.initialize( memory, buffer_size               ) ;
-  
-  buffer.reset()      ;
-  memory.deallocate() ;
-
-  if( binded == 1 )
-  {
-    return true ;
-  }
-  
-  return false ;
-}
-
-athena::Result test_multiple_buffer_preallocated_initialize()
-{
-  const unsigned buffer_size = sizeof( unsigned ) * 200 ;
-  Impl::Buffer      buffer_one ;
-  Impl::Buffer      buffer_two ;
-  nyx::Memory<Impl> memory_one ;
-  nyx::Memory<Impl> memory_two ;
-  unsigned          binded     ;
-  
-  binded = 0 ;
-  if( !device.initialized() ) return athena::Result::Skip ;
-            memory_one.initialize( device, sizeof( unsigned ) * 1000 ) ;
-  binded += buffer_one.initialize( memory_one, buffer_size           ) ;
-  
-  memory_two = memory_one + buffer_one.size() ;
-
-  binded += buffer_two.initialize( memory_two, buffer_size ) ;
-  
-  buffer_one.reset() ;
-  buffer_two.reset() ;
-  memory_one.deallocate() ;
-
-  if( binded == 2 )
-  {
-    return true ;
-  }
-  
-  return false ;
-}
-
-athena::Result test_buffer_size()
-{
-  Impl::Buffer buffer ;
-  
-  if( !device.initialized() ) return athena::Result::Skip ;
-  buffer.initialize( device, 500 * sizeof( unsigned ) ) ;
-  
-  if( buffer.size() < 500 * sizeof( unsigned ) ) return false ;
+  if( !array_1.initialize( memory, 200 ) ) return false ;
+  if( !array_2.initialize( memory, 200 ) ) return false ;
+          
   return true ;
 }
 
-athena::Result simpleImageTest()
+athena::Result test_image_initialization()
 {
   Impl::Image<nyx::ImageFormat::RGBA8> image ;
   
@@ -491,7 +427,6 @@ athena::Result imageLoadTest()
   
   return true ;
 }
-
 int main()
 {
   manager.initialize( "Nyx VULKAN Library" ) ;
@@ -505,15 +440,12 @@ int main()
   manager.add( "08) Memory::offset Test"                    , &test_memory_offset                           ) ;
   manager.add( "09) Memory::device Test"                    , &test_memory_device                           ) ;
   manager.add( "10) Memory::syncToHost Test"                , &test_memory_sync_to_host_copy                ) ;
-  manager.add( "11) Buffer::initialize Test"                , &test_buffer_initialize                       ) ;
-  manager.add( "12) Buffer::preallocated init Test"         , &test_buffer_preallocated_initialize          ) ;
-  manager.add( "13) Buffer::multiple preallocated init Test", &test_multiple_buffer_preallocated_initialize ) ;
-  manager.add( "14) Buffer::size Test"                      , &test_buffer_size                             ) ;
-  manager.add( "15) Array::initialize Test"                 , &array_initialize_test                        ) ;
-  manager.add( "16) Array::size Test"                       , &array_size_test                              ) ;
-  manager.add( "17) Array::copy Test"                       , &array_host_copy_test                         ) ;
-  manager.add( "18) Array::copy Test ( No waiting )"        , &test_array_copy_non_wait                     ) ;
-  manager.add( "19) Image Test"                             , &simpleImageTest                              ) ;
+  manager.add( "11) Array::initialize Test"                 , &test_array_initialize                        ) ;
+  manager.add( "12) Array::initialize Preallocated Test"    , &test_array_prealloc_init                     ) ;
+  manager.add( "13) Array::size Test"                       , &test_array_size                              ) ;
+  manager.add( "14) Array::copy Test"                       , &test_array_host_copy                         ) ;
+  manager.add( "15) Array::copy Test ( No waiting )"        , &test_array_copy_non_wait                     ) ;
+  manager.add( "19) Image Test"                             , &test_image_initialization                    ) ;
   manager.add( "20) Pipeline Test"                          , &shaderTest                                   ) ;
   manager.add( "21) Image Copy Test"                        , &imageLoadTest                                ) ;
   

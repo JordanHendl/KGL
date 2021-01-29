@@ -36,13 +36,13 @@ namespace vk
 }
 
 namespace nyx
-{
+{ 
   namespace vkg
   {
     class Device        ;
     class RenderPass    ;
     class CommandBuffer ;
-    class NyxShader      ;
+    class NyxShader     ;
     
     class Pipeline
     {
@@ -114,6 +114,11 @@ namespace nyx
          */
         void reset() ;
         
+        /** Method to see if this is a graphics pipeline or not.
+         * @return Whether or not this object is a graphics pipeline.
+         */
+        bool isGraphics() const ;
+
         /** Method to retrieve a const-reference to this object's internal vulkan pipeline.
          * @return The internal vulkan pipeline of this object.
          */

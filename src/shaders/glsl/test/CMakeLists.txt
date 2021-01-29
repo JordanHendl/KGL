@@ -1,0 +1,2 @@
+GLSL_COMPILE( TARGET test.frag )
+GLSL_COMPILE( TARGET test.vert )

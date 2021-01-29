@@ -35,7 +35,7 @@
 
 namespace nyx
 {
-  template<typename OS, typename API>
+  template<typename OS, typename Framework>
   class BaseWindow
   {
     public:
@@ -123,119 +123,119 @@ namespace nyx
        */
       const typename OS::Window& window() const ;
 
-      /** Method to retrieve the Graphics API-specific context from this window.
-       * @return The graphics API-specific context from this window.
+      /** Method to retrieve the Graphics Framework-specific context from this window.
+       * @return The graphics Framework-specific context from this window.
        */
-      const typename API::Context& context() const ;
+      const typename Framework::Context& context() const ;
     private:
       typename OS::Window   os_window   ;
-      typename API::Context api_context ;
+      typename Framework::Context api_context ;
   };
   
-  template<typename OS, typename API>
-  bool BaseWindow<OS, API>::initialized() const
+  template<typename OS, typename Framework>
+  bool BaseWindow<OS, Framework>::initialized() const
   {
     return os_window.initialized() && this->api_context ;
   }
   
-  template<typename OS, typename API>
-  void BaseWindow<OS, API>::initialize( const char* window_title, unsigned width, unsigned height )
+  template<typename OS, typename Framework>
+  void BaseWindow<OS, Framework>::initialize( const char* window_title, unsigned width, unsigned height )
   {
     this->os_window.initialize( window_title, width, height ) ;
     
-    this->api_context = API::contextFromBaseWindow( this->os_window ) ;
+    this->api_context = Framework::contextFromBaseWindow( this->os_window ) ;
   }
   
-  template<typename OS, typename API>
-  void BaseWindow<OS, API>::reset()
+  template<typename OS, typename Framework>
+  void BaseWindow<OS, Framework>::reset()
   {
     this->os_window.reset() ;
   }
 
-  template<typename OS, typename API>
-  void BaseWindow<OS, API>::setXPosition( unsigned position )
+  template<typename OS, typename Framework>
+  void BaseWindow<OS, Framework>::setXPosition( unsigned position )
   {
     this->os_window.setXPosition( position ) ;
   }
   
-  template<typename OS, typename API>
-  void BaseWindow<OS, API>::setYPosition( unsigned position )
+  template<typename OS, typename Framework>
+  void BaseWindow<OS, Framework>::setYPosition( unsigned position )
   {
     this->os_window.setYPosition( position ) ;
   }
   
-  template<typename OS, typename API>
-  void BaseWindow<OS, API>::setWidth( unsigned width ) 
+  template<typename OS, typename Framework>
+  void BaseWindow<OS, Framework>::setWidth( unsigned width ) 
   {
     this->os_window.setWidth( width ) ;
   }
   
-  template<typename OS, typename API>
-  void BaseWindow<OS, API>::setHeight( unsigned height )
+  template<typename OS, typename Framework>
+  void BaseWindow<OS, Framework>::setHeight( unsigned height )
   {
     this->os_window.setHeight( height ) ;
   }
 
-  template<typename OS, typename API>
-  void BaseWindow<OS, API>::setMonitor( unsigned monitor_id )
+  template<typename OS, typename Framework>
+  void BaseWindow<OS, Framework>::setMonitor( unsigned monitor_id )
   {
     this->os_window.setMonitor( monitor_id ) ;
   }
 
-  template<typename OS, typename API>
-  void BaseWindow<OS, API>::setFullscreen( bool value )
+  template<typename OS, typename Framework>
+  void BaseWindow<OS, Framework>::setFullscreen( bool value )
   {
     this->os_window.setFullscreen( value ) ;
   }
 
-  template<typename OS, typename API>
-  void BaseWindow<OS, API>::setResizable( bool value )
+  template<typename OS, typename Framework>
+  void BaseWindow<OS, Framework>::setResizable( bool value )
   {
     this->os_window.setResizable( value ) ;
   }
 
-  template<typename OS, typename API>
-  void BaseWindow<OS, API>::setBorderless( bool value )
+  template<typename OS, typename Framework>
+  void BaseWindow<OS, Framework>::setBorderless( bool value )
   {
     this->os_window.setBorderless( value ) ;
   }
 
-  template<typename OS, typename API>
-  void BaseWindow<OS, API>::setMinimize( bool value )
+  template<typename OS, typename Framework>
+  void BaseWindow<OS, Framework>::setMinimize( bool value )
   {
     this->os_window.setMinimize( value ) ;
   }
 
-  template<typename OS, typename API>
-  void BaseWindow<OS, API>::setMaximized( bool value )
+  template<typename OS, typename Framework>
+  void BaseWindow<OS, Framework>::setMaximized( bool value )
   {
     this->os_window.setMaximize( value ) ;
   }
 
-  template<typename OS, typename API>
-  const typename API::Context& BaseWindow<OS, API>::context() const
+  template<typename OS, typename Framework>
+  const typename Framework::Context& BaseWindow<OS, Framework>::context() const
   {
     return this->api_context ;
   }
   
-  template<typename OS, typename API>
-  const typename OS::Window& BaseWindow<OS, API>::window() const 
+  template<typename OS, typename Framework>
+  const typename OS::Window& BaseWindow<OS, Framework>::window() const 
   {
     return this->os_window ;
   }
   
-  template<typename OS, typename API>
-  void BaseWindow<OS, API>::handleEvents()
+  template<typename OS, typename Framework>
+  void BaseWindow<OS, Framework>::handleEvents()
   {
     this->os_window.handleEvents() ;
   }
 
   #ifdef WIN32
-    template<typename API>
-    using Window = nyx::BaseWindow<nyx::win32::Win32, API> ;
+    template<typename Framework>
+    using Window = nyx::BaseWindow<nyx::win32::Win32, Framework> ;
   #elif __linux__ 
-    template<typename API>
-    using Window = nyx::BaseWindow<nyx::lx::Linux, API> ;
+    template<typename Framework>
+    using Window = nyx::BaseWindow<nyx::lx::Linux, Framework> ;
   #endif
 }
 #endif

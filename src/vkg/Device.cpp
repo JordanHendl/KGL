@@ -36,6 +36,8 @@ namespace nyx
 {
   namespace vkg
   {
+    static vk::PhysicalDeviceBufferDeviceAddressFeaturesEXT ext_buffer_address = { true, false, false } ;
+
     struct QueueCount
     {
       /** The vector of queues associated with this object.
@@ -202,6 +204,7 @@ namespace nyx
 
     DeviceData::DeviceData()
     {
+      this->extension_list = { "VK_KHR_buffer_device_address" } ;
       this->graphics_priorities = { 1.0f } ;
       this->compute_priorities  = { 1.0f } ;
       this->transfer_priorities = { 1.0f } ;
@@ -263,18 +266,16 @@ namespace nyx
       typedef std::vector<::vk::DeviceQueueCreateInfo> CreateInfos ;
       
       ::vk::DeviceCreateInfo info            ;
-      DeviceData::List       ext_list        ;
-      DeviceData::List       layer_list      ;
       DeviceData::CharList   ext_list_char   ;
       DeviceData::CharList   layer_list_char ;
       CreateInfos            queue_infos     ;
       unsigned               queue_id        ;
       unsigned               num_queues      ;
       
-      ext_list        = this->filterExtensions()           ;
-      layer_list      = this->filterLayers()               ;
-      ext_list_char   = this->listToCharList( ext_list )   ;
-      layer_list_char = this->listToCharList( layer_list ) ;
+      this->extension_list = this->filterExtensions()                     ;
+      this->layer_list     = this->filterLayers()                         ;
+      ext_list_char        = this->listToCharList( this->extension_list ) ;
+      layer_list_char      = this->listToCharList( this->layer_list     ) ;
 
       queue_infos.resize( this->queue_families.total_families.size() ) ;
 
@@ -297,6 +298,8 @@ namespace nyx
       info.setPEnabledLayerNames     ( layer_list_char        ) ;
       info.setPEnabledFeatures       ( &this->features        ) ;
       
+      info.setPNext( static_cast<const void*>( &nyx::vkg::ext_buffer_address ) ) ;
+
       this->physical_device.createDevice( &info, nullptr, &this->gpu ) ;
     }
     
@@ -457,6 +460,16 @@ namespace nyx
     void Device::reset()
     {
       data().gpu.destroy( nullptr ) ;
+    }
+    
+    bool Device::hasExtension( const char* ext_name ) const
+    {
+      for( auto& ext : data().extension_list )
+      {
+        if( ext == std::string( ext_name ) ) return true ;
+      }
+      
+      return false ;
     }
     
     void Device::addExtension( const char* extension_name )

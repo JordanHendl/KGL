@@ -24,6 +24,8 @@
 
 #include "CommandBuffer.h"
 #include "Queue.h"
+#include "Pipeline.h"
+#include "Vulkan.h"
 #include "Device.h"
 #include "RenderPass.h"
 #include <vulkan/vulkan.hpp>
@@ -43,6 +45,8 @@ namespace nyx
       typedef std::vector<vk::CommandBuffer> CmdBuffers ;
       
       nyx::vkg::Queue            queue               ;
+      vk::Pipeline               pipeline            ;
+      vk::PipelineLayout         pipeline_layout     ;
       vk::CommandBufferBeginInfo begin_info          ;
       CommandBuffer::Level       level               ;
       CmdBuffers                 cmd_buffers         ;
@@ -63,6 +67,8 @@ namespace nyx
     
     CommandBufferData::CommandBufferData()
     {
+      this->pipeline            = nullptr                       ;
+      this->pipeline_layout     = nullptr                       ;
       this->level               = CommandBuffer::Level::Primary ;
       this->started_render_pass = false                         ;
     }
@@ -108,6 +114,28 @@ namespace nyx
       *this->cmd_data = *cmd.cmd_data ;
       
       return *this ;
+    }
+    
+    void CommandBuffer::bind( const nyx::vkg::Pipeline& pipeline )
+    {
+      vk::PipelineBindPoint bind_point  ;
+      bind_point = pipeline.isGraphics() ? vk::PipelineBindPoint::eGraphics : vk::PipelineBindPoint::eCompute ;
+      
+      data().pipeline        = pipeline.pipeline() ;
+      data().pipeline_layout = pipeline.layout()   ;
+
+      for( auto& buff : data().cmd_buffers )
+      {
+        buff.bindPipeline( bind_point, data().pipeline ) ;
+      }
+    }
+    
+    void CommandBuffer::pushConstantBase( const void* value, unsigned byte_size, nyx::PipelineStage stage_flags )
+    {
+      for( auto& buff : data().cmd_buffers )
+      {
+        buff.pushConstants( data().pipeline_layout, nyx::vkg::Vulkan::convert( stage_flags ), 0, byte_size, value ) ;
+      }
     }
 
     void CommandBuffer::initialize( const nyx::vkg::Queue& queue, unsigned count, CommandBuffer::Level level ) 

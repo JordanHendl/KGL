@@ -20,8 +20,11 @@
 
 namespace nyx
 {
-  template<typename IMPL>
+  template<typename Impl>
   class Memory ;
+  
+  template<typename Impl, typename Type>
+  class Array ;
   
   /** Reflective enumeration for array flags.
    */
@@ -37,7 +40,6 @@ namespace nyx
         StorageBuffer = 0x00000020,
         Index         = 0x00000040,
         Vertex        = 0x00000080,
-        DeviceAddress = 0x00020000
       };
       
       /** Default constructor.
@@ -82,7 +84,27 @@ namespace nyx
       unsigned bit ;
   };
   
-  template<typename IMPL, class TYPE>
+  template<typename Impl, typename Type>
+  class Iterator
+  {
+    public:
+      Iterator() ;
+      void seek( unsigned idx ) ;
+      unsigned size() const ;
+      bool initialized() const ;
+    private:
+      Iterator( typename Impl::DeviceAddress dev_address, unsigned size, unsigned element_size ) ;
+      
+      template<typename Impl2, typename Type2>
+      friend class nyx::Array ;
+
+      typename Impl::DeviceAddress device_address ;
+      unsigned                     count          ;
+      unsigned                     element_size   ;
+      unsigned                     position       ;
+  };
+
+  template<typename Impl, class Type>
   class Array
   {
     public:
@@ -93,7 +115,7 @@ namespace nyx
       
       /** Copy constructor.
        */
-      Array( const Array<IMPL, TYPE>& array ) ;
+      Array( const Array<Impl, Type>& array ) ;
       
       /** Deconstructor. Releases allocated data.
        */
@@ -102,23 +124,29 @@ namespace nyx
       /** Equals Operator for copying the input array
        * @return Reference to this object after assignment.
        */
-      Array& operator=( const Array<IMPL, TYPE>& array ) ;
+      Array& operator=( const Array<Impl, Type>& array ) ;
+      
+      /** Method to create an iterator for this object at the input location.
+       * @param idx The index to start the iterator at.
+       * @return An iterator on this object.
+       */
+      Iterator<Impl, Type> iterator( unsigned idx = 0 ) ;
+
+      /** Implicit conversion to turn an this object into an implementation-specific version.
+       * @return The underlying implmentation-specific container of this object.
+       */
+      operator const typename Impl::Buffer&() const ;
       
       /** Implicit conversion to turn an this object into an implementation-specific version.
        * @return The underlying implmentation-specific container of this object.
        */
-      operator const typename IMPL::Buffer&() const ;
-      
-      /** Implicit conversion to turn an this object into an implementation-specific version.
-       * @return The underlying implmentation-specific container of this object.
-       */
-      operator typename IMPL::Buffer&() ;
+      operator typename Impl::Buffer&() ;
       
       /** Method to retrieve the reference to the data at the specified index on the host.
        * @param index The index of data to retrieve.
        * @return The reference to this host-data at the specified index.
        */
-      TYPE& operator[]( unsigned index ) ;
+      Type& operator[]( unsigned index ) ;
       
       /** Method to copy the input array into this object.
        * @param src The source buffer to copy from.
@@ -126,7 +154,7 @@ namespace nyx
        * @param The source offset to start at.
        * @param The destination offset to start the copy at.
        */
-      void copy( const Array<IMPL, TYPE>& src, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+      void copy( const Array<Impl, Type>& src, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
       
       /** Method to copy the input array into this object.
        * @param src The source buffer to copy from.
@@ -135,7 +163,7 @@ namespace nyx
        * @param The source offset to start at.
        * @param The destination offset to start the copy at.
        */
-      void copy( const Array<IMPL, TYPE>& src, const typename IMPL::CommandRecord& record, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+      void copy( const Array<Impl, Type>& src, const typename Impl::CommandRecord& record, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
       
       /** Method to copy the date of the input host pointer to the device.
        * @param src The host-pointer to copy from.
@@ -143,7 +171,7 @@ namespace nyx
        * @param srcoffset The offset of the input to start copying from.
        * @param dstoffset The offset of the device array to start writing to.
        */
-      void copyToDevice( const TYPE* src, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+      void copyToDevice( const Type* src, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
       
       /** Method to copy the date of the input host pointer to this object's host-data.
        * @param src The host-pointer to copy from.
@@ -151,7 +179,7 @@ namespace nyx
        * @param srcoffset The offset of the input to start copying from.
        * @param dstoffset The offset of the host-pointer to start writing to.
        */
-      void copyToHost( const TYPE* src, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+      void copyToHost( const Type* src, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
       
       /** Method to copy the date of the input host pointer to both of this object's data members.
        * @param src The host-pointer to copy from.
@@ -159,7 +187,7 @@ namespace nyx
        * @param srcoffset The offset of the input to start copying from.
        * @param dstoffset The offset of the destination pointers to start copying to.
        */
-      void copySynced( const TYPE* src, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+      void copySynced( const Type* src, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
       
       /** Method to return the element size of this object.
        * @return The size of each element of this object.
@@ -192,7 +220,7 @@ namespace nyx
       /** Method to initialize this object & allocate data.
        * @param buffer The buffer to use for this object's internal buffer.
        */
-      void initialize( const typename IMPL::Buffer& buffer ) ;
+      void initialize( const typename Impl::Buffer& buffer ) ;
       
       /** Method to check if this object is initialized or not.
        * @return Whether or not this object is initialized.
@@ -204,7 +232,7 @@ namespace nyx
        * @param device The implementation-specific device to use for this object.
        * @param host_alloc Whether or not to allocate this object on the host as well.
        */
-      void initialize( const typename IMPL::Device& device, unsigned size, bool host_alloc = true ) ;
+      void initialize( const typename Impl::Device& device, unsigned size, bool host_alloc = true ) ;
       
       /** Method to initialize this object & allocate data.
        * @param size The number of elements allocated to this object.
@@ -214,173 +242,252 @@ namespace nyx
        * @param buffer_flags The implementation-specific buffer flags to use for buffer creation.
        */
       template<typename ... ARRAY_FLAGS>
-      void initialize( const typename IMPL::Device& device, unsigned size, bool host_alloc, ARRAY_FLAGS... array_flags ) ;
+      void initialize( const typename Impl::Device& device, unsigned size, bool host_alloc, ARRAY_FLAGS... array_flags ) ;
+      
+      /** Method to initialize this object & allocate data.
+       * @note See Array::initialized() for whether allocation was successful.
+       * @param device The implementation-specific device to use for this object.
+       * @param prealloc The preallocated memory to use, if possible, for this array creation. 
+       * @param size The number of elements allocated to this object.
+       * @param host_alloc Whether or not to allocate this object on the host as well.
+       */
+      bool initialize( nyx::Memory<Impl>& prealloc, unsigned size ) ;
+      
+      /** Method to initialize this object & allocate data.
+       * @note See Array::initialized() for whether allocation was successful.
+       * @param device The implementation-specific device to use for this object.
+       * @param prealloc The preallocated memory to use, if possible, for this array creation. 
+       * @param size The number of elements allocated to this object.
+       * @param host_alloc Whether or not to allocate this object on the host as well.
+       * @param mem_flags The implementation-specific memory flags to use for the memory creation.
+       * @param buffer_flags The implementation-specific buffer flags to use for buffer creation.
+       */
+      template<typename ... ARRAY_FLAGS>
+      bool initialize( nyx::Memory<Impl>& prealloc, unsigned size, ARRAY_FLAGS... array_flags ) ;
       
       /** Method to retrieve a const reference to this object's implementation-specific buffer.
        * @return Const-reference to this object's internal buffer.
        */
-      const typename IMPL::Buffer& buffer() const ;
+      const typename Impl::Buffer& buffer() const ;
       
       /** Method to retrieve a const reference to this object's implementation-specific GPU device.
        * @return Const-reference to this object's internal device.
        */
-      const typename IMPL::Device& device() const ;
+      const typename Impl::Device& device() const ;
       
       /** Method to retrieve a reference to this object's internal memory.
        * @return Reference to this object's internal memory.
        */
-      Memory<IMPL>& memory() ;
+      Memory<Impl>& memory() ;
       
       /** Method to reset and release any allocated data.
        */
       void reset() ;
 
     private:
-      typename IMPL::Buffer arr_buffer ; ///< The implementation specific buffer to associate with this object.
+      typename Impl::Buffer arr_buffer ; ///< The implementation specific buffer to associate with this object.
       unsigned              count      ; ///< The amount of elements in this object.
   };
   
-  template<typename IMPL, class TYPE>
-  Array<IMPL, TYPE>::Array()
+  template<typename Impl, typename Type>
+  Iterator<Impl, Type>::Iterator()
+  {
+    this->count          = 0 ;
+    this->element_size   = 0 ;
+  }
+  
+  template<typename Impl, typename Type>
+  Iterator<Impl, Type>::Iterator( typename Impl::DeviceAddress dev_address, unsigned size, unsigned element_size )
+  {
+    this->device_address = dev_address  ;
+    this->count          = size         ;
+    this->element_size   = element_size ;
+  }
+  
+  template<typename Impl, typename Type>
+  bool Iterator<Impl, Type>::initialized() const
+  {
+    return this->count != 0 ;
+  }
+
+  template<typename Impl, typename Type>
+  void Iterator<Impl, Type>::seek( unsigned idx )
+  {
+    this->position = idx < this->count ? idx : this->count - 1 ;
+  }
+  
+  template<typename Impl, typename Type>
+  unsigned Iterator<Impl, Type>::size() const
+  {
+    return this->count ;
+  }
+
+  template<typename Impl, class Type>
+  Array<Impl, Type>::Array()
   {
     this->count = 0 ;
   }
   
-  template<typename IMPL, class TYPE>
-  Array<IMPL, TYPE>::Array( const Array<IMPL, TYPE>& array )
+  template<typename Impl, class Type>
+  Array<Impl, Type>::Array( const Array<Impl, Type>& array )
   {
     *this = array ;
   }
   
-  template<typename IMPL, class TYPE>
-  Array<IMPL, TYPE>& Array<IMPL, TYPE>::operator=( const Array<IMPL, TYPE>& array )
+  template<typename Impl, class Type>
+  Array<Impl, Type>& Array<Impl, Type>::operator=( const Array<Impl, Type>& array )
   {
     this->arr_buffer = array.arr_buffer ;
     this->count      = array.count      ;
   }
   
-  template<typename IMPL, class TYPE>
-  void Array<IMPL, TYPE>::copy( const Array<IMPL, TYPE>& src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
+  template<typename Impl, class Type>
+  void Array<Impl, Type>::copy( const Array<Impl, Type>& src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
   {
     this->arr_buffer.copy( src.arr_buffer, amount, srcoffset, dstoffset ) ;
   }
   
-  template<typename IMPL, class TYPE>
-  void Array<IMPL, TYPE>::copy( const Array<IMPL, TYPE>& src, const typename IMPL::CommandRecord& record, unsigned amount, unsigned srcoffset, unsigned dstoffset )
+  template<typename Impl, class Type>
+  void Array<Impl, Type>::copy( const Array<Impl, Type>& src, const typename Impl::CommandRecord& record, unsigned amount, unsigned srcoffset, unsigned dstoffset )
   {
-    if( amount == 0 ) amount = sizeof( TYPE ) * this->count ;
-    else              amount *= sizeof( TYPE ) ;
+    if( amount == 0 ) amount = sizeof( Type ) * this->count ;
+    else              amount *= sizeof( Type ) ;
     this->arr_buffer.copy( src.arr_buffer, amount, record, srcoffset, dstoffset ) ;
   }
 
-  template<typename IMPL, class TYPE>
-  void Array<IMPL, TYPE>::copyToDevice( const TYPE* src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
+  template<typename Impl, class Type>
+  void Array<Impl, Type>::copyToDevice( const Type* src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
   {
-    this->arr_buffer.copyToDevice( static_cast<const void*>( src ), sizeof( TYPE ) * amount, srcoffset, dstoffset ) ;
+    this->arr_buffer.copyToDevice( static_cast<const void*>( src ), sizeof( Type ) * amount, srcoffset, dstoffset ) ;
   }
   
-  template<typename IMPL, class TYPE>
-  void Array<IMPL, TYPE>::copyToHost( const TYPE* src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
+  template<typename Impl, class Type>
+  void Array<Impl, Type>::copyToHost( const Type* src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
   {
-    this->arr_buffer.copyToHost( static_cast<const void*>( src ), amount * sizeof( TYPE ), srcoffset, dstoffset ) ;
+    this->arr_buffer.copyToHost( static_cast<const void*>( src ), amount * sizeof( Type ), srcoffset, dstoffset ) ;
   }
   
-  template<typename IMPL, class TYPE>
-  void Array<IMPL, TYPE>::copySynced( const TYPE* src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
+  template<typename Impl, class Type>
+  void Array<Impl, Type>::copySynced( const Type* src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
   {
     this->copyToDevice( src, amount, srcoffset, dstoffset ) ;
     this->copyToHost  ( src, amount, srcoffset, dstoffset ) ;
   }
   
-  template<typename IMPL, class TYPE>
-  Array<IMPL, TYPE>::operator const typename IMPL::Buffer&() const
+  template<typename Impl, class Type>
+  Array<Impl, Type>::operator const typename Impl::Buffer&() const
   {
     return this->arr_buffer ;
   }
   
-  template<typename IMPL, class TYPE>
-  Array<IMPL, TYPE>::operator typename IMPL::Buffer&()
+  template<typename Impl, class Type>
+  Array<Impl, Type>::operator typename Impl::Buffer&()
   {
     return this->arr_buffer ;
   }
 
-  template<typename IMPL, class TYPE>
-  unsigned Array<IMPL, TYPE>::elementSize() const
+  template<typename Impl, class Type>
+  nyx::Iterator<Impl, Type> Array<Impl, Type>::iterator( unsigned idx )
   {
-    return sizeof( TYPE ) ;
+    nyx::Iterator< Impl, Type > iter( this->arr_buffer.address(), this->count, sizeof( Type ) ) ;
+   
+    iter.seek( idx ) ;
+    return iter ;
+  }
+  
+  template<typename Impl, class Type>
+  unsigned Array<Impl, Type>::elementSize() const
+  {
+    return sizeof( Type ) ;
   }
 
-  template<typename IMPL, class TYPE>
-  void Array<IMPL, TYPE>::syncToDevice()
+  template<typename Impl, class Type>
+  void Array<Impl, Type>::syncToDevice()
   {
     this->arr_buffer.syncToDevice() ;
   }
   
-  template<typename IMPL, class TYPE>
-  void Array<IMPL, TYPE>::syncToHost()
+  template<typename Impl, class Type>
+  void Array<Impl, Type>::syncToHost()
   {
     this->arr_buffer.syncToHost() ;
   }
 
-  template<typename IMPL, class TYPE>
-  bool Array<IMPL, TYPE>::dirty()
+  template<typename Impl, class Type>
+  bool Array<Impl, Type>::dirty()
   {
     return this->arr_buffer.dirty() ;
   }
   
-  template<typename IMPL, class TYPE>
-  unsigned Array<IMPL, TYPE>::size() const
+  template<typename Impl, class Type>
+  unsigned Array<Impl, Type>::size() const
   {
     return this->count ;
   }
   
-  template<typename IMPL, class TYPE>
-  void Array<IMPL, TYPE>::reset()
+  template<typename Impl, class Type>
+  void Array<Impl, Type>::reset()
   {
     this->arr_buffer.reset() ;
   }
   
-  template<typename IMPL, class TYPE>
-  unsigned Array<IMPL, TYPE>::byteSize() const
+  template<typename Impl, class Type>
+  unsigned Array<Impl, Type>::byteSize() const
   {
     return this->arr_buffer.size() ;
   }
   
-  template<typename IMPL, class TYPE>
-  void Array<IMPL, TYPE>::initialize( const typename IMPL::Buffer& buffer )
+  template<typename Impl, class Type>
+  void Array<Impl, Type>::initialize( const typename Impl::Buffer& buffer )
   {
     this->arr_buffer = buffer ;
   }
 
-  template<typename IMPL, class TYPE>
-  void Array<IMPL, TYPE>::initialize( const typename IMPL::Device& device, unsigned size, bool host_alloc )
+  template<typename Impl, class Type>
+  void Array<Impl, Type>::initialize( const typename Impl::Device& device, unsigned size, bool host_alloc )
   {
     this->count = size ;
-    this->arr_buffer.initialize( device, size * sizeof( TYPE ), host_alloc ) ;
+    this->arr_buffer.initialize( device, size * sizeof( Type ), host_alloc ) ;
   }
   
-  template<typename IMPL, class TYPE>
-  bool Array<IMPL, TYPE>::initialized() const 
+  template<typename Impl, class Type>
+  template<typename ... ARRAY_FLAGS>
+  void Array<Impl, Type>::initialize( const typename Impl::Device& device, unsigned size, bool host_alloc, ARRAY_FLAGS... array_flags )
+  {
+    this->count = size ;
+    this->arr_buffer.initialize( device, size * sizeof( Type ), host_alloc, array_flags... ) ;
+  }
+  
+  template<typename Impl, class Type>
+  bool Array<Impl, Type>::initialize( nyx::Memory<Impl>& prealloc, unsigned size )
+  {
+    this->count = size ;
+    return this->arr_buffer.initialize( prealloc, size * sizeof( Type ) ) ;
+  }
+  
+  template<typename Impl, class Type>
+  template<typename ... ARRAY_FLAGS>
+  bool Array<Impl, Type>::initialize( nyx::Memory<Impl>& prealloc, unsigned size, ARRAY_FLAGS... array_flags )
+  {
+    this->count = size ;
+    return this->arr_buffer.initialize( prealloc, array_flags..., size * sizeof( Type ) ) ;
+  }
+
+  template<typename Impl, class Type>
+  bool Array<Impl, Type>::initialized() const 
   {
     return this->arr_buffer.initialized() ;
   }
 
-  template<typename IMPL, class TYPE>
-  template<typename ... ARRAY_FLAGS>
-  void Array<IMPL, TYPE>::initialize( const typename IMPL::Device& device, unsigned size, bool host_alloc, ARRAY_FLAGS... array_flags )
-  {
-    this->count = size ;
-    this->arr_buffer.initialize( device, size * sizeof( TYPE ), host_alloc, array_flags... ) ;
-  }
 
-  template<typename IMPL, class TYPE>
-  const typename IMPL::Buffer& Array<IMPL, TYPE>::buffer() const
+  template<typename Impl, class Type>
+  const typename Impl::Buffer& Array<Impl, Type>::buffer() const
   {
     return this->arr_buffer ;
   }
   
-  template<typename IMPL, class TYPE>
-  const typename IMPL::Device& Array<IMPL, TYPE>::device() const
+  template<typename Impl, class Type>
+  const typename Impl::Device& Array<Impl, Type>::device() const
   {
     return this->arr_buffer.device() ;
   }
