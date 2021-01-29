@@ -30,6 +30,9 @@ namespace nyx
   template<class T>
   class Memory ;
   
+  template<typename Impl, typename Type>
+  class Array ;
+
   class ArrayFlags ;
   
   using DeviceAddress = unsigned long ;
@@ -39,7 +42,10 @@ namespace nyx
     class Vulkan        ;
     class Device        ;
     class CommandBuffer ;
-
+    class Image         ;
+    
+    /** Class for managing a Vulkan buffer.
+     */
     class Buffer
     {
       public:
@@ -56,7 +62,18 @@ namespace nyx
         /** Default Constructor
          */
         ~Buffer() ;
+
+        private:
+          
+        /** Friend decleration so the template interface can access this object's functionality.
+         */
+        template<typename Impl, typename Type>
+        friend class nyx::Array ;
         
+        /** Friend decleration so the vkg::Image object can access this object's data for copy.
+         */
+        friend class vkg::Image ;
+
         /** Equals operator. Performs a surface copy of the input source
          * @return A reference to this object after the surface copy.
          */
@@ -171,8 +188,6 @@ namespace nyx
          * @param flag The Vulkan usage flag to use for this object.
          */
         void setUsage( nyx::ArrayFlags flag  ) ;
-        
-      private:
         
         /** Method to provide a base for the variadic-template initialization function.
          * @param gpu The device to use for this buffer's data.
