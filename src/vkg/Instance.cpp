@@ -13,6 +13,22 @@ namespace nyx
 {
   namespace vkg
   {
+    #if defined ( __unix__ ) || defined( _WIN32 )
+      constexpr const char* END_COLOR    = "\x1B[m"     ;
+      constexpr const char* COLOR_RED    = "\u001b[31m" ;
+      constexpr const char* COLOR_GREEN  = "\u001b[32m" ;
+      constexpr const char* COLOR_YELLOW = "\u001b[33m" ;
+      constexpr const char* COLOR_GREY   = "\x1B[1;30m" ;
+      constexpr const char* UNDERLINE    = "\u001b[4m"  ;
+    #else
+      constexpr const char* END_COLOR    = "" ;
+      constexpr const char* COLOR_GREEN  = "" ;
+      constexpr const char* COLOR_YELLOW = "" ;
+      constexpr const char* COLOR_GREY   = "" ;
+      constexpr const char* COLOR_RED    = "" ;
+      constexpr const char* COLOR_WHITE  = "" ;
+    #endif
+
     /** Static variables for debug output.
      */
     static Instance::DebugOutputLevel output_level    = Instance::DebugOutputLevel::Normal ;
@@ -44,15 +60,21 @@ namespace nyx
       const vk::DebugUtilsMessageSeverityFlagsEXT severity = static_cast<vk::DebugUtilsMessageSeverityFlagsEXT>( messageSeverity ) ;
       const vk::DebugUtilsMessageTypeFlagsEXT     type     = static_cast<vk::DebugUtilsMessageTypeFlagsEXT>    ( messageType     ) ;
       
+      const char* COLOR ;
+      if( severity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose ) COLOR = COLOR_GREY   ;
+      if( severity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo    ) COLOR = COLOR_GREY   ;
+      if( severity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning ) COLOR = COLOR_YELLOW ;
+      if( severity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError   ) COLOR = COLOR_RED    ;
+      
       if( output_severity != Instance::DebugSeverity::None && output_level != Instance::DebugOutputLevel::Quiet )
       {
         if( toFlags( output_level ) & type && toFlags( output_severity ) & severity ) 
         {
           std::cout << "\n" ;
-          std::cout << "--  NYX::VKG Instance Debug"                  << "\n" ;
-          std::cout << "--  Type    : "  << vk::to_string( type     ) << "\n" ;
-          std::cout << "--  Severity: "  << vk::to_string( severity ) << "\n" ;
-          std::cout << "---> Message: " << pCallbackData->pMessage    << "\n" ;
+          std::cout << COLOR << "--  NYX::VKG Instance Debug"                  << END_COLOR << "\n" ;
+          std::cout << COLOR << "--  Type    : "  << vk::to_string( type     ) << END_COLOR << "\n" ;
+          std::cout << COLOR << "--  Severity: "  << vk::to_string( severity ) << END_COLOR << "\n" ;
+          std::cout << COLOR << "---> Message: " << pCallbackData->pMessage    << END_COLOR << "\n" ;
         }
       }
       pUserData = pUserData ;

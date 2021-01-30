@@ -43,9 +43,71 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
  {
    namespace vkg
    {
-     /** The instance to use for all vulkan API calls.
+     
+    #if defined ( __unix__ ) || defined( _WIN32 )
+      constexpr const char* END_COLOR    = "\x1B[m"     ;
+      constexpr const char* COLOR_RED    = "\u001b[31m" ;
+      constexpr const char* COLOR_GREEN  = "\u001b[32m" ;
+      constexpr const char* COLOR_YELLOW = "\u001b[33m" ;
+      constexpr const char* COLOR_GREY   = "\x1B[1;30m" ;
+      constexpr const char* UNDERLINE    = "\u001b[4m"  ;
+    #else
+      constexpr const char* END_COLOR    = "" ;
+      constexpr const char* COLOR_GREEN  = "" ;
+      constexpr const char* COLOR_YELLOW = "" ;
+      constexpr const char* COLOR_GREY   = "" ;
+      constexpr const char* COLOR_RED    = "" ;
+      constexpr const char* COLOR_WHITE  = "" ;
+    #endif
+
+     /** Static function for getting a color code from a vulkan severity.
+      * @param severity The severity to determing the color of.
+      * @return The color code of the severity.
       */
-     static vk::Instance vk_instance ;
+     static const char* colorFromSeverity( Vulkan::Severity severity ) ;
+
+     /** Static function to find the appropriate memory given the input flags and filter.
+      * @param filter The mask to filter results.
+      * @param flag The memory flag to look for.
+      * @param device The device to look for memory on.
+      * @return The mask of memory type found.
+      */
+     static uint32_t memType( uint32_t filter, ::vk::MemoryPropertyFlags flag, ::vk::PhysicalDevice device ) ;
+     
+     /** Static function to act as a default memory handler.
+      * @param error The error to handle.
+      */
+     static void defaultHandler( nyx::vkg::Vulkan::Error error ) ;
+
+     /** The structure to contain all of the global vkg library data.
+      */
+     struct VulkanData
+     {
+       typedef void ( *Callback )( Vulkan::Error ) ;
+       
+       Callback              error_cb ;
+       Vulkan::ErrorHandler* handler  ;
+       vk::Instance          instance ;
+       
+       /** Default constructor.
+        */
+       VulkanData() ;
+     };
+     
+     /** Static container for all of the vulkan library's global data.
+      */
+     static VulkanData data ;
+     
+     const char* colorFromSeverity( Vulkan::Severity severity )
+     {
+       switch ( severity )
+       {
+         case Vulkan::Severity::Info    : return vkg::COLOR_GREY   ;
+         case Vulkan::Severity::Warning : return vkg::COLOR_YELLOW ;
+         case Vulkan::Severity::Fatal   : return vkg::COLOR_RED    ;
+         default : return vkg::COLOR_GREY ;
+       }
+     }
 
      uint32_t memType( uint32_t filter, ::vk::MemoryPropertyFlags flag, ::vk::PhysicalDevice device )
      {
@@ -61,33 +123,130 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        }
        return 0 ;
      }
-     
-     
-     Error::Error()
+
+     void defaultHandler( nyx::vkg::Vulkan::Error error )
      {
-       this->err = Error::None ;
+       auto severity = error.severity() ;
+
+       std::cout << colorFromSeverity( severity ) << "-- " << severity.toString() << " | " << "Nyx::vkg Error: " << error.toString() << "." << vkg::END_COLOR << std::endl ;
+       if( severity == Vulkan::Severity::Fatal ) exit( -1 ) ;
+     }
+
+     VulkanData::VulkanData()
+     {
+       this->error_cb = &vkg::defaultHandler ;
+       this->instance = nullptr ;
+       this->handler  = nullptr ;
+     }
+
+     vkg::Vulkan::Severity::Severity()
+     {
+       this->sev = Severity::None ;
      }
      
-     Error::Error( const Error& error )
+     vkg::Vulkan::Severity::Severity( const vkg::Vulkan::Severity& severity )
      {
-       this->err = error.err ;
+       this->sev = severity.sev ;
      }
      
-     Error::Error( unsigned error )
+     vkg::Vulkan::Severity::Severity( unsigned error )
      {
-       this->err = error ;
+       this->sev = error ;
      }
      
-     unsigned Error::error() const
+     unsigned vkg::Vulkan::Severity::severity() const
      {
        return *this ;
      }
      
-     Error::operator unsigned() const
+     vkg::Vulkan::Severity::operator unsigned() const
+     {
+       return this->sev ;
+     }
+     
+     const char* vkg::Vulkan::Severity::toString() const
+     {
+       switch( this->sev )
+       {
+         case Severity::Fatal : return "Fatal" ;
+         default : return "Unknown Severity" ;
+       }
+     }
+     
+     vkg::Vulkan::Error::Error()
+     {
+       this->err = Error::None ;
+     }
+     
+     vkg::Vulkan::Error::Error( const vkg::Vulkan::Error& error )
+     {
+       this->err = error.err ;
+     }
+     
+     vkg::Vulkan::Error::Error( unsigned error )
+     {
+       this->err = error ;
+     }
+     
+     unsigned vkg::Vulkan::Error::error() const
+     {
+       return *this ;
+     }
+     
+     vkg::Vulkan::Error::operator unsigned() const
      {
        return this->err ;
      }
+     
+     const char* vkg::Vulkan::Error::toString() const
+     {
+       switch( this->err )
+       {
+         case Error::DeviceLost : return "Device Lost" ;
+         default : return "Unknown Error" ;
+       }
+     }
+     
+     Vulkan::Severity vkg::Vulkan::Error::severity() const
+     {
+       switch( this->err )
+       {
+         case Error::DeviceLost : return Severity::Fatal ;
+         default : return Severity::None ;
+       }
+     }
 
+     void Vulkan::add( nyx::vkg::Vulkan::Error error )
+     {
+       if( error != Vulkan::Error::Success )
+       {
+         if( data.error_cb != nullptr )
+         {
+           ( data.error_cb )( error ) ;
+         }
+         
+         if( data.handler != nullptr )
+         {
+           data.handler->handleError( error ) ;
+         }
+       }
+     }
+     
+     void Vulkan::add( vk::Result error )
+     {
+       Vulkan::add( Vulkan::convert( error ) ) ;
+     }
+     
+     void Vulkan::setErrorHandler( void ( *error_handler )( nyx::vkg::Vulkan::Error ) )
+     {
+       data.error_cb = error_handler ;
+     }
+     
+     void Vulkan::setErrorHandler( nyx::vkg::Vulkan::ErrorHandler* handler )
+     {
+       data.handler = handler ;
+     }
+        
      vk::ShaderStageFlags Vulkan::convert( nyx::PipelineStage stage )
      {
        switch( stage )
@@ -230,15 +389,16 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         
      void Vulkan::initialize( const vk::Instance& instance )
      {
-       ::nyx::vkg::vk_instance = instance ;
+       data.instance = instance ;
      }
 
-     vkg::Error Vulkan::convert( vk::Result error )
+     vkg::Vulkan::Error Vulkan::convert( vk::Result error )
      {
        switch( error )
        {
-         case vk::Result::eErrorDeviceLost : return nyx::vkg::Error( vkg::Error::DeviceLost  ) ;
-         default : return nyx::vkg::Error( vkg::Error::None ) ;
+         case vk::Result::eErrorDeviceLost : return Vulkan::Error::DeviceLost ;
+         case vk::Result::eSuccess         : return Vulkan::Error::Success    ;
+         default : return Vulkan::Error::None ;
        }
      }
 
@@ -292,8 +452,10 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
      void Vulkan::free( Vulkan::Memory& mem, Vulkan::Device& gpu )
      {
        const auto device = gpu.device() ;
-       
-       device.free ( mem ) ;
+       if( mem && gpu.initialized() )
+       {
+         device.free ( mem ) ;
+       }
      }
      
      Vulkan::Memory Vulkan::createMemory( const Vulkan::Device& gpu, unsigned size, nyx::MemoryFlags flags, unsigned filter )
@@ -343,9 +505,9 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        info.hinstance = window.instance()                               ;
        info.hwnd      = window.handle()                                 ;
 
-       if( nyx::vkg::vk_instance )
+       if( data.instance )
        {
-         result = static_cast<vk::Result>( vkCreateWin32SurfaceKHR( nyx::vkg::vk_instance, &info, nullptr, &surface ) ) ;
+         result = static_cast<vk::Result>( vkCreateWin32SurfaceKHR( data.instance, &info, nullptr, &surface ) ) ;
          if( result != vk::Result::eSuccess )
          {
            std::cout << "Error creating surface: " << vk::to_string( result ) << "\n" ; // TODO convert error.
@@ -370,9 +532,9 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        info.connection = window.connection()                           ;
        info.window     = window.window()                               ;
        
-       if( nyx::vkg::vk_instance )
+       if( data.instance )
        {
-         result = static_cast<vk::Result>( vkCreateXcbSurfaceKHR( nyx::vkg::vk_instance, &info, nullptr, &surface ) ) ;
+         result = static_cast<vk::Result>( vkCreateXcbSurfaceKHR( data.instance, &info, nullptr, &surface ) ) ;
          
          if( result != vk::Result::eSuccess )
          {

@@ -27,14 +27,11 @@
 
 #include "Image.h"
 
-
-
 namespace vk
 {
   class SurfaceKHR   ;
   class SwapchainKHR ;
   enum class Format  ;
-
 }
 
 namespace nyx

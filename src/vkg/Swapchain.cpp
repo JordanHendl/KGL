@@ -21,6 +21,9 @@
  * 
  * Created on January 14, 2021, 2:21 AM
  */
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_ASSERT_ON_RESULT
+#define VULKAN_HPP_NOEXCEPT
 
 #include "Swapchain.h"
 #include "Synchronization.h"
@@ -116,7 +119,7 @@ namespace nyx
       info.setQueueFamilyIndexCount( 0                           ) ;
       info.setQueueFamilyIndices   ( nullptr                     ) ;
       
-      this->present_queue.device().device().createSwapchainKHR( &info, nullptr, &this->swapchain ) ;
+      vkg::Vulkan::add( this->present_queue.device().device().createSwapchainKHR( &info, nullptr, &this->swapchain ) ) ;
     }
 
     void SwapchainData::generateImages()

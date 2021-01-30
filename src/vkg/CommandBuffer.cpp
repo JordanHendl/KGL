@@ -22,6 +22,10 @@
  * Created on December 30, 2020, 1:42 PM
  */
 
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_ASSERT_ON_RESULT
+#define VULKAN_HPP_NOEXCEPT
+
 #include "CommandBuffer.h"
 #include "Queue.h"
 #include "Pipeline.h"
@@ -156,7 +160,7 @@ namespace nyx
       info.setCommandPool       ( pool      ) ;
       
       data().cmd_buffers.resize( count ) ;
-      device.allocateCommandBuffers( &info, data().cmd_buffers.data() ) ;
+      vkg::Vulkan::add( device.allocateCommandBuffers( &info, data().cmd_buffers.data() ) ) ;
     }
 
     void CommandBuffer::combine( const CommandBuffer& cmd )
@@ -234,8 +238,9 @@ namespace nyx
       
       if( index < data().cmd_buffers.size() )
       {
-        data().cmd_buffers[ index ].begin          ( &data().begin_info ) ;
-        data().cmd_buffers[ index ].beginRenderPass( &info, flags       ) ;
+        vkg::Vulkan::add( data().cmd_buffers[ index ].begin          ( &data().begin_info ) ) ;
+                          data().cmd_buffers[ index ].beginRenderPass( &info, flags         ) ;
+
         data().started_render_pass = true ;
       }
     }
@@ -253,8 +258,8 @@ namespace nyx
       
       for( auto &cmd_buff : data().cmd_buffers )
       {
-        cmd_buff.begin          ( &data().begin_info ) ;
-        cmd_buff.beginRenderPass( &info, flags       ) ;
+        vkg::Vulkan::add( cmd_buff.begin          ( &data().begin_info ) ) ;
+                          cmd_buff.beginRenderPass( &info, flags         ) ;
       }
       
       data().started_render_pass = true ;

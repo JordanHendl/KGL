@@ -22,6 +22,10 @@
  * Created on December 28, 2020, 10:34 AM
  */
 
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_ASSERT_ON_RESULT
+#define VULKAN_HPP_NOEXCEPT
+
 #include "RenderPass.h"
 #include "Device.h"
 #include "Image.h"
@@ -139,8 +143,7 @@ namespace nyx
     
     ::vk::RenderPass RenderPassData::makeRenderPass()
     {
-      ::vk::RenderPass           render_pass ;
-      ::vk::RenderPassCreateInfo info        ;
+      ::vk::RenderPassCreateInfo info ;
       
       info.setAttachmentCount( this->attach_descriptions.size() ) ;
       info.setSubpassCount   ( this->sub_descriptions.size()    ) ;
@@ -149,8 +152,9 @@ namespace nyx
       info.setPSubpasses     ( this->sub_descriptions.data()    ) ;
       info.setPDependencies  ( this->sub_dependencies.data()    ) ;
       
-      render_pass = this->device.device().createRenderPass( info, nullptr ) ;
-      return render_pass ;
+      auto result = this->device.device().createRenderPass( info, nullptr ) ;
+      vkg::Vulkan::add( result.result ) ;
+      return result.value ;
     }
 
     void RenderPassData::makeFramebuffers()
@@ -180,7 +184,8 @@ namespace nyx
         info.setHeight         ( this->height      ) ;
         info.setLayers         ( this->layers      ) ;
         info.setRenderPass     ( this->render_pass ) ;
-        this->device.device().createFramebuffer( &info, nullptr, &this->framebuffers[ index ] ) ;
+        
+        vkg::Vulkan::add( this->device.device().createFramebuffer( &info, nullptr, &this->framebuffers[ index ] ) ) ;
         
         index++ ;
       }
@@ -210,7 +215,7 @@ namespace nyx
         info.setHeight         ( chain.height()    ) ;
         info.setLayers         ( 1                 ) ;
 
-        this->device.device().createFramebuffer( &info, nullptr, &this->framebuffers[ index ] ) ;
+        vkg::Vulkan::add( this->device.device().createFramebuffer( &info, nullptr, &this->framebuffers[ index ] ) ) ;
       }
     }
 

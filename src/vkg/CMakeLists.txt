@@ -1,5 +1,5 @@
 # Find Vulkan
-FIND_PACKAGE( Vulkan )
+FIND_PACKAGE( Vulkan 1.2 )
 
 # Only build if we found vulkan.
 IF( ${Vulkan_FOUND} )
@@ -63,9 +63,9 @@ IF( ${Vulkan_FOUND} )
 
     INSTALL( FILES  ${NYX_VULKAN_HEADERS} DESTINATION ${INCLUDE_DIR}/vkg )
     INSTALL( TARGETS nyx_vkg EXPORT Nyx   
-             ARCHIVE  DESTINATION ${EXPORT_LIB_DIR}/vkg
-             RUNTIME  DESTINATION ${EXPORT_LIB_DIR}/vkg
-             LIBRARY  DESTINATION ${EXPORT_LIB_DIR}/vkg
+             ARCHIVE  DESTINATION ${EXPORT_LIB_DIR}
+             RUNTIME  DESTINATION ${EXPORT_LIB_DIR}
+             LIBRARY  DESTINATION ${EXPORT_LIB_DIR}
              INCLUDES DESTINATION ${EXPORT_INCLUDE_DIR} )
 
 ENDIF()

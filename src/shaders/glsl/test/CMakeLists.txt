@@ -1,2 +1,1 @@
-GLSL_COMPILE( TARGET test.frag )
-GLSL_COMPILE( TARGET test.vert )
+GLSL_COMPILE( TARGETS test.vert test.frag NAME test_shader )

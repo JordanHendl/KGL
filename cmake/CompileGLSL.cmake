@@ -1,3 +1,9 @@
+FUNCTION(JOIN VALUES GLUE OUTPUT)
+  STRING (REGEX REPLACE "([^\\]|^);" "\\1${GLUE}" _TMP_STR "${VALUES}")
+  STRING (REGEX REPLACE "[\\](.)" "\\1" _TMP_STR "${_TMP_STR}") #fixes escaping
+  SET (${OUTPUT} "${_TMP_STR}" PARENT_SCOPE)
+ENDFUNCTION()
+
 # Helper function to configure the test maker's global state.
 FUNCTION( CONFIGURE_GLSL_COMPILE )
   BUILD_TEST( ${ARGV} )
@@ -10,8 +16,9 @@ FUNCTION( GLSL_COMPILE )
 
   # Test configurations.
   SET( VARIABLES 
-        TARGET
+        TARGETS
         INCLUDE_DIR
+        NAME
      )
   
   # For each argument provided.
@@ -35,22 +42,21 @@ FUNCTION( GLSL_COMPILE )
     ENDIF()
   ENDFOREACH()
 
-    IF( TARGET )
+    IF( TARGETS )
       IF( COMPILE_GLSL )
-        FIND_PACKAGE( Vulkan REQUIRED )
 
-        MESSAGE( INFO "glslangValidator -V -o ${SPIRV_DIR}/glsl/${TARGET}.glsl.h --vn shader ${TARGET}" )
-        FILE( COPY ${TARGET} DESTINATION ${SPIRV_DIR}/glsl )
+        # Replace all delimiters of the string with a space.
+        STRING ( REPLACE ";" " \n"  NEW_TARGETS "${TARGETS}")
         ADD_CUSTOM_COMMAND(
           POST_BUILD
-          OUTPUT ${TARGET}_compilation
-          COMMAND glslangValidator -I${GLSL_INCLUDE_DIR} -V -o ${SPIRV_DIR}/glsl/${TARGET}.glsl.h --vn shader ${TARGET}
+          OUTPUT ${NAME}_compilation
+          COMMAND /usr/local/bin/NyxFile/bin/nyxmaker -v -i ${GLSL_INCLUDE_DIR} ${TARGETS} -o ${NYXFILE_DIR}/${NAME}
           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
-    
+
         ADD_CUSTOM_TARGET(
-          ${TARGET}_compile_flag ALL
-          DEPENDS ${TARGET}_compilation
+          ${NAME}_compile_flag ALL
+          DEPENDS ${NAME}_compilation
         )
       ENDIF()
     ENDIF()

@@ -1,3 +1,31 @@
+/*
+ * Copyright (C) 2020 Jordan Hendl
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/* 
+ * File:   Image.cpp
+ * Author: Jordan Hendl
+ *
+ * Created on December 27, 2020, 2:46 PM
+ */
+
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_ASSERT_ON_RESULT
+#define VULKAN_HPP_NOEXCEPT
+
 #include "Image.h"
 #include "Device.h"
 #include "Vulkan.h"
@@ -101,7 +129,9 @@ namespace nyx
       info.setFormat          ( this->format           ) ;
       info.setSubresourceRange( range                  ) ;
       
-      return this->device.device().createImageView( info, nullptr ) ;
+      auto result = device.device().createImageView( info, nullptr ) ;
+      vkg::Vulkan::add( result.result ) ;
+      return result.value ;
     }
     
     vk::Sampler ImageData::createSampler()
@@ -127,13 +157,14 @@ namespace nyx
       info.setMinLod                 ( 0.0f                                     ) ;
       info.setMaxLod                 ( 0.0f                                     ) ;
       
-      return this->device.device().createSampler( info, nullptr ) ;
+      auto result = device.device().createSampler( info, nullptr ) ;
+      vkg::Vulkan::add( result.result ) ;
+      return result.value ;
     }
 
     vk::Image ImageData::createImage()
     {
       ::vk::ImageCreateInfo info   ;
-      ::vk::Image           image  ;
       ::vk::Extent3D        extent ;
       
       extent.setWidth ( this->width  ) ;
@@ -151,9 +182,9 @@ namespace nyx
       info.setSharingMode  ( ::vk::SharingMode::eExclusive ) ;
       info.setTiling       ( ::vk::ImageTiling::eOptimal   ) ;
 
-      image = this->device.device().createImage( info, nullptr ) ;
-
-      return image ;
+      auto result = this->device.device().createImage( info, nullptr ) ;
+      vkg::Vulkan::add( result.result ) ;
+      return result.value ;
     }
 
     Image::Image( const Image& orig )
@@ -253,7 +284,7 @@ namespace nyx
       
       if( data().requirements.size <= data().memory.size() - data().memory.offset() )
       {
-        device.device().bindImageMemory( data().image, data().memory.memory(), data().memory.offset() ) ;
+        vkg::Vulkan::add( device.device().bindImageMemory( data().image, data().memory.memory(), data().memory.offset() ) ) ;
         
         data().view    = data().createView ()   ;
         data().sampler = data().createSampler() ;

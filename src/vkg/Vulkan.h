@@ -126,67 +126,8 @@ namespace nyx
      */
     class Image ;
     
-    /** Reflective enumeration for a library error.
-     */
-    class Error
-    {
-      public:
-        
-        /** The type of error.
-         */
-        enum
-        {
-          None,
-          Success,
-          Not_Ready,
-          Incomplete,
-          OutOfHostMemory,
-          DeviceLost,
-          ExtensionNotPresent,
-          LayerNotPresent,
-          Unknown,
-          SuboptimalSwapchain,
-          Fragmentation,
-          InvalidExternalHandle,
-          SurfaceLost,
-          NativeWindowInUse,
-          SuboptimalKHR,
-          MemoryMapFailed,
-          ValidationFailed,
-          InvalidDevice,
-        };
-        
-        /** Default constructor.
-         */
-        Error() ;
-        
-        /** Copy constructor. Copies the input.
-         * @param error The input to copy.
-         */
-        Error( const Error& error ) ;
-        
-        /** Copy constructor. Copies the input.
-         * @param error The input to copy.
-         */
-        Error( unsigned error ) ;
-        
-        /** Method to retrieve the error associated with this object.
-         * @return The error associated with this object.
-         */
-        unsigned error() const ;
-        
-        /** Conversion operator of this object to an unsigned integer representing the error.
-         * @return The error of this object.
-         */
-        operator unsigned() const ;
 
-      private:
-        
-        /** Underlying variable holding the error of this object.
-         */
-        unsigned err ; 
-    };
-
+      
     /** Class that implements Vulkan functionality.
      */
     class Vulkan
@@ -213,6 +154,166 @@ namespace nyx
         template<nyx::ImageFormat FORMAT>
         using Image = nyx::Image<nyx::vkg::Vulkan, FORMAT> ;
         
+        /** Reflective enumeration for a library error severity.
+         */
+        class Severity
+        {
+          public:
+
+            /** The type of error.
+             */
+            enum
+            {
+              None,
+              Info,
+              Warning,
+              Fatal,
+            };
+
+            /** Default constructor.
+             */
+            Severity() ;
+
+            /** Copy constructor. Copies the input.
+             * @param severity The input to copy.
+             */
+            Severity( const Severity& severity ) ;
+
+            /** Copy constructor. Copies the input.
+             * @param error The input to copy.
+             */
+            Severity( unsigned error ) ;
+
+            /** Method to convert this error into a string.
+             * @return The C-string representation of this severity.
+             */
+            const char* toString() const ;
+
+            /** Method to retrieve the error associated with this object.
+             * @return The severity associated with this object.
+             */
+            unsigned severity() const ;
+
+            /** Conversion operator of this object to an unsigned integer representing the error.
+             * @return The severity of this object.
+             */
+            operator unsigned() const ;
+
+          private:
+
+            /** Underlying variable holding the severity of this object.
+             */
+            unsigned sev ; 
+        };
+
+        /** Reflective enumeration for a library error.
+         */
+        class Error
+        {
+          public:
+
+            /** The type of error.
+             */
+            enum
+            {
+              None,
+              Success,
+              Not_Ready,
+              Incomplete,
+              OutOfHostMemory,
+              DeviceLost,
+              ExtensionNotPresent,
+              LayerNotPresent,
+              Unknown,
+              SuboptimalSwapchain,
+              Fragmentation,
+              InvalidExternalHandle,
+              SurfaceLost,
+              NativeWindowInUse,
+              SuboptimalKHR,
+              MemoryMapFailed,
+              ValidationFailed,
+              InvalidDevice,
+            };
+
+            /** Default constructor.
+             */
+            Error() ;
+
+            /** Copy constructor. Copies the input.
+             * @param error The input to copy.
+             */
+            Error( const Error& error ) ;
+
+            /** Copy constructor. Copies the input.
+             * @param error The input to copy.
+             */
+            Error( unsigned error ) ;
+            
+            /** Method to retrieve the severity of this error.
+             * @return Method to retrieve the severity of this error.
+             */
+            Vulkan::Severity severity() const ;
+
+            /** Method to convert this error into a string.
+             * @return The C-string representation of this error.
+             */
+            const char* toString() const ;
+
+            /** Method to retrieve the error associated with this object.
+             * @return The error associated with this object.
+             */
+            unsigned error() const ;
+
+            /** Conversion operator of this object to an unsigned integer representing the error.
+             * @return The error of this object.
+             */
+            operator unsigned() const ;
+
+          private:
+
+            /** Underlying variable holding the error of this object.
+             */
+            unsigned err ; 
+        };
+
+        /** Abstract class for an error handler.
+         * If you wish to have an object handle errors, inherit this class and implement the handleError() function.
+         */
+        class ErrorHandler
+        {
+          public:
+
+            /** Virtual method to handle a library error.
+             * @param error The error to handle.
+             */
+            virtual void handleError( nyx::vkg::Vulkan::Error error ) = 0 ;
+
+            /** Virtual deconstructor for inheritance.
+             */
+            virtual ~ErrorHandler() ;
+        };
+      
+        /** Static method to push an error onto this library.
+         * @param error The error to handle by this library
+         */
+        static void add( Vulkan::Error error ) ;
+        
+        /** Static method to push an error onto this library.
+         * @param error The error to handle by this library
+         */
+        static void add( vk::Result error ) ;
+        
+        /** Static method to allow a custom error handler to be set for this library.
+         * @param error_handler The error handler to be used by this library.
+         */
+        static void setErrorHandler( void ( *error_handler )( Vulkan::Error ) ) ;
+        
+        /** Static method to allow a custom error handler to be set for this library.
+         * @param handler The error handler to be used by this library.
+         */
+        static void setErrorHandler( Vulkan::ErrorHandler* handler ) ;
+
         /** Static method to convert a library format to the implementation-specific format.
          * @param stage The library stage to convert.
          * @return The vulkan-library specific version.

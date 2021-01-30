@@ -194,6 +194,7 @@ athena::Result test_memory_initialize()
   memory.initialize( device, sizeof( unsigned ) * 200, true ) ;
   
   if( !memory.initialized() ) return false ;
+  memory.deallocate() ;
   return true ;
 }
 
@@ -205,6 +206,8 @@ athena::Result test_memory_size()
   memory.initialize( device, sizeof( unsigned ) * 200, true ) ;
   
   if( memory.size() != ( sizeof( unsigned ) * 200 ) ) return false ;
+  
+  memory.deallocate() ;
   return true ;
 }
 
@@ -218,6 +221,8 @@ athena::Result test_memory_offset()
   memory2 = memory1 + ( sizeof( unsigned ) * 100 ) ;
   
   if( !memory2.initialized() || ( memory2.size() - memory2.offset() ) != ( sizeof( unsigned ) * 100 ) ) return false ;
+  
+  memory1.deallocate() ;
   return true ;
 }
 
@@ -229,6 +234,7 @@ athena::Result test_memory_device()
   memory.initialize( device, sizeof( unsigned ) * 200, true ) ;
   
   if( !memory.device().initialized() ) return false ;
+  memory.deallocate() ;
   return true ;
 }
 
@@ -266,9 +272,11 @@ athena::Result test_array_size()
   if( !device.initialized() ) return athena::Result::Skip ;
   array.initialize( device, 500, true ) ;
   if( array.size() != 500 ) return athena::Result::Fail ;
-  
+
+  array.reset() ;  
   return true ;
 }
+
 athena::Result test_array_host_copy()
 {
   Impl::CommandRecord   cmd      ;
@@ -337,6 +345,8 @@ athena::Result test_array_prealloc_init()
   if( !array_1.initialize( memory, 200 ) ) return false ;
   if( !array_2.initialize( memory, 200 ) ) return false ;
           
+  array_1.reset() ;
+  array_2.reset() ;
   return true ;
 }
 
@@ -352,6 +362,23 @@ athena::Result test_image_initialization()
   }
 
   return false ;
+}
+
+athena::Result test_image_size()
+{
+  const unsigned width  = 1280 ;
+  const unsigned height = 1024 ;
+  
+  Impl::Image<nyx::ImageFormat::RGBA8> image ;
+  if( !device.initialized() ) return athena::Result::Skip ;
+  if( !image.initialize( device, width, height ) ) return false ;
+  if( image.width()    != width                  ) return false ;
+  if( image.height()   != height                 ) return false ;
+  if( image.size()     != ( width * height )     ) return false ;
+  if( image.byteSize() < ( width * height * 4 )  ) return false ;
+  
+  image.reset() ;
+  return true ;
 }
 
 athena::Result shaderTest()
@@ -402,27 +429,35 @@ athena::Result shaderTest()
   return true ;
 }
 
-athena::Result imageLoadTest()
+athena::Result test_image_copy()
 {
   Impl::Array<unsigned char> staging ; 
   nyx::RGBAImage<Impl>       image   ;
   Impl::CommandRecord        cmd     ;
+  
   int width  ;
   int height ;
   int chan   ;
   
-  auto bytes = stbi_load( "test_image.jpeg", &width, &height, &chan, STBI_rgb_alpha ) ;
   if( !device.initialized() ) return athena::Result::Skip ;
+  
+  auto bytes = stbi_load( "test_image.jpeg", &width, &height, &chan, STBI_rgb_alpha ) ;
+  
   cmd.initialize      ( graphics_queue, 1 ) ;
-  staging.initialize  ( device, static_cast<unsigned>( width * height * 4 ), true, nyx::ArrayFlags::TransferSrc | nyx::ArrayFlags::TransferDst ) ;
+  
+  // Initialize objects.
+  image  .initialize( device, static_cast<unsigned>( width ), static_cast<unsigned>( height ), 1                                             ) ;
+  staging.initialize( device, static_cast<unsigned>( width * height * 4 ), true, nyx::ArrayFlags::TransferSrc | nyx::ArrayFlags::TransferDst ) ;
+  
+  // Copy to host-visible staging buffer first.
   staging.copyToDevice( bytes, static_cast<unsigned>( width * height * 4 ) ) ;
-  
-  if( !image.initialize( device, static_cast<unsigned>( width ), static_cast<unsigned>( height ), 1 ) ) return false ;
-  
+
+  // Now, record a GPU to GPU copy on the record.  
   cmd.record() ;
   image.copy( staging.buffer(), cmd ) ;
   cmd.stop() ;
   
+  // AND submit to the queue.
   graphics_queue.submit( cmd ) ;
   
   return true ;
@@ -430,24 +465,25 @@ athena::Result imageLoadTest()
 int main()
 {
   manager.initialize( "Nyx VULKAN Library" ) ;
-  manager.add( "01) Instance Creation Test"                 , &instance_initialization_test                 ) ;
-  manager.add( "02) Window Creation Test"                   , &window_creation_test                         ) ;
-  manager.add( "03) Device Creation Test"                   , &device_creation_test                         ) ;
-  manager.add( "04) Graphics Queue Grab Test"               , &graphics_queue_get_test                      ) ;
-  manager.add( "05) Swapchain Creation Test"                , &swapchain_creation_test                      ) ;
-  manager.add( "06) Memory::initialize Test"                , &test_memory_initialize                       ) ;
-  manager.add( "07) Memory::size Test"                      , &test_memory_size                             ) ;
-  manager.add( "08) Memory::offset Test"                    , &test_memory_offset                           ) ;
-  manager.add( "09) Memory::device Test"                    , &test_memory_device                           ) ;
-  manager.add( "10) Memory::syncToHost Test"                , &test_memory_sync_to_host_copy                ) ;
-  manager.add( "11) Array::initialize Test"                 , &test_array_initialize                        ) ;
-  manager.add( "12) Array::initialize Preallocated Test"    , &test_array_prealloc_init                     ) ;
-  manager.add( "13) Array::size Test"                       , &test_array_size                              ) ;
-  manager.add( "14) Array::copy Test"                       , &test_array_host_copy                         ) ;
-  manager.add( "15) Array::copy Test ( No waiting )"        , &test_array_copy_non_wait                     ) ;
-  manager.add( "19) Image Test"                             , &test_image_initialization                    ) ;
-  manager.add( "20) Pipeline Test"                          , &shaderTest                                   ) ;
-  manager.add( "21) Image Copy Test"                        , &imageLoadTest                                ) ;
+  manager.add( "01) Instance Creation Test"              , &instance_initialization_test  ) ;
+  manager.add( "02) Window Creation Test"                , &window_creation_test          ) ;
+  manager.add( "03) Device Creation Test"                , &device_creation_test          ) ;
+  manager.add( "04) Graphics Queue Grab Test"            , &graphics_queue_get_test       ) ;
+  manager.add( "05) Swapchain Creation Test"             , &swapchain_creation_test       ) ;
+  manager.add( "06) Memory::initialize Test"             , &test_memory_initialize        ) ;
+  manager.add( "07) Memory::size Test"                   , &test_memory_size              ) ;
+  manager.add( "08) Memory::offset Test"                 , &test_memory_offset            ) ;
+  manager.add( "09) Memory::device Test"                 , &test_memory_device            ) ;
+  manager.add( "10) Memory::syncToHost Test"             , &test_memory_sync_to_host_copy ) ;
+  manager.add( "11) Array::initialize Test"              , &test_array_initialize         ) ;
+  manager.add( "12) Array::initialize Preallocated Test" , &test_array_prealloc_init      ) ;
+  manager.add( "13) Array::size Test"                    , &test_array_size               ) ;
+  manager.add( "14) Array::copy Test"                    , &test_array_host_copy          ) ;
+  manager.add( "15) Array::copy Test ( No waiting )"     , &test_array_copy_non_wait      ) ;
+  manager.add( "16) Image::initialize Test"              , &test_image_initialization     ) ;
+  manager.add( "17) Image::size Test"                    , &test_image_size               ) ;
+  manager.add( "19) Image::copy Test"                    , &test_image_copy               ) ;
+  manager.add( "20) Pipeline Test"                       , &shaderTest                    ) ;
   
   return manager.test( athena::Output::Verbose ) ;
 }

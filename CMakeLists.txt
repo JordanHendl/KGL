@@ -22,7 +22,7 @@
 # Created on December 31, 2020, 11:30 PM
 # 
 
-CMAKE_MINIMUM_REQUIRED( VERSION 3.8.0 )
+CMAKE_MINIMUM_REQUIRED( VERSION 3.19.4 )
 
 LIST( APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" )
 
@@ -144,7 +144,9 @@ SET( DOC_DIR          "doc"                                    )
 SET( CONFIG_DIR        ${CMAKE_PROJECT_NAME}                   )
 SET( DOXYGEN_DIR       ${CMAKE_CURRENT_SOURCE_DIR}/doc         )
 SET( BUILD_DIR         ${CMAKE_BINARY_DIR}                     )
-SET( SPIRV_DIR         ${CMAKE_BINARY_DIR}/spirv               )
+SET( NYXFILE_DIR       ${CMAKE_BINARY_DIR}/nyxfiles            )
+
+FILE( MAKE_DIRECTORY ${NYXFILE_DIR} )
 
 SET( EXPORT_BIN_DIR     "${BIN_DIR}"     )
 SET( EXPORT_INCLUDE_DIR "${INCLUDE_DIR}" )

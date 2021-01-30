@@ -1,3 +1,2 @@
-GLSL_COMPILE( TARGET buffer_reference_test.frag.glsl )
-GLSL_COMPILE( TARGET buffer_reference_test.vert.glsl )
+GLSL_COMPILE( TARGETS buffer_reference_test.vert.glsl buffer_reference_test.frag.glsl NAME buffer_reference )
 

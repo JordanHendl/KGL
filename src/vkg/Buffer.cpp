@@ -15,6 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_ASSERT_ON_RESULT
+#define VULKAN_HPP_NOEXCEPT
+
 #include "Buffer.h"
 #include "Vulkan.h"
 #include "Device.h"
@@ -82,8 +86,10 @@ namespace nyx
       info.setUsage      ( this->usage_flags | vk::BufferUsageFlagBits::eShaderDeviceAddressEXT ) ;
       info.setSharingMode( ::vk::SharingMode::eExclusive                                        ) ;
       
-      buffer = this->device.device().createBuffer( info, nullptr ) ;
+      auto result = this->device.device().createBuffer( info, nullptr ) ;
       
+      vkg::Vulkan::add( result.result ) ;
+      buffer = result.value ;
       return buffer ;
     }
 
@@ -175,7 +181,7 @@ namespace nyx
 
       if( data().requirements.size <= needed_size )
       {
-        data().device.device().bindBufferMemory( data().buffer, data().internal_memory.memory(), data().internal_memory.offset() ) ;
+        vkg::Vulkan::add( data().device.device().bindBufferMemory( data().buffer, data().internal_memory.memory(), data().internal_memory.offset() ) ) ;
         data().makeDeviceAddress() ;
         data().initialized = true ;
         return true ;

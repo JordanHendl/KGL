@@ -22,10 +22,15 @@
  * Created on December 30, 2020, 1:21 AM
  */
 
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_ASSERT_ON_RESULT
+#define VULKAN_HPP_NOEXCEPT
+
 #include "Pipeline.h"
 #include "Device.h"
 #include "NyxShader.h"
 #include "RenderPass.h"
+#include "Vulkan.h"
 #include <vulkan/vulkan.hpp>
 
 namespace nyx
@@ -146,7 +151,9 @@ namespace nyx
       info.setPushConstantRangeCount( 1                                     ) ;
       info.setPPushConstantRanges   ( &range                                ) ;
       
-      this->layout = this->device.device().createPipelineLayout( info, nullptr ) ;
+      auto result = this->device.device().createPipelineLayout( info, nullptr ) ;
+      vkg::Vulkan::add( result.result ) ;
+      this->layout = result.value ;
     }
     
     void PipelineData::createPipeline()
@@ -177,14 +184,18 @@ namespace nyx
         graphics_info.setPColorBlendState   ( &this->config.color_blend_info   ) ;
         graphics_info.setRenderPass         ( this->render_pass.pass()         ) ;
         
-        this->pipeline = this->device.device().createGraphicsPipeline( this->cache, graphics_info ) ;
+        auto result = this->device.device().createGraphicsPipeline( this->cache, graphics_info ) ;
+        vkg::Vulkan::add( result.result ) ;
+        this->pipeline = result.value ;
       }
       else
       {
         compute_info.setLayout( this->layout              ) ;
         compute_info.setStage ( this->shader.infos()[ 0 ] ) ;
         
-        this->pipeline = this->device.device().createComputePipeline( this->cache, compute_info ) ;
+        auto result = ( this->device.device().createComputePipeline( this->cache, compute_info ) ) ;
+        vkg::Vulkan::add( result.result ) ;
+        this->pipeline = result.value ;
       }
     }
     

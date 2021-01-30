@@ -22,8 +22,13 @@
  * Created on December 23, 2020, 8:03 PM
  */
 
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_ASSERT_ON_RESULT
+#define VULKAN_HPP_NOEXCEPT
+
 #include "Device.h"
 #include "Queue.h"
+#include "Vulkan.h"
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <string>
@@ -300,7 +305,7 @@ namespace nyx
       
       info.setPNext( static_cast<const void*>( &nyx::vkg::ext_buffer_address ) ) ;
 
-      this->physical_device.createDevice( &info, nullptr, &this->gpu ) ;
+      vkg::Vulkan::add( this->physical_device.createDevice( &info, nullptr, &this->gpu ) ) ;
     }
     
     void DeviceData::findQueueFamilies()
@@ -487,7 +492,6 @@ namespace nyx
     {
       static const nyx::vkg::Queue dummy ;
       const unsigned family = data().queue_families.graphics.getQueue() ;
-//      const unsigned index  = data().queue_families.graphics.index( family ) ;
       const unsigned mask   = static_cast<unsigned>( data().queue_families.graphics.mask( family ) ) ;
       vk::Queue       vk_queue ;
       nyx::vkg::Queue queue    ;
@@ -596,7 +600,10 @@ namespace nyx
     
     void Device::wait() const
     {
-      data().gpu.waitIdle() ;
+      if( data().gpu )
+      {
+        vkg::Vulkan::add( data().gpu.waitIdle() ) ;
+      }
     }
 
     DeviceData& Device::data()
