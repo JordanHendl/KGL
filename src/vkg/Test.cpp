@@ -422,8 +422,7 @@ athena::Result shaderTest()
   data    .initialize( device, 4 * 16, true, nyx::ArrayFlags::Vertex   ) ;
   uniform .initialize( device, 1, true, nyx::ArrayFlags::UniformBuffer ) ;
 
-//  for( unsigned i = 0; i < 25; i++ )
-  while( true )
+  for( unsigned i = 0; i < 25; i++ )
   {
     descriptors.current().set( "info", uniform ) ;
 
@@ -473,6 +472,7 @@ athena::Result test_image_copy()
   if( !device.initialized() ) return athena::Result::Skip ;
   
   auto bytes = stbi_load( "test_image.jpeg", &width, &height, &chan, STBI_rgb_alpha ) ;
+  if( !bytes ) return false ;
   
   cmd.initialize      ( graphics_queue, 1 ) ;
   

@@ -82,9 +82,9 @@ namespace nyx
       ::vk::BufferCreateInfo info   ;
       ::vk::Buffer           buffer ;
       
-      info.setSize       ( size                                                                 ) ;
-      info.setUsage      ( this->usage_flags | vk::BufferUsageFlagBits::eShaderDeviceAddressEXT ) ;
-      info.setSharingMode( ::vk::SharingMode::eExclusive                                        ) ;
+      info.setSize       ( size                                                              ) ;
+      info.setUsage      ( this->usage_flags | vk::BufferUsageFlagBits::eShaderDeviceAddress ) ;
+      info.setSharingMode( ::vk::SharingMode::eExclusive                                     ) ;
       
       auto result = this->device.device().createBuffer( info, nullptr ) ;
       
