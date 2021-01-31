@@ -45,8 +45,28 @@ FUNCTION( GLSL_COMPILE )
     IF( TARGETS )
       IF( COMPILE_GLSL )
 
+        FIND_PACKAGE( Vulkan )
+
+        # Compile SPIRV for each target.
+        FOREACH( ARG ${TARGETS} )
+#          FILE( COPY ${ARG} DESTINATION ${NYXFILE_DIR}/spirv )
+          ADD_CUSTOM_COMMAND(
+            POST_BUILD
+            OUTPUT ${ARG}_spirv_compilation
+            COMMAND glslangValidator -I${GLSL_INCLUDE_DIR} -V -o ${NYXFILE_DIR}/spirv/${ARG}.h --vn spirv ${ARG}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+          )
+      
+          ADD_CUSTOM_TARGET(
+            ${ARG}_spirv_compile_flag ALL
+            DEPENDS ${ARG}_spirv_compilation
+          )
+        ENDFOREACH()
+
         # Replace all delimiters of the string with a space.
         STRING ( REPLACE ";" " \n"  NEW_TARGETS "${TARGETS}")
+
+        #Compile .NYX file for each target.
         ADD_CUSTOM_COMMAND(
           POST_BUILD
           OUTPUT ${NAME}_compilation

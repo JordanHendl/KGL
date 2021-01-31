@@ -53,7 +53,7 @@ namespace nyx
        * @param params The parameters to use for initializing the object of this list.
        */
       template< typename ... Params>
-      void initialize( unsigned count, Params... params ) ;
+      void initialize( unsigned count, const Params& ... params ) ;
       
       /** Assignment operator. Assigns this object to the input.
        * @param list The list to assign this object to.
@@ -159,7 +159,7 @@ namespace nyx
   
   template<class Type>
   template< typename ... Params>
-  void List<Type>::initialize( unsigned count, Params... params )
+  void List<Type>::initialize( unsigned count, const Params& ... params )
   {
     this->reset() ;
     this->ptr = new Type[ count ] ;

@@ -20,7 +20,7 @@
 
 namespace nyx
 {
-  class KgFile ;
+  class NyxFile ;
   
   /** The Shader stages possible for a KgFile to contain.
    */
@@ -62,7 +62,7 @@ namespace nyx
       /** Default Desconstructor.
        */
       ~ShaderIterator() ;
-
+      
       /** Method to retrieve the number of uniforms in this shader stage.
        * @return unsigned The number of uniforms in this shader stage.
        */
@@ -111,6 +111,11 @@ namespace nyx
        * @return The size of the compiled spirv of this shader stage.
        */
       unsigned spirvSize() const ;
+      
+      /** Overloaded * operator to allow range-based for loops.
+       * @return The shader stage of this iterator.
+       */
+      const ShaderIterator& operator*() const ;
 
       /** Method to retrieve the specific shader stage this iterator is representing.
        * @return The current shader stage.
@@ -155,7 +160,7 @@ namespace nyx
        * @param input The object to test this object against.
        * @return Whether or not this object is equal to the input.
        */
-      bool operator!=( const ShaderIterator& input ) ;
+      bool operator!=( const ShaderIterator& input ) const ;
 
     private:
 
@@ -175,28 +180,28 @@ namespace nyx
 
       /** Forward declare friendship.
        */
-      friend class KgFile ;
+      friend class NyxFile ;
   };
 
   /** Class to abstract a KgFile.
    */
-  class KgFile
+  class NyxFile
   {
     public:
 
       /** Default constructor. 
        */
-      KgFile() ;
+      NyxFile() ;
 
       /** Default deconstructor.
        */
-      ~KgFile() ;
+      ~NyxFile() ;
       
       /** Assignment operator. Assigns the input to this object.
        * @param file The object to assign this one to.
        * @return Reference to this object after assignment.
        */
-      KgFile& operator=( const KgFile& file ) ;
+      NyxFile& operator=( const NyxFile& file ) ;
 
       /** Method to load the specified .kg file at the input path.
        * @param The C-string path of the file on the filesystem to load.

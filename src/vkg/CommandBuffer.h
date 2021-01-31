@@ -21,9 +21,7 @@
  *
  * Created on December 30, 2020, 1:42 PM
  */
-
-#ifndef NYX_VKG_COMMANDBUFFER_H
-#define NYX_VKG_COMMANDBUFFER_H
+#pragma once 
 
 namespace vk
 {
@@ -33,6 +31,9 @@ namespace vk
 
 namespace nyx
 {
+  template<typename Impl, typename Type>
+  class Array ;
+  
   enum class PipelineStage ;
   namespace vkg
   {
@@ -43,6 +44,8 @@ namespace nyx
     class Buffer     ;
     class RenderPass ;
     class Pipeline   ;
+    class Vulkan     ;
+    class Descriptor ;
 
     /** Class for handling command buffer generation & management.
      */
@@ -78,6 +81,12 @@ namespace nyx
         template<typename Type>
         void pushConstant( const Type& value, nyx::PipelineStage stage ) ;
         
+        /** Method to bind a descriptor to this command buffer.
+         * @note Requires a pipeline already bound to this object.
+         * @param descriptor The descriptor to bind.
+         */
+        void bind( const nyx::vkg::Descriptor& descriptor ) ;
+
         /** Method to bind a pipeline to this command buffer.
          * @param pipeline The pipeline to bind.
          */
@@ -136,21 +145,22 @@ namespace nyx
          * @param buffer The buffer containing vertex data to draw.
          * @param offset The elementoffset into the buffer to start drawing at.
          */
-        void draw( const nyx::vkg::Buffer& buffer, unsigned offset = 0 ) ;
+        template<typename Type>
+        void draw( const nyx::Array<vkg::Vulkan, Type>& array, unsigned offset = 0 ) ;
         
-        /** Method to record a instanced draw operation on this object's command buffers.
-         * @param buffer The buffer containing vertex data to draw instanced.
-         * @param instance_count The amount of times to instance draw the buffer.
-         * @param offset The offset into the buffer to start drawing.
-         * @param first The first index into the buffer to draw at.
-         */
-        void drawInstanced( const nyx::vkg::Buffer& buffer, unsigned instance_count, unsigned offset = 0, unsigned first = 0 ) ;
-        
-        /** Method to record an indexed draw command to this object's command buffers.
-         * @param indices The buffer containing the indices of the vertex buffer to draw.
-         * @param vertices The vertex buffer used for drawing.
-         */
-        void drawIndexed( const nyx::vkg::Buffer& indices, const nyx::vkg::Buffer& vertices ) ;
+//        /** Method to record a instanced draw operation on this object's command buffers.
+//         * @param buffer The buffer containing vertex data to draw instanced.
+//         * @param instance_count The amount of times to instance draw the buffer.
+//         * @param offset The offset into the buffer to start drawing.
+//         * @param first The first index into the buffer to draw at.
+//         */
+//        void drawInstanced( const nyx::vkg::Buffer& buffer, unsigned instance_count, unsigned offset = 0, unsigned first = 0 ) ;
+//        
+//        /** Method to record an indexed draw command to this object's command buffers.
+//         * @param indices The buffer containing the indices of the vertex buffer to draw.
+//         * @param vertices The vertex buffer used for drawing.
+//         */
+//        void drawIndexed( const nyx::vkg::Buffer& indices, const nyx::vkg::Buffer& vertices ) ;
         
         /** Method to begin all this object's command buffers record using input render pass.
          * @param render_pass Method to begin the render pass & all this object's command buffers record as well.
@@ -187,6 +197,13 @@ namespace nyx
         
       private:
         
+        /** Base method to use a buffer as vertices to draw.
+         * @param buffer The buffer to use for vertices.
+         * @param count The amount of vertices in the buffer.
+         * @param offset The offset of the buffer to start at.
+         */
+        void drawBase( const nyx::vkg::Buffer& buffer, unsigned count, unsigned offset = 0 ) ;
+        
         /** Private method for pushing a value as a push-constant to this command buffer.
          * @param value The pointer value to push onto the Device.
          * @param byte_size The size in bytes of the object being pushed.
@@ -210,12 +227,16 @@ namespace nyx
     };
     
     template<typename Type>
+    void CommandBuffer::draw( const nyx::Array<vkg::Vulkan,Type>& array, unsigned offset )
+    {
+      this->drawBase( array, array.size(), offset ) ;
+    }
+
+    template<typename Type>
     void CommandBuffer::pushConstant( const Type& value, nyx::PipelineStage stage )
     {
-      this->pushConstantBase( static_cast<const void*>( value ), sizeof( Type ), stage ) ;
+      this->pushConstantBase( static_cast<const void*>( &value ), sizeof( Type ), stage ) ;
     }
   }
 }
-
-#endif /* COMMANDBUFFER_H */
 

@@ -32,6 +32,7 @@
 #include "Vulkan.h"
 #include "Device.h"
 #include "RenderPass.h"
+#include "Descriptor.h"
 #include <vulkan/vulkan.hpp>
 #include <map>
 #include <vector>
@@ -48,6 +49,7 @@ namespace nyx
     {
       typedef std::vector<vk::CommandBuffer> CmdBuffers ;
       
+      vk::PipelineBindPoint      bind_point          ;
       nyx::vkg::Queue            queue               ;
       vk::Pipeline               pipeline            ;
       vk::PipelineLayout         pipeline_layout     ;
@@ -120,17 +122,23 @@ namespace nyx
       return *this ;
     }
     
+    void CommandBuffer::bind( const nyx::vkg::Descriptor& descriptor )
+    {
+      for( auto& buff : data().cmd_buffers )
+      { 
+        buff.bindDescriptorSets( data().bind_point, data().pipeline_layout, 0, 1, &descriptor.set(), 0, nullptr ) ;
+      }
+    }
+
     void CommandBuffer::bind( const nyx::vkg::Pipeline& pipeline )
     {
-      vk::PipelineBindPoint bind_point  ;
-      bind_point = pipeline.isGraphics() ? vk::PipelineBindPoint::eGraphics : vk::PipelineBindPoint::eCompute ;
-      
-      data().pipeline        = pipeline.pipeline() ;
-      data().pipeline_layout = pipeline.layout()   ;
+      data().bind_point      = pipeline.isGraphics() ? vk::PipelineBindPoint::eGraphics : vk::PipelineBindPoint::eCompute ;
+      data().pipeline        = pipeline.pipeline()                                                                        ;
+      data().pipeline_layout = pipeline.layout()                                                                          ;
 
       for( auto& buff : data().cmd_buffers )
       {
-        buff.bindPipeline( bind_point, data().pipeline ) ;
+        buff.bindPipeline( data().bind_point, data().pipeline ) ;
       }
     }
     
@@ -210,11 +218,16 @@ namespace nyx
       return data().cmd_buffers.data() ;
     }
 
-//    void CommandBuffer::draw( const nyx::vkg::Buffer& buffer, unsigned offset )
-//    {
-//    
-//    }
-//
+    void CommandBuffer::drawBase( const nyx::vkg::Buffer& buffer, unsigned count, unsigned offset )
+    {
+      const vk::DeviceSize device_size = offset ;
+      for( auto& buff : data().cmd_buffers )
+      {
+        buff.bindVertexBuffers( 0, 1, &buffer.buffer(), &device_size ) ;
+        buff.draw( count, 1, 0, 0 ) ;
+      }
+    }
+
 //    void CommandBuffer::drawInstanced( const nyx::vkg::Buffer& buffer, unsigned instance_count, unsigned offset, unsigned first )
 //    {
 //    

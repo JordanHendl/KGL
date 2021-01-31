@@ -15,14 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_ASSERT_ON_RESULT
+#define VULKAN_HPP_NOEXCEPT
+
 #include "Vulkan.h"
 #include "Device.h"
 #include "library/Image.h"
 #include <algorithm>
 #include <iostream>
 #include <library/Memory.h>
-
-#define VULKAN_HPP_NO_EXCEPTIONS
 
 #ifdef WIN32
 #define VK_USE_PLATFORM_WIN32_KHR
@@ -202,7 +204,8 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
      {
        switch( this->err )
        {
-         case Error::DeviceLost : return "Device Lost" ;
+         case Error::DeviceLost        : return "Device Lost"         ;
+         case Error::FeatureNotPresent : return "Feature Not Present" ;
          default : return "Unknown Error" ;
        }
      }
@@ -211,7 +214,8 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
      {
        switch( this->err )
        {
-         case Error::DeviceLost : return Severity::Fatal ;
+         case Error::DeviceLost        : return Severity::Fatal ;
+         case Error::FeatureNotPresent : return Severity::Fatal ;
          default : return Severity::None ;
        }
      }
@@ -396,8 +400,9 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
      {
        switch( error )
        {
-         case vk::Result::eErrorDeviceLost : return Vulkan::Error::DeviceLost ;
-         case vk::Result::eSuccess         : return Vulkan::Error::Success    ;
+         case vk::Result::eErrorDeviceLost        : return Vulkan::Error::DeviceLost        ;
+         case vk::Result::eSuccess                : return Vulkan::Error::Success           ;
+         case vk::Result::eErrorFeatureNotPresent : return Vulkan::Error::FeatureNotPresent ;
          default : return Vulkan::Error::None ;
        }
      }
@@ -416,14 +421,10 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
 
        src    = static_cast<const void*>( reinterpret_cast<const unsigned char*>( src ) + src_offset ) ;
 
-       auto result = ( device.mapMemory  ( dst, offset, amount, flag, &mem  ) ) ;
-                     std::memcpy       ( mem, src, static_cast<size_t>( amt ) ) ;
-                     device.unmapMemory( dst                                  ) ;
-                     
-       if( result != vk::Result::eSuccess )
-       {
-         std::cout << "Error: " << vk::to_string( result ) << "\n" ;
-       }
+       Vulkan::add( device.mapMemory  ( dst, offset, amount, flag, &mem    ) ) ;
+                    std::memcpy       ( mem, src, static_cast<size_t>( amt ) ) ;
+                    device.unmapMemory( dst                                  ) ;
+                  
      }
      
      void Vulkan::copyToHost( const Vulkan::Memory& src, Vulkan::Data dst, Vulkan::Device& gpu, unsigned amt, unsigned src_offset, unsigned dst_offset )
@@ -439,14 +440,10 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
 
        dst    = static_cast<void*>( reinterpret_cast<unsigned char*>( dst ) + dst_offset ) ;
        
-       auto result = device.mapMemory  ( src, offset, amount, flag, &mem      ) ;
-                     std::memcpy       ( dst, mem, static_cast<size_t>( amt ) ) ;
-                     device.unmapMemory( src                                  ) ;
+       Vulkan::add( device.mapMemory  ( src, offset, amount, flag, &mem      ) ) ;
+                    std::memcpy       ( dst, mem, static_cast<size_t>( amt )   ) ;
+                    device.unmapMemory( src                                    ) ;
                      
-       if( result != vk::Result::eSuccess )
-       {
-         std::cout << "Error: " << vk::to_string( result ) << "\n" ;
-       }
      }
      
      void Vulkan::free( Vulkan::Memory& mem, Vulkan::Device& gpu )
@@ -469,9 +466,11 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
        info.setAllocationSize ( size                              ) ;
        info.setMemoryTypeIndex( memType( filter, flag, p_device ) ) ;
        
-       mem = device.allocateMemory( info, nullptr ).value ;
+       auto result = device.allocateMemory( info, nullptr ) ;
+       
+       Vulkan::add( result.result ) ;
 
-       return mem ;
+       return result.value ;
      }
      
      Vulkan::Memory Vulkan::createMemory( const Vulkan::Device& gpu, unsigned size, unsigned filter )

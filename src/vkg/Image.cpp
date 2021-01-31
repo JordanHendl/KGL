@@ -228,7 +228,7 @@ namespace nyx
       {
         buffer.buffer( index ).copyImage( src.data().image, src.data().layout, data().image, data().layout, 1, &info ) ;
       }
-      src .revertLayout ( buffer ) ;
+      src  .revertLayout ( buffer ) ;
       this->revertLayout( buffer ) ;
       
     }
@@ -313,6 +313,7 @@ namespace nyx
       data().layers = num_layers ;
       
       data().image   = prealloc                            ;
+      data().layout  = vk::ImageLayout::ePresentSrcKHR     ;
       data().format  = nyx::vkg::Vulkan::convert( format ) ;
       data().view    = data().createView ()                ;
       data().sampler = data().createSampler()              ;
@@ -367,6 +368,11 @@ namespace nyx
     void Image::setLayout( const nyx::ImageLayout& layout )
     {
       data().layout = nyx::vkg::Vulkan::convert( layout ) ;
+    }
+    
+    nyx::ImageLayout Image::layout() const
+    {
+      return vkg::Vulkan::convert( data().layout ) ;
     }
 
     void Image::transition( const nyx::ImageLayout& layout, const nyx::vkg::CommandBuffer& cmd_buff ) const

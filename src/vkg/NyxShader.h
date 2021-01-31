@@ -54,6 +54,8 @@ namespace vk
 
 namespace nyx
 {
+  class ShaderIterator ;
+  class NyxFile ;
   namespace vkg
   {
     class Device ;
@@ -101,11 +103,16 @@ namespace nyx
          */
         NyxShader& operator=( const NyxShader& shader ) ;
         
+        /** Method to retrieve the end of this shader's data.
+         * @return A const-reference to the container for this object's shader info.
+         */
+        const NyxFile& file() const ;
+        
         /** Method to initialize this shader with the provided input.
          * @param device The library device to use for all vulkan operations.
          * @param kg_path The C-string path to the .kg file in the filesystem.
          */
-        void initialize( const nyx::vkg::Device& device, const char* kg_path ) ;
+        void initialize( const nyx::vkg::Device& device, const char* nyx_path ) ;
         
         /** Method to initialize this shader with the provided input.
          * @note Initializes all data set manually.

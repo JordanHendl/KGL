@@ -85,7 +85,9 @@ namespace nyx
       Attributes                             attributes  ; ///< TODO
       Bindings                               bindings    ; ///< TODO
       Infos                                  infos       ; ///< TODO
-      nyx::KgFile                            kgfile      ; ///< TODO
+      nyx::NyxFile                           nyxfile     ; ///< TODO
+      nyx::ShaderIterator                    start       ;
+      nyx::ShaderIterator                    end         ;
       nyx::vkg::Device                       device      ; ///< TODO
       vk::DescriptorSetLayout                layout      ; ///< TODO
       vk::PipelineVertexInputStateCreateInfo info        ; ///< TODO
@@ -229,7 +231,7 @@ namespace nyx
       unsigned offset ;
       
       offset = 0 ;
-      for( auto iter = this->kgfile.begin(); iter != this->kgfile.end(); ++iter )
+      for( auto iter = this->nyxfile.begin(); iter != this->nyxfile.end(); ++iter )
       {
         for( index = 0; index < iter.numUniforms(); index++ )
         {
@@ -249,7 +251,6 @@ namespace nyx
             binding_map[ iter.uniformName( index ) ] = binding ;
           }
         }
-        
         
         if( iter.stage() == nyx::ShaderStage::VERTEX )
         {
@@ -358,11 +359,16 @@ namespace nyx
       
       return *this ;
     }
+    
+    const NyxFile& NyxShader::file() const
+    {
+      return data().nyxfile ;
+    }
 
-    void NyxShader::initialize( const nyx::vkg::Device& device, const char* kg_path )
+    void NyxShader::initialize( const nyx::vkg::Device& device, const char* nyx_path )
     {
       data().device = device ;
-      data().kgfile.load( kg_path ) ;
+      data().nyxfile.load( nyx_path ) ;
       
       data().parse() ;
       data().makeDescriptorLayout()    ;

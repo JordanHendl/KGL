@@ -284,7 +284,7 @@ namespace nyx
 
     bool Swapchain::initialized() const
     {
-      return data().swapchain ;
+      return data().swapchain && !data().acquired.empty() ;
     }
 
     unsigned Swapchain::width() const

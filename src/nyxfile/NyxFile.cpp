@@ -213,6 +213,11 @@ namespace nyx
     return data().it->second.spirv.data() ;
   }
 
+  const ShaderIterator& ShaderIterator::operator*() const
+  {
+    return *this ;
+  }
+  
   ShaderStage ShaderIterator::stage() const
   {
     return data().it->first ;
@@ -280,7 +285,7 @@ namespace nyx
     return *this ;
   }
 
-  bool ShaderIterator::operator!=( const ShaderIterator& input )
+  bool ShaderIterator::operator!=( const ShaderIterator& input ) const
   {
     return data().it != input.data().it ;
   }
@@ -295,24 +300,24 @@ namespace nyx
     return *this->shader_iterator_data ;
   }
 
-  KgFile::KgFile()
+  NyxFile::NyxFile()
   {
     this->compiler_data = new KgFileData() ;
   }
 
-  KgFile::~KgFile()
+  NyxFile::~NyxFile()
   {
     delete this->compiler_data ;
   }
   
-  KgFile& KgFile::operator =( const KgFile& file )
+  NyxFile& NyxFile::operator =( const NyxFile& file )
   {
     *this->compiler_data = *file.compiler_data ;
     
     return *this ;
   }
 
-  void KgFile::load( const char* path )
+  void NyxFile::load( const char* path )
   {
     std::ifstream              stream  ;
     std::string                str     ;
@@ -382,7 +387,7 @@ namespace nyx
     }
   }
 
-  ShaderIterator KgFile::begin() const
+  ShaderIterator NyxFile::begin() const
   {
     ShaderIterator it ;
     it.data().it = data().map.begin() ;
@@ -390,7 +395,7 @@ namespace nyx
     return it ;
   }
 
-  ShaderIterator KgFile::end() const 
+  ShaderIterator NyxFile::end() const 
   {
     ShaderIterator it ;
     it.data().it = data().map.end() ;
@@ -398,17 +403,17 @@ namespace nyx
     return it ;
   }
 
-  unsigned KgFile::size() const
+  unsigned NyxFile::size() const
   {
     return data().map.size() ;
   }
 
-  KgFileData& KgFile::data()
+  KgFileData& NyxFile::data()
   {
     return *this->compiler_data ;
   }
 
-  const KgFileData& KgFile::data() const
+  const KgFileData& NyxFile::data() const
   {
     return *this->compiler_data ;
   }

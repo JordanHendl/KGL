@@ -142,7 +142,7 @@ namespace nyx
     InstanceData::InstanceData()
     {
       app_version = { 0, 0, 1 }        ;
-      api_version = { 1, 2, 0 }        ;
+      api_version = { 1, 2, 2 }        ;
       app_name    = "NYX_DEFAULT_NAME" ;
       debug       = true               ;
     }

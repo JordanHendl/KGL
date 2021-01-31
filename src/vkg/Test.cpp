@@ -168,8 +168,8 @@ athena::Result swapchain_creation_test()
 {
   swapchain.initialize( graphics_queue, window.context() ) ;
   
-  if( !device.initialized() ) return athena::Result::Skip ;
-  if( !swapchain.initialized() ) return false ;
+  if( !device.initialized()  ) return athena::Result::Skip ;
+  if( swapchain.count() == 0 ) return false ;
   return true ;
 }
 
@@ -386,14 +386,19 @@ athena::Result test_image_size()
 
 athena::Result shaderTest()
 {
-  Impl::Shader        shader   ;
-  Impl::RenderPass    pass     ;
-  Impl::Pipeline      pipeline ;
-  Impl::CommandRecord buffer   ;
-  
-  nyx::List<Impl::Synchronization> syncs ;
-  
+  Impl::Array<float>   data     ;
+  Impl::Array<bool>    uniform  ;
+  Impl::Shader         shader   ;
+  Impl::RenderPass     pass     ;
+  Impl::Pipeline       pipeline ;
+  Impl::DescriptorPool pool     ;
+
+  nyx::List<Impl::Synchronization> syncs       ;
+  nyx::List<Impl::CommandRecord>   buffer      ;
+  nyx::List<Impl::Descriptor>      descriptors ;
+
   if( !device.initialized() ) return athena::Result::Skip ;
+
   // Add shaders.
   shader.addAttribute   ( 0, 0, Impl::Shader::Format::vec4, 0                                          ) ;
   shader.addInputBinding( 0, sizeof( float ) * 3, vk::VertexInputRate::eVertex                         ) ;
@@ -401,25 +406,49 @@ athena::Result shaderTest()
   shader.addShaderModule( vk::ShaderStageFlagBits::eVertex  , test_vert, sizeof( test_vert )           ) ;
   shader.addShaderModule( vk::ShaderStageFlagBits::eFragment, test_frag, sizeof( test_frag )           ) ;
   
+  pool.addArrayInput( "info", 0, nyx::ArrayFlags::UniformBuffer ) ;
+  
   // Initialize vulkan objects.
   pass.setFinalLayout( vk::ImageLayout::ePresentSrcKHR ) ;
-  pass    .initialize( swapchain                       ) ;
-  shader  .initialize( device                          ) ;
-  pipeline.initialize( pass, shader                    ) ;
-  buffer  .initialize( graphics_queue, 20              ) ;
-  syncs   .initialize( swapchain.count(), device, 0    ) ;
 
-  for( unsigned i = 0; i < 50; i++ )
+  pass       .initialize( swapchain                       ) ;
+  shader     .initialize( device                          ) ;
+  pool       .initialize( shader, 50                      ) ;
+  pipeline   .initialize( pass, shader                    ) ;
+  buffer     .initialize( 20, graphics_queue, 1           ) ;
+  syncs      .initialize( swapchain.count(), device, 0    ) ;
+  descriptors.initialize( 50, pool                        ) ;
+ 
+  data    .initialize( device, 4 * 16, true, nyx::ArrayFlags::Vertex   ) ;
+  uniform .initialize( device, 1, true, nyx::ArrayFlags::UniformBuffer ) ;
+
+//  for( unsigned i = 0; i < 25; i++ )
+  while( true )
   {
+    descriptors.current().set( "info", uniform ) ;
+
     syncs.current().waitOnFences() ;
     syncs.current().waitOn( swapchain.acquire() ) ;
-    buffer.record( pass, swapchain.current() ) ;
-    buffer.stop( swapchain.current() ) ;
-    graphics_queue.submit( buffer.buffer( swapchain.current() ), syncs ) ;
+    
+    buffer.current().record( pass ) ;
+    
+    // Bind pipeline & Descriptor.
+    buffer.current().bind( pipeline    ) ;
+    buffer.current().bind( descriptors ) ;
+    
+    // Record Draw command.
+    buffer.current().draw( data ) ;
+    
+    buffer.current().stop() ;
+    graphics_queue.submit( buffer , syncs ) ;
+    
   
     swapchain.submit( syncs ) ;
     syncs.current().clear() ;
-    syncs.advance() ;
+
+    syncs      .advance() ;
+    buffer     .advance() ;
+    descriptors.advance() ;
   }
   
   device  .wait()  ;

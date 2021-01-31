@@ -29,6 +29,7 @@
 #include "RenderPass.h"
 #include "Pipeline.h"
 #include "Swapchain.h"
+#include "Descriptor.h"
 
 typedef unsigned VkFlags            ;
 typedef VkFlags  VkImageUsageFlags  ;
@@ -133,26 +134,28 @@ namespace nyx
     class Vulkan
     {
       public:
-        using Buffer          = nyx::vkg::Buffer                        ; ///< The object to handle vulkan buffer creation.
-        using CommandRecord   = nyx::vkg::CommandBuffer                 ; ///< The object to handle recording of vulkan commands.
-        using Context         = vk::SurfaceKHR                          ; ///< The object to handle a window's context.
-        using Device          = nyx::vkg::Device                        ; ///< The object to manage a hardware-accelerated device.
-        using DeviceAddress   = unsigned long long                      ; ///< The type of device address this library uses.
-        using RenderPass      = nyx::vkg::RenderPass                    ; ///< The object to manage a render pass.
-        using Instance        = nyx::vkg::Instance                      ; ///< The object to manage vulkan instance creation.
-        using Texture         = nyx::vkg::Image                         ; ///< The object to handle all image creation/memory management.
-        using Memory          = vk::DeviceMemory                        ; ///< The Framework-specific handle for Device Memory.
-        using Pipeline        = nyx::vkg::Pipeline                      ; ///< The object to manage pipeline creation & handling.
-        using Queue           = nyx::vkg::Queue                         ; ///< The object to manage vulkan queues.
-        using Shader          = nyx::vkg::NyxShader                     ; ///< The object to manage an individual vulkan shader.
-        using Swapchain       = nyx::vkg::Swapchain                     ; ///< The object to manage a window's framebuffers.
-        using Synchronization = nyx::vkg::Synchronization               ; ///< The object used to manage synchronization in this library.
+        using Buffer          = nyx::vkg::Buffer          ; ///< The object to handle vulkan buffer creation.
+        using CommandRecord   = nyx::vkg::CommandBuffer   ; ///< The object to handle recording of vulkan commands.
+        using Context         = vk::SurfaceKHR            ; ///< The object to handle a window's context.
+        using Descriptor      = nyx::vkg::Descriptor      ; ///< The object to manage data access in shaders.
+        using DescriptorPool  = nyx::vkg::DescriptorPool  ; ///< The object to manage creating Descriptors.
+        using Device          = nyx::vkg::Device          ; ///< The object to manage a hardware-accelerated device.
+        using DeviceAddress   = unsigned long long        ; ///< The type of device address this library uses.
+        using RenderPass      = nyx::vkg::RenderPass      ; ///< The object to manage a render pass.
+        using Instance        = nyx::vkg::Instance        ; ///< The object to manage vulkan instance creation.
+        using Texture         = nyx::vkg::Image           ; ///< The object to handle all image creation/memory management.
+        using Memory          = vk::DeviceMemory          ; ///< The Framework-specific handle for Device Memory.
+        using Pipeline        = nyx::vkg::Pipeline        ; ///< The object to manage pipeline creation & handling.
+        using Queue           = nyx::vkg::Queue           ; ///< The object to manage vulkan queues.
+        using Shader          = nyx::vkg::NyxShader       ; ///< The object to manage an individual vulkan shader.
+        using Swapchain       = nyx::vkg::Swapchain       ; ///< The object to manage a window's framebuffers.
+        using Synchronization = nyx::vkg::Synchronization ; ///< The object used to manage synchronization in this library.
 
-        template<typename TYPE>
-        using Array  = nyx::Array <nyx::vkg::Vulkan, TYPE> ;
+        template<typename Type>
+        using Array  = nyx::Array <nyx::vkg::Vulkan, Type> ;
     
-        template<nyx::ImageFormat FORMAT>
-        using Image = nyx::Image<nyx::vkg::Vulkan, FORMAT> ;
+        template<nyx::ImageFormat Format>
+        using Image = nyx::Image<nyx::vkg::Vulkan, Format> ;
         
         /** Reflective enumeration for a library error severity.
          */
@@ -222,6 +225,7 @@ namespace nyx
               Incomplete,
               OutOfHostMemory,
               DeviceLost,
+              FeatureNotPresent,
               ExtensionNotPresent,
               LayerNotPresent,
               Unknown,

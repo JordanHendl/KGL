@@ -15,10 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-typedef unsigned VkFlags ;
+#pragma once
 
-#ifndef NYX_VKG_BUFFER_H
-#define NYX_VKG_BUFFER_H
+typedef unsigned VkFlags ;
 
 namespace vk
 {
@@ -43,14 +42,15 @@ namespace nyx
     class Device        ;
     class CommandBuffer ;
     class Image         ;
-    
+    class Descriptor    ;
+
     /** Class for managing a Vulkan buffer.
      */
     class Buffer
     {
       public:
-        friend class nyx::vkg::Vulkan ;
-        
+        friend class nyx::vkg::Vulkan     ;
+        friend class nyx::vkg::Descriptor ;
         /** Default Constructor.
          */
         Buffer() ;
@@ -73,6 +73,10 @@ namespace nyx
         /** Friend decleration so the vkg::Image object can access this object's data for copy.
          */
         friend class vkg::Image ;
+        
+        /** Friend decleration so the command buffer can draw this object.
+         */
+        friend class vkg::CommandBuffer ;
 
         /** Equals operator. Performs a surface copy of the input source
          * @return A reference to this object after the surface copy.
@@ -214,6 +218,4 @@ namespace nyx
     };
   }
 }
-
-#endif
 

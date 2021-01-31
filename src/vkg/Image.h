@@ -60,7 +60,7 @@ namespace nyx
     class CommandBuffer ;
     class RenderPass    ;
     class Swapchain     ;
-    
+
     /** Abstraction of a Vulkan Image.
      */
     class Image 
@@ -104,7 +104,7 @@ namespace nyx
         friend class SwapchainData  ; ///< Friend class for swapchain data object.
         friend class RenderPass     ; ///< Friend class for render pass.
         friend class Swapchain      ; ///< Friend class for swapchain.
-
+        friend class Descriptor     ;
         
         /** Method to perform a deep copy on the input image.
          * @param src The image to copy from.
@@ -188,6 +188,11 @@ namespace nyx
          */
         void setLayout( const nyx::ImageLayout& layout ) ;
         
+        /** Method to retrieve the layout of this image.
+         * @return The layout of this image.
+         */
+        nyx::ImageLayout layout() const ;
+
         /** Method to transition this object's layout to the specified one on the GPU.
          * @param layout The layout to transition this image to.
          * @param cmd_buff The Vulkan command buffer to record the transition operation to.
