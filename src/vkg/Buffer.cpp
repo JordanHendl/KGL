@@ -127,7 +127,10 @@ namespace nyx
     
     void Buffer::reset()
     {
-      data().device.device().destroyBuffer( data().buffer ) ;
+      if( data().buffer )
+      {
+        data().device.device().destroyBuffer( data().buffer ) ;
+      }
       
       if( !data().preallocated )
       {

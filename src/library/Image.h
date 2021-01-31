@@ -137,6 +137,11 @@ namespace nyx
        */
       const typename Impl::Device& device() const ;
       
+      /** Method to check whether this object is initialized or not.
+       * @return Whether this object is initialized or not.
+       */
+      bool initialized() const ;
+
       /** Method to initialize this image with the input parameters.
        * @param gpu The Implementation-specific GPU to use for this image.
        * @param width The width of the image in pixels.
@@ -170,6 +175,12 @@ namespace nyx
        */
       unsigned layers() const ;
       
+      /** Method to resize this object to the desired width and height.
+       * @param width The width in pixels to resize this object to.
+       * @param height The Height in pixels to resize this object to.
+       */
+      void resize( unsigned width, unsigned height ) ;
+
       /** Method to transition this image to a different layout.
        * @param layout The implementaion-specific layout to transition this image to.
        * @param record The implementation-specific Command Record to use for this operation.
@@ -266,6 +277,12 @@ namespace nyx
   }
 
   template<typename Impl, ImageFormat Format>
+  bool Image<Impl, Format>::initialized() const
+  {
+    return this->impl_image.initialized() ;
+  }
+  
+  template<typename Impl, ImageFormat Format>
   bool Image<Impl, Format>::initialize( const typename Impl::Device& gpu, unsigned width, unsigned height, unsigned layers )
   {
     return this->impl_image.initialize( gpu, Format, width, height, layers ) ;
@@ -311,6 +328,12 @@ namespace nyx
   unsigned Image<Impl, Format>::size() const
   {
     return this->impl_image.size() ;
+  }
+  
+  template<typename Impl, ImageFormat Format>
+  void Image<Impl, Format>::resize( unsigned width, unsigned height )
+  {
+    return this->impl_image.resize( width, height ) ;
   }
   
   template<typename Impl, ImageFormat Format>

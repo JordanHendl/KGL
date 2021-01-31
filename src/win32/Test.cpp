@@ -17,7 +17,7 @@
 
 #include "Window.h"
 #include <event/Event.h>
-#include <Athena/Manager.h>
+#include <athena/Manager.h>
 #include <iostream>
 static const unsigned object_input_expected = 250;
 static const unsigned only_type_expected = 480;

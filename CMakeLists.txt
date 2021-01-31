@@ -41,7 +41,7 @@ OPTION( RUN_TESTS     "Whether or not the Nyx tests should be run"              
 OPTION( BUILD_DOCS    "Whether or not to generate documentation of Nyx"                   OFF )
 OPTION( BUILD_RELEASE "Whether or not the to build for release."                          OFF )
 
-PROJECT( Nyx CXX )
+PROJECT( nyx CXX )
 
 MESSAGE( INFO "Nyx Library Prebuild" ) 
 MESSAGE( INFO " " ) 
@@ -137,14 +137,15 @@ MESSAGE( INFO " " )
 
 INCLUDE( KPackage ) 
 
-SET( BIN_DIR          "bin"                                    )
-SET( INCLUDE_DIR      "include/${CMAKE_PROJECT_NAME}"          )
-SET( LIB_DIR          "lib64"                                  )
-SET( DOC_DIR          "doc"                                    )
-SET( CONFIG_DIR        ${CMAKE_PROJECT_NAME}                   )
-SET( DOXYGEN_DIR       ${CMAKE_CURRENT_SOURCE_DIR}/doc         )
-SET( BUILD_DIR         ${CMAKE_BINARY_DIR}                     )
-SET( NYXFILE_DIR       ${CMAKE_BINARY_DIR}/nyxfiles            )
+SET( BIN_DIR           "bin"                                 )
+SET( INCLUDE_DIR       "include"                             )
+SET( LIB_DIR           "lib64"                               )
+SET( DOC_DIR           "doc"                                 )
+SET( CONFIG_DIR         ${CMAKE_PROJECT_NAME}                )
+SET( DOXYGEN_DIR        ${CMAKE_CURRENT_SOURCE_DIR}/doc      )
+SET( BUILD_DIR          ${CMAKE_BINARY_DIR}                  )
+SET( NYXFILE_DIR        ${CMAKE_BINARY_DIR}/nyxfiles         )
+SET( HEADER_INSTALL_DIR ${INCLUDE_DIR}/${CMAKE_PROJECT_NAME} )
 
 FILE( MAKE_DIRECTORY ${NYXFILE_DIR} )
 

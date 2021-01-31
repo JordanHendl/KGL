@@ -81,6 +81,15 @@ namespace nyx
          */
         void initialize( const nyx::vkg::Device& device, unsigned num_sems = 1 ) ;
         
+        /** Method to set whether or not this object should make a fence when initialized.
+         * @param value Whether or not this object should make a fence.
+         */
+        void setMakeFence( bool value ) ;
+
+        /** Method to reset the fence of this object.
+         */
+        void resetFence() ;
+
         /** Method to add the input synchronization object to be waited on by this one.
          * @param sync The synchronization object to wait on for this current object's operation.
          */

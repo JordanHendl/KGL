@@ -262,6 +262,16 @@ namespace nyx
       }
       this->revertLayout( buffer ) ;
     }
+    
+    bool Image::initialized() const
+    {
+      if( !data().device.initialized() ) return false ;
+      if( !data().image                ) return false ;
+      if( !data().sampler              ) return false ;
+      if( !data().view                 ) return false ;
+
+      return true ;
+    }
 
     bool Image::initialize( const vkg::Device& device, nyx::ImageFormat format, unsigned width, unsigned height, unsigned num_layers )
     {

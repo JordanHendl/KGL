@@ -112,6 +112,11 @@ namespace nyx
          */
         void copy( const nyx::vkg::Buffer& src, const nyx::vkg::CommandBuffer& buffer ) ;
 
+        /** Method to determine if this object was initialized or not.
+         * @return Whether or not this object was initialized.
+         */
+        bool initialized() const ;
+
         /** Method to initialize this object with the input parameters.
          * @note Uses any set values from other setters in initialization.
          * @param width The width of the image in pixels.

@@ -28,6 +28,7 @@
 namespace vk
 {
   class CommandBuffer ;
+  class Fence         ;
 }
 
 namespace nyx

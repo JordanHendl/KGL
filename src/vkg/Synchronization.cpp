@@ -40,18 +40,24 @@ namespace nyx
       typedef std::vector<vk::Semaphore> SemList   ; ///< TODO
       typedef std::vector<vk::Fence    > FenceList ; ///< TODO
       
-      vk::Device         device        ; ///< TODO
-      vk::PhysicalDevice p_device      ; ///< TODO
-      vk::Fence          signal_fence  ; ///< TODO
-      SemList            signal_sems   ; ///< TODO
-      FenceList          wait_fences   ; ///< TODO
-      SemList            wait_sems     ; ///< TODO
-      
+      vk::Device         device            ; ///< TODO
+      vk::PhysicalDevice p_device          ; ///< TODO
+      vk::Fence          signal_fence      ; ///< TODO
+      SemList            signal_sems       ; ///< TODO
+      FenceList          wait_fences       ; ///< TODO
+      SemList            wait_sems         ; ///< TODO
+      bool               should_make_fence ;
+
       /** Default constructor.
        */
-      SynchronizationData() = default ;
+      SynchronizationData() ;
     };
     
+    SynchronizationData::SynchronizationData()
+    {
+      this->should_make_fence = true ;
+    }
+
     Synchronization::Synchronization()
     {
       this->sync_data = new SynchronizationData() ;
@@ -85,7 +91,12 @@ namespace nyx
     {
       return data().p_device ;
     }
-
+    
+    void Synchronization::setMakeFence( bool value )
+    {
+      data().should_make_fence = value ;
+    }
+    
     void Synchronization::initialize( const nyx::vkg::Device& device, unsigned num_sems )
     {
       vk::SemaphoreCreateInfo sem_info   ;
@@ -103,8 +114,14 @@ namespace nyx
         sem = data().device.createSemaphore( sem_info, nullptr ) ;
       }
       
-      data().signal_fence = data().device.createFence( fence_info, nullptr ) ;
-      
+      if( data().should_make_fence )
+      {
+        data().signal_fence = data().device.createFence( fence_info, nullptr ) ;
+      }
+    }
+    
+    void Synchronization::resetFence()
+    {
       data().device.resetFences( 1, &data().signal_fence ) ;
     }
 

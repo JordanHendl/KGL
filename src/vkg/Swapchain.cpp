@@ -236,6 +236,7 @@ namespace nyx
         device.resetFences( 1, &data().fences[ index ] ) ;
       }
       
+      data().syncs[ index ].resetFence() ;
       auto result = device.acquireNextImageKHR( data().swapchain, UINT64_MAX, data().syncs[ index ].signal(), data().syncs[ index ].signalFence() ) ;
       
       if( result.result == vk::Result::eErrorOutOfDateKHR || result.result == vk::Result::eSuboptimalKHR )

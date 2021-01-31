@@ -33,7 +33,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <iostream>
-#include <Athena/Manager.h>
+#include <athena/Manager.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 using Impl = nyx::vkg::Vulkan ;
@@ -319,6 +319,9 @@ athena::Result test_array_copy_non_wait()
   buffer_2.initialize( device, 500, false ) ;
   cmd     .initialize( graphics_queue, 1  ) ;
   sync    .initialize( device             ) ;
+  
+  sync.resetFence() ;
+
   if( cmd.size() != 1 ) return false ;
   
   // Record copy command.
@@ -408,15 +411,14 @@ athena::Result shaderTest()
 
   for( unsigned i = 0; i < 50; i++ )
   {
+    syncs.current().waitOnFences() ;
     syncs.current().waitOn( swapchain.acquire() ) ;
-  
     buffer.record( pass, swapchain.current() ) ;
     buffer.stop( swapchain.current() ) ;
     graphics_queue.submit( buffer.buffer( swapchain.current() ), syncs ) ;
   
     swapchain.submit( syncs ) ;
     syncs.current().clear() ;
-    syncs.current().waitOnFences() ;
     syncs.advance() ;
   }
   

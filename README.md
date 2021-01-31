@@ -105,7 +105,7 @@
 
   XCB is used for Linux windowing, however it should be already installed on mosts systems.
 
-  Athena is used for testing. To output tests, install the Athena testing library. ( See https://github.com/JordanHendl/Athena )
+  athena is used for testing. To output tests, install the athena testing library. ( See https://github.com/JordanHendl/athena )
 
 ## Closing
   For usages of each specific API, I suggest checking out the Test.cpp in each one!
