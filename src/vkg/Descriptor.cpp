@@ -93,6 +93,8 @@ namespace nyx
     {
       switch( flags.value() )
       {
+        case nyx::ArrayFlags::StorageBuffer : return nyx::UniformType::SSBO ;
+        case nyx::ArrayFlags::UniformBuffer : return nyx::UniformType::UBO  ;
         default : return nyx::UniformType::UBO ;
       }
     }
@@ -109,6 +111,8 @@ namespace nyx
     {
       switch( flags )
       {
+        case nyx::UniformType::SAMPLER : return vk::DescriptorType::eCombinedImageSampler ;
+        case nyx::UniformType::SSBO    : return vk::DescriptorType::eStorageBuffer        ;
         default : return vk::DescriptorType::eUniformBuffer ;
       }
     }

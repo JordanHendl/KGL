@@ -26,12 +26,12 @@ namespace nyx
    */
   enum ShaderStage : unsigned
   {
-    VERTEX,
-    FRAGMENT,
-    GEOMETRY,
-    TESSALATION_C,
-    TESSELATION_E,
-    COMPUTE,
+    Vertex,
+    Fragment,
+    Geometry,
+    Tess_C,
+    Tess_E,
+    Compute,
   };
 
   /** The enumeration of the types of Uniform variables possible in a KgShader file.

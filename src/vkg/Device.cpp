@@ -41,7 +41,7 @@ namespace nyx
 {
   namespace vkg
   {
-    static vk::PhysicalDeviceBufferDeviceAddressFeaturesEXT ext_buffer_address = { true, false, false } ;
+//    static vk::PhysicalDeviceBufferDeviceAddressFeaturesEXT ext_buffer_address = { false, false, false } ;
 
     struct QueueCount
     {
@@ -209,7 +209,7 @@ namespace nyx
 
     DeviceData::DeviceData()
     {
-      this->extension_list = { "VK_KHR_buffer_device_address" } ;
+//      this->extension_list = { "VK_KHR_buffer_device_address" } ;
       this->graphics_priorities = { 1.0f } ;
       this->compute_priorities  = { 1.0f } ;
       this->transfer_priorities = { 1.0f } ;
@@ -303,7 +303,7 @@ namespace nyx
       info.setPEnabledLayerNames     ( layer_list_char        ) ;
       info.setPEnabledFeatures       ( &this->features        ) ;
       
-      info.setPNext( static_cast<const void*>( &nyx::vkg::ext_buffer_address ) ) ;
+//      info.setPNext( static_cast<const void*>( &nyx::vkg::ext_buffer_address ) ) ;
 
       vkg::Vulkan::add( this->physical_device.createDevice( &info, nullptr, &this->gpu ) ) ;
     }

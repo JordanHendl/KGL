@@ -83,7 +83,14 @@ namespace nyx
       ::vk::Buffer           buffer ;
       
       info.setSize       ( size                                                              ) ;
-      info.setUsage      ( this->usage_flags | vk::BufferUsageFlagBits::eShaderDeviceAddress ) ;
+      if( this->device.hasExtension( nyx::vkg::BUFFER_ADDRESS_EXT_NAME ) )
+      {
+        info.setUsage      ( this->usage_flags | vk::BufferUsageFlagBits::eShaderDeviceAddress ) ;
+      }
+      else
+      {
+        info.setUsage      ( this->usage_flags ) ;
+      }
       info.setSharingMode( ::vk::SharingMode::eExclusive                                     ) ;
       
       auto result = this->device.device().createBuffer( info, nullptr ) ;

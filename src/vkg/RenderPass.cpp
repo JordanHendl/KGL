@@ -31,6 +31,7 @@
 #include "Image.h"
 #include "Swapchain.h"
 #include "Vulkan.h"
+#include "library/Image.h"
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <array>
@@ -247,6 +248,8 @@ namespace nyx
     {
       data().device = device ;
       
+      data().area.extent.width  = data().width  ;
+      data().area.extent.height = data().height ;
       data().render_pass = data().makeRenderPass() ;
       data().makeFramebuffers() ;
     }
@@ -256,6 +259,12 @@ namespace nyx
       data().device = swapchain.device() ;
       data().width  = swapchain.width()  ;
       data().height = swapchain.height() ; 
+      
+      data().area.extent.width  = data().width  ;
+      data().area.extent.height = data().height ;
+
+      data().viewports[ 0 ].width  = data().width ;
+      data().viewports[ 0 ].height = data().height ;
 
       data().attach_descriptions[ 0 ].setFormat( swapchain.format() ) ;
 
@@ -368,7 +377,7 @@ namespace nyx
     void RenderPass::setViewportWidth( unsigned id, float param )
     {
       const unsigned sz = id + 1 ;
-      if( sz > data().viewports.size() ) { data().viewports.resize( sz ) ; data().ratios.resize( sz ) ; }
+      if( sz > data().ratios.size() ) { data().viewports.resize( sz ) ; data().ratios.resize( sz ) ; }
       
       data().ratios[ id ].width_ratio = param ;
     }
@@ -376,7 +385,7 @@ namespace nyx
     void RenderPass::setViewportHeight( unsigned id, float param )
     {
       const unsigned sz = id + 1 ;
-      if( sz > data().viewports.size() ) { data().viewports.resize( sz ) ; data().ratios.resize( sz ) ; }
+      if( sz > data().ratios.size() ) { data().viewports.resize( sz ) ; data().ratios.resize( sz ) ; }
       
       data().ratios[ id ].height_ratio = param ;
     }
@@ -516,9 +525,9 @@ namespace nyx
       if( idx < data().sub_dependencies.size() ) data().sub_dependencies[ idx ].setDstAccessMask( dst ) ;
     }
     
-    void RenderPass::setFinalLayout( const vk::ImageLayout& layout, unsigned idx )
+    void RenderPass::setFinalLayout( nyx::ImageLayout layout, unsigned idx )
     {
-      if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setFinalLayout( layout ) ;
+      if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setFinalLayout( vkg::Vulkan::convert( layout ) ) ;
     }
     
     void RenderPass::setClearColor( float red, float green, float blue, float alpha )

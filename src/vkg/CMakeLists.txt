@@ -23,7 +23,7 @@ IF( ${Vulkan_FOUND} )
          Vulkan.h
          Buffer.h
          Device.h
-         Descriptor.cpp
+         Descriptor.h
          Instance.h
          Image.h
          RenderPass.h

@@ -56,6 +56,19 @@ namespace nyx
 {
   class ShaderIterator ;
   class NyxFile ;
+  
+  /** Forward declared array flags.
+   */
+  class ArrayFlags ;
+  
+  /** Forward declared shader stage enumeration.
+   */
+  enum ShaderStage : unsigned ;
+
+  /** Forward declared image usage enumeration.
+   */
+  enum class ImageUsage : unsigned ;
+
   namespace vkg
   {
     class Device ;
@@ -82,6 +95,15 @@ namespace nyx
           vec2,
           ivec2,
           uvec2
+        };
+        
+        
+        /** The rate of vertex being input.
+         */
+        enum class InputRate
+        {
+          Vertex,
+          Instanced,
         };
 
         /** Default constructor.
@@ -141,29 +163,37 @@ namespace nyx
          * @param format The vulkan format of the attribute.
          * @param offset The offset of the attribute.
          */
-        void addAttribute( unsigned location, unsigned binding, const NyxShader::Format& format, unsigned offset ) ;
+        void addAttribute( unsigned location, unsigned binding, const NyxShader::Format& format, unsigned offset = 0 ) ;
         
         /** Method to manually add a descriptor to this shader.
          * @param binding The binding number of the entry, corresponds to a resource of the same binding in the shader stages.
          * @param type  Which type of resources are used for this binding.
          * @param count The number of descriptors contained in the binding ( e.g. an array in the shader ).
-         * @param flags The bitmask of shader flags specifying which pipeline shader stage can access this resource.
+         * @param stage The bitmask of shader flags specifying which pipeline shader stage can access this resource.
          */
-        void addDescriptor( unsigned binding, const vk::DescriptorType& type, unsigned count, const vk::ShaderStageFlags flags ) ;
+        void addDescriptor( unsigned binding, const nyx::ArrayFlags& type, unsigned count, nyx::ShaderStage stage ) ;
+        
+        /** Method to manually add a descriptor to this shader.
+         * @param binding The binding number of the entry, corresponds to a resource of the same binding in the shader stages.
+         * @param type  Which type of resources are used for this binding.
+         * @param count The number of descriptors contained in the binding ( e.g. an array in the shader ).
+         * @param stage The bitmask of shader flags specifying which pipeline shader stage can access this resource.
+         */
+        void addDescriptor( unsigned binding, nyx::ImageUsage type, unsigned count, nyx::ShaderStage stage ) ;
 
         /** Method to manually add an input binding to the shader.
          * @param binding The binding number of the input.
          * @param stride The stride distance in bytes between elements.
          * @param rate Whether it is verted index or instance index addressed.
          */
-        void addInputBinding( unsigned binding, unsigned stride, const vk::VertexInputRate& rate ) ;
+        void addInputBinding( unsigned binding, unsigned stride, InputRate rate ) ;
         
         /** Method to manually add a SPIRV shader module to this object.
-         * @param flags The shader flags to associated with this shader.
+         * @param stage The shader flags to associated with this shader.
          * @param spirv const pointer to the start of the SPIRV byte code.
          * @param size The size in of the SPIRV byte code in elements.
          */
-        void addShaderModule( const vk::ShaderStageFlagBits& flags, const unsigned* spirv, unsigned size ) ;
+        void addShaderModule( nyx::ShaderStage stage, const unsigned* spirv, unsigned size ) ;
         
         /** Method to retrieve the device used for this object's creation.
          * @return Const reference to the device used for this object's creation.

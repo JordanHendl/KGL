@@ -36,6 +36,7 @@
 #include <athena/Manager.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "nyxfile/NyxFile.h"
 using Impl = nyx::vkg::Vulkan ;
 
 static Impl::Instance      instance       ;
@@ -125,6 +126,7 @@ athena::Result instance_initialization_test()
   instance.addExtension      ( "VK_KHR_surface"                          ) ;
   instance.addValidationLayer( "VK_LAYER_KHRONOS_validation"             ) ;
   instance.addValidationLayer( "VK_LAYER_LUNARG_standard_validation"     ) ;
+  instance.addValidationLayer( "VK_LAYER_RENDERDOC_Capture"     ) ;
   
   instance.initialize() ;
   
@@ -146,6 +148,7 @@ athena::Result device_creation_test()
   
   device  .addValidationLayer( "VK_LAYER_KHRONOS_validation"         ) ;
   device  .addValidationLayer( "VK_LAYER_LUNARG_standard_validation" ) ;
+  device  .addValidationLayer( "VK_LAYER_RENDERDOC_Capture" ) ;
   device  .addExtension      ( "VK_KHR_swapchain"                    ) ;
   device.initialize( instance.device( 0 ), window.context() ) ;
   
@@ -384,7 +387,7 @@ athena::Result test_image_size()
   return true ;
 }
 
-athena::Result shaderTest()
+athena::Result pipeline_test()
 {
   Impl::Array<float>   data     ;
   Impl::Array<bool>    uniform  ;
@@ -400,16 +403,16 @@ athena::Result shaderTest()
   if( !device.initialized() ) return athena::Result::Skip ;
 
   // Add shaders.
-  shader.addAttribute   ( 0, 0, Impl::Shader::Format::vec4, 0                                          ) ;
-  shader.addInputBinding( 0, sizeof( float ) * 3, vk::VertexInputRate::eVertex                         ) ;
-  shader.addDescriptor  ( 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eFragment ) ;
-  shader.addShaderModule( vk::ShaderStageFlagBits::eVertex  , test_vert, sizeof( test_vert )           ) ;
-  shader.addShaderModule( vk::ShaderStageFlagBits::eFragment, test_frag, sizeof( test_frag )           ) ;
+  shader.addAttribute   ( 0, 0, Impl::Shader::Format::vec4, 0                              ) ;
+  shader.addInputBinding( 0, sizeof( float ) * 3, Impl::Shader::InputRate::Vertex          ) ;
+  shader.addDescriptor  ( 0, nyx::ArrayFlags::UniformBuffer, 1, nyx::ShaderStage::Fragment ) ;
+  shader.addShaderModule( nyx::ShaderStage::Vertex  , test_vert, sizeof( test_vert )       ) ;
+  shader.addShaderModule( nyx::ShaderStage::Fragment, test_frag, sizeof( test_frag )       ) ;
   
   pool.addArrayInput( "info", 0, nyx::ArrayFlags::UniformBuffer ) ;
   
   // Initialize vulkan objects.
-  pass.setFinalLayout( vk::ImageLayout::ePresentSrcKHR ) ;
+  pass.setFinalLayout( nyx::ImageLayout::PresentSrc ) ;
 
   pass       .initialize( swapchain                       ) ;
   shader     .initialize( device                          ) ;
@@ -514,7 +517,7 @@ int main()
   manager.add( "16) Image::initialize Test"              , &test_image_initialization     ) ;
   manager.add( "17) Image::size Test"                    , &test_image_size               ) ;
   manager.add( "19) Image::copy Test"                    , &test_image_copy               ) ;
-  manager.add( "20) Pipeline Test"                       , &shaderTest                    ) ;
+  manager.add( "20) Pipeline Test"                       , &pipeline_test                 ) ;
   
   return manager.test( athena::Output::Verbose ) ;
 }

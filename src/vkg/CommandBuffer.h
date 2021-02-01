@@ -156,11 +156,12 @@ namespace nyx
 //         */
 //        void drawInstanced( const nyx::vkg::Buffer& buffer, unsigned instance_count, unsigned offset = 0, unsigned first = 0 ) ;
 //        
-//        /** Method to record an indexed draw command to this object's command buffers.
-//         * @param indices The buffer containing the indices of the vertex buffer to draw.
-//         * @param vertices The vertex buffer used for drawing.
-//         */
-//        void drawIndexed( const nyx::vkg::Buffer& indices, const nyx::vkg::Buffer& vertices ) ;
+        /** Method to record an indexed draw command to this object's command buffers.
+         * @param indices The buffer containing the indices of the vertex buffer to draw.
+         * @param vertices The vertex buffer used for drawing.
+         */
+        template<typename Type, typename Type2>
+        void drawIndexed(const nyx::Array<vkg::Vulkan, Type2>& indices, const nyx::Array<vkg::Vulkan, Type>& vertices ) ;
         
         /** Method to begin all this object's command buffers record using input render pass.
          * @param render_pass Method to begin the render pass & all this object's command buffers record as well.
@@ -202,7 +203,16 @@ namespace nyx
          * @param count The amount of vertices in the buffer.
          * @param offset The offset of the buffer to start at.
          */
-        void drawBase( const nyx::vkg::Buffer& buffer, unsigned count, unsigned offset = 0 ) ;
+        void drawBase( const nyx::vkg::Buffer& buffer, unsigned count, unsigned offset = 0 ) ;\
+
+        /** Base method to use a buffer as vertices to draw.
+         * @param index The buffer to use for indices.
+         * @param vert The buffer to use for vertices.
+         * @param index_count The amount of indices in the buffer.
+         * @param vert_count The amount of vertices in the buffer.
+         * @param offset The offset of the buffer to start at.
+         */
+        void drawIndexedBase( const nyx::vkg::Buffer& index, const nyx::vkg::Buffer& vert, unsigned index_count, unsigned vert_count, unsigned offset = 0 ) ;
         
         /** Private method for pushing a value as a push-constant to this command buffer.
          * @param value The pointer value to push onto the Device.
@@ -230,6 +240,12 @@ namespace nyx
     void CommandBuffer::draw( const nyx::Array<vkg::Vulkan,Type>& array, unsigned offset )
     {
       this->drawBase( array, array.size(), offset ) ;
+    }
+
+    template<typename Type, typename Type2>
+    void CommandBuffer::drawIndexed( const nyx::Array<vkg::Vulkan, Type2>& indices, const nyx::Array<vkg::Vulkan, Type>& vertices )
+    {
+      this->drawIndexedBase( indices, vertices, indices.size(), vertices.size(), 0 ) ;
     }
 
     template<typename Type>

@@ -52,6 +52,11 @@ namespace vk
 
 namespace nyx
 {
+  
+  /** Forward declared image layout.
+   */
+  enum class ImageLayout : unsigned ;
+
   namespace vkg
   {
     class Device    ;
@@ -351,7 +356,7 @@ namespace nyx
          * @param layout The layout to set.
          * @param idx The index of attachment to apply the layout to.
          */
-        void setFinalLayout( const vk::ImageLayout& layout, unsigned idx = 0 ) ;
+        void setFinalLayout( nyx::ImageLayout layout, unsigned idx = 0 ) ;
 
         /** Method to set the RGBA float values for this render pass' clear color.
          * @param red   The Red component of the clear color that is between 0.0f-1.0f.

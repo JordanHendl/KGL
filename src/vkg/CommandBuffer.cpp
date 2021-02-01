@@ -227,6 +227,20 @@ namespace nyx
         buff.draw( count, 1, 0, 0 ) ;
       }
     }
+    
+    void CommandBuffer::drawIndexedBase( const nyx::vkg::Buffer& index, const nyx::vkg::Buffer& vert, unsigned index_count, unsigned vert_count, unsigned offset ) 
+    {
+      const vk::DeviceSize device_size = offset                 ;
+      const vk::IndexType  type        = vk::IndexType::eUint32 ;
+
+      vert_count = vert_count ;
+      for( auto& buff : data().cmd_buffers )
+      {
+        buff.bindVertexBuffers( 0, 1, &vert.buffer(), &device_size ) ;
+        buff.bindIndexBuffer  ( index.buffer(), 0, type            ) ;
+        buff.drawIndexed      ( index_count, 1, 0, 0, 0            ) ;
+      }
+    }
 
 //    void CommandBuffer::drawInstanced( const nyx::vkg::Buffer& buffer, unsigned instance_count, unsigned offset, unsigned first )
 //    {

@@ -23,8 +23,11 @@
  */
 
 #include "NyxShader.h"
-#include <nyxfile/NyxFile.h>
 #include "Device.h"
+#include "Image.h"
+#include <nyxfile/NyxFile.h>
+#include <library/Array.h>
+#include <library/Image.h>
 #include <vulkan/vulkan.hpp>
 #include <map>
 #include <vector>
@@ -35,6 +38,10 @@ namespace nyx
 {
   namespace vkg
   {
+    static vk::DescriptorType convert( nyx::ImageUsage flags ) ;
+    static vk::DescriptorType convert( nyx::ArrayFlags flags ) ;
+    static vk::VertexInputRate convert( vkg::NyxShader::InputRate rate ) ;
+
     /**
      * @param desc_type
      * @param type
@@ -44,7 +51,7 @@ namespace nyx
     /**
      * @param stage
      */
-    static inline ::vk::ShaderStageFlagBits vulkanBitFromStage( const nyx::ShaderStage& stage ) ;
+    static inline ::vk::ShaderStageFlagBits convert( const nyx::ShaderStage& stage ) ;
     
     /**
      * @param type
@@ -175,16 +182,16 @@ namespace nyx
       }
     }
                 
-    ::vk::ShaderStageFlagBits vulkanBitFromStage( const nyx::ShaderStage& stage )
+    ::vk::ShaderStageFlagBits convert( const nyx::ShaderStage& stage )
     {
       switch( stage )
       {
-        case nyx::ShaderStage::FRAGMENT      : return ::vk::ShaderStageFlagBits::eFragment               ;
-        case nyx::ShaderStage::GEOMETRY      : return ::vk::ShaderStageFlagBits::eGeometry               ;
-        case nyx::ShaderStage::TESSALATION_C : return ::vk::ShaderStageFlagBits::eTessellationControl    ;
-        case nyx::ShaderStage::TESSELATION_E : return ::vk::ShaderStageFlagBits::eTessellationEvaluation ;
-        case nyx::ShaderStage::COMPUTE       : return ::vk::ShaderStageFlagBits::eCompute                ;
-        case nyx::ShaderStage::VERTEX        : return ::vk::ShaderStageFlagBits::eVertex                 ;
+        case nyx::ShaderStage::Fragment      : return ::vk::ShaderStageFlagBits::eFragment               ;
+        case nyx::ShaderStage::Geometry      : return ::vk::ShaderStageFlagBits::eGeometry               ;
+        case nyx::ShaderStage::Tess_C : return ::vk::ShaderStageFlagBits::eTessellationControl    ;
+        case nyx::ShaderStage::Tess_E : return ::vk::ShaderStageFlagBits::eTessellationEvaluation ;
+        case nyx::ShaderStage::Compute       : return ::vk::ShaderStageFlagBits::eCompute                ;
+        case nyx::ShaderStage::Vertex        : return ::vk::ShaderStageFlagBits::eVertex                 ;
         default                                          : return ::vk::ShaderStageFlagBits::eFragment   ;
       }
     }
@@ -205,14 +212,44 @@ namespace nyx
     {
       switch( flag )
       {
-        case vk::ShaderStageFlagBits::eVertex   : return nyx::ShaderStage::VERTEX   ;
-        case vk::ShaderStageFlagBits::eFragment : return nyx::ShaderStage::FRAGMENT ;
-        case vk::ShaderStageFlagBits::eCompute  : return nyx::ShaderStage::COMPUTE  ;
-        case vk::ShaderStageFlagBits::eGeometry : return nyx::ShaderStage::GEOMETRY ;
-        default : return nyx::ShaderStage::VERTEX ;
+        case vk::ShaderStageFlagBits::eVertex   : return nyx::ShaderStage::Vertex   ;
+        case vk::ShaderStageFlagBits::eFragment : return nyx::ShaderStage::Fragment ;
+        case vk::ShaderStageFlagBits::eCompute  : return nyx::ShaderStage::Compute  ;
+        case vk::ShaderStageFlagBits::eGeometry : return nyx::ShaderStage::Geometry ;
+        default : return nyx::ShaderStage::Vertex ;
       }
     }
     
+    vk::VertexInputRate convert( vkg::NyxShader::InputRate rate )
+    {
+      switch( rate )
+      {
+        case NyxShader::InputRate::Instanced : return vk::VertexInputRate::eInstance ;
+        case NyxShader::InputRate::Vertex    : return vk::VertexInputRate::eVertex   ;
+        default : return vk::VertexInputRate::eVertex ;
+      }
+    }
+    
+    vk::DescriptorType convert( nyx::ImageUsage flags )
+    {
+      switch( flags )
+      {
+        case nyx::ImageUsage::Sampled : return vk::DescriptorType::eCombinedImageSampler ;
+        case nyx::ImageUsage::Input   : return vk::DescriptorType::eStorageImage ;
+        default : return vk::DescriptorType::eSampler ;
+      }
+    }
+    
+    vk::DescriptorType convert( nyx::ArrayFlags flags )
+    {
+      switch( flags.value() )
+      {
+        case nyx::ArrayFlags::StorageBuffer : return vk::DescriptorType::eStorageBuffer ;
+        case nyx::ArrayFlags::UniformBuffer : return vk::DescriptorType::eUniformBuffer ;
+        default : return vk::DescriptorType::eUniformBuffer ;
+      }
+    }
+
     KgShaderData::KgShaderData()
     {
       this->rate = vk::VertexInputRate::eVertex ;
@@ -238,21 +275,21 @@ namespace nyx
           if( binding_map.find( iter.uniformName( index ) ) != binding_map.end() ) 
           {
             auto flags = binding_map[ iter.uniformName( index ) ].stageFlags ;
-            flags |= vulkanBitFromStage( iter.stage() ) ;
+            flags |= convert( iter.stage() ) ;
             binding_map[ iter.uniformName( index ) ].setStageFlags( flags ) ;
           }
           else
           {
-            binding.setBinding         ( iter.uniformBinding( index )                             ) ;
-            binding.setDescriptorCount ( iter.uniformSize   ( index )                             ) ;          
-            binding.setStageFlags      ( binding.stageFlags |= vulkanBitFromStage( iter.stage() ) ) ;
+            binding.setBinding         ( iter.uniformBinding( index )                  ) ;
+            binding.setDescriptorCount ( iter.uniformSize   ( index )                  ) ;          
+            binding.setStageFlags      ( binding.stageFlags |= convert( iter.stage() ) ) ;
             binding.descriptorType << iter.uniformType( index ) ;
 
             binding_map[ iter.uniformName( index ) ] = binding ;
           }
         }
         
-        if( iter.stage() == nyx::ShaderStage::VERTEX )
+        if( iter.stage() == nyx::ShaderStage::Vertex )
         {
           for( unsigned index = 0; index < iter.numAttributes(); index++ )
           {
@@ -275,7 +312,7 @@ namespace nyx
         }
         module_info.setCodeSize( iter.spirvSize() * sizeof( unsigned ) ) ;
         module_info.setPCode   ( iter.spirv()                          ) ;
-        this->spirv_map[ vulkanBitFromStage( iter.stage() ) ] = module_info ;
+        this->spirv_map[ convert( iter.stage() ) ] = module_info ;
       }
       
       index = 0 ;
@@ -328,7 +365,7 @@ namespace nyx
       iter = 0 ;
       for( auto it : this->modules )
       {
-        info.setStage ( vulkanBitFromStage( it.first ) ) ;
+        info.setStage ( convert( it.first ) ) ;
         info.setModule( it.second                      ) ;
         info.setPName ( "main"                         ) ;
         
@@ -411,37 +448,50 @@ namespace nyx
       
       data().attributes.push_back( attr ) ;
     }
-    void NyxShader::addDescriptor( unsigned binding, const vk::DescriptorType& type, unsigned count, const vk::ShaderStageFlags flags )
+    
+    void NyxShader::addDescriptor( unsigned binding, const nyx::ArrayFlags& type, unsigned count, nyx::ShaderStage stage )
     {
       vk::DescriptorSetLayoutBinding info ;
       
-      info.setBinding        ( binding ) ;
-      info.setDescriptorType ( type    ) ;
-      info.setDescriptorCount( count ) ;
-      info.setStageFlags     ( flags ) ;
+      info.setBinding        ( binding               ) ;
+      info.setDescriptorType ( vkg::convert( type )  ) ;
+      info.setDescriptorCount( count                 ) ;
+      info.setStageFlags     ( vkg::convert( stage ) ) ;
       
       data().descriptors.push_back( info ) ;
     }
     
-    void NyxShader::addInputBinding( unsigned binding, unsigned stride, const vk::VertexInputRate& rate )
+    void NyxShader::addDescriptor( unsigned binding, nyx::ImageUsage type, unsigned count, nyx::ShaderStage stage )
+    {
+      vk::DescriptorSetLayoutBinding info ;
+      
+      info.setBinding        ( binding               ) ;
+      info.setDescriptorType ( vkg::convert( type )  ) ;
+      info.setDescriptorCount( count                 ) ;
+      info.setStageFlags     ( vkg::convert( stage ) ) ;
+      
+      data().descriptors.push_back( info ) ;
+    }
+    
+    void NyxShader::addInputBinding( unsigned binding, unsigned stride, InputRate rate )
     {
       vk::VertexInputBindingDescription bind ;
       
-      bind.setBinding  ( binding ) ; 
-      bind.setStride   ( stride  ) ;
-      bind.setInputRate( rate    ) ;
+      bind.setBinding  ( binding              ) ; 
+      bind.setStride   ( stride               ) ;
+      bind.setInputRate( vkg::convert( rate ) ) ;
 
       data().bindings.push_back( bind ) ;
     }
         
-    void NyxShader::addShaderModule( const vk::ShaderStageFlagBits& flags, const unsigned* spirv, unsigned size )
+    void NyxShader::addShaderModule( nyx::ShaderStage stage, const unsigned* spirv, unsigned size )
     {
       vk::ShaderModuleCreateInfo info ;
       
       info.setCodeSize( size  ) ;
       info.setPCode   ( spirv ) ;
       
-      data().spirv_map[ flags ] = info ;
+      data().spirv_map[ vkg::convert( stage ) ] = info ;
     }
     
     const nyx::vkg::Device& NyxShader::device() const
