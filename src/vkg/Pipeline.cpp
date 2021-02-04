@@ -233,9 +233,11 @@ namespace nyx
       return data().pipeline ;
     }
 
-    void Pipeline::initialize( const nyx::vkg::Device& device, const char* kg_path )
+    void Pipeline::initialize( unsigned device, const char* kg_path )
     {
-      data().device = device ;
+      Vulkan::initialize() ;
+
+      data().device = Vulkan::device( device ) ;
       data().shader.initialize( device, kg_path ) ;
       
       data().createLayout() ;
@@ -244,8 +246,11 @@ namespace nyx
 
     void Pipeline::initialize( const nyx::vkg::RenderPass& pass, const char* kg_path )
     {
-      data().render_pass = pass          ;
-      data().device      = pass.device() ;
+      if( !Vulkan::initialized() ) Vulkan::initialize() ;
+
+      data().render_pass = pass                            ;
+      data().device      = Vulkan::device( pass.device() ) ;
+
       data().shader.initialize( pass.device(), kg_path ) ;
       
       data().createLayout() ;
@@ -259,8 +264,10 @@ namespace nyx
 
     void Pipeline::initialize( const NyxShader& shader )
     {
-      data().shader = shader          ;
-      data().device = shader.device() ;
+      Vulkan::initialize() ;
+
+      data().shader = shader                            ;
+      data().device = Vulkan::device( shader.device() ) ;
       
       data().createLayout() ;
       data().createPipeline() ;
@@ -268,9 +275,11 @@ namespace nyx
 
     void Pipeline::initialize( const nyx::vkg::RenderPass& pass, const NyxShader& shader )
     {
-      data().render_pass = pass          ;
-      data().device      = pass.device() ;
-      data().shader      = shader        ;
+      Vulkan::initialize() ;
+
+      data().render_pass = pass                            ;
+      data().device      = Vulkan::device( pass.device() ) ;
+      data().shader      = shader                          ;
       
       data().config.viewport = pass.viewport() ;
 
@@ -290,7 +299,7 @@ namespace nyx
     
     void Pipeline::reset()
     {
-//      data().device.device().destroy( data().pipeline, nullptr ) ;
+      data().device.device().destroy( data().pipeline, nullptr ) ;
       data().device.device().destroy( data().layout  , nullptr ) ;
     }
 

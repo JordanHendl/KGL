@@ -79,7 +79,7 @@ namespace nyx
          * @param num_sems The amount of signal semaphores to create.
          * @param num_fences The amount of fences to create.
          */
-        void initialize( const nyx::vkg::Device& device, unsigned num_sems = 1 ) ;
+        void initialize( unsigned device, unsigned num_sems = 1 ) ;
         
         /** Method to set whether or not this object should make a fence when initialized.
          * @param value Whether or not this object should make a fence.
@@ -157,7 +157,10 @@ namespace nyx
         /** Method to wait on the fences specfied wait fences of this object.
          */
         void waitOnFences() ;
-
+        
+        /** Method to swap waits and signals.  
+         */
+        void swap() ;
         /** Method to clear all waiting objects of this object.
          */
         void clear() ;

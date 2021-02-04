@@ -36,87 +36,74 @@
 #include <map>
 #include <limits>
 #include <tuple>
+#include <memory>
+#include <algorithm>
 
 namespace nyx
 {
   namespace vkg
   {
 //    static vk::PhysicalDeviceBufferDeviceAddressFeaturesEXT ext_buffer_address = { false, false, false } ;
-
-    struct QueueCount
-    {
-      /** The vector of queues associated with this object.
-       */
-      std::vector<std::tuple<unsigned, vk::QueueFamilyProperties*>> queues ;
-      
-      /** The amount of queues allowed.
-       */
-      unsigned count ;
-      
-      /** Default constreuctor.
-       */
-      QueueCount() ;
-      
-      /** Method to retrieve a queue.
-       * @return The family of the queue gotten.
-       */
-      unsigned getQueue() ;
-      
-      /** Method to retrieve the index of the input family.
-       * @param family The family to retrieve an index of.
-       * @return The index of the specified family.
-       */
-      unsigned index( unsigned family ) ;
-      
-      vk::QueueFlags mask( unsigned family ) ;
-    };
     
     /** Structure to manage vulkan queue families.
      */
-    struct QueueFamilies
+    struct QueueFamily
     {
-      typedef unsigned                            Queue       ; ///< TODO
-      typedef unsigned                            MaxCount    ; ///< TODO
-      typedef std::map<Queue, std::vector<float>> PriorityMap ; ///< TODO
+      typedef std::vector<vkg::Queue> QueueVector  ; ///< TODO
+      typedef unsigned Family ;
       
-      std::vector<unsigned>                  total_families ; ///< TODO
-      QueueCount                             graphics       ; ///< TODO
-      QueueCount                             compute        ; ///< TODO
-      QueueCount                             present        ; ///< TODO
-      QueueCount                             transfer       ; ///< TODO
-      PriorityMap                            priority_map   ; ///< TODO
-      
+      vk::QueueFamilyProperties* prop   ;
+      Family                     family ;
+      QueueVector                queues ;
+      vk::PhysicalDevice         p_dev  ;
+
       /** Default constructor.
        */
-      QueueFamilies() = default ;
+      QueueFamily() = default ;
       
+      /** Whether or not this object can do compute.
+       * @return Whether or not this family can do compute
+       */
+      bool compute() ;
+      
+      /** Whether or not this object can do compute.
+       * @return Whether or not this family can do compute
+       */
+      bool graphics() ;
+      
+      /** Whether or not this object can present to the input surface.
+       * @return Whether or not this family can present to the input surface.
+       */
+      bool present( vk::SurfaceKHR surface ) ;
+      
+      /** Method to generate a queue for this 
+       * @param device
+       * @return 
+       */
+      vkg::Queue& makeQueue( const vkg::Device& device ) ;
+
       /** Assignment operator.
        * @param family The object to assign to this one.
        * @return Reference after assignment.
        */
-      QueueFamilies& operator=( const QueueFamilies& family ) ;
+      QueueFamily& operator=( const QueueFamily& family ) ;
     };
 
     struct DeviceData
     {
-      typedef std::vector<std::string    > List       ; ///< TODO
-      typedef std::vector<nyx::vkg::Queue> QueueList  ; ///< TODO
-      typedef std::vector<const char*    > CharList   ; ///< TODO
-      typedef std::vector<float          > Priorities ; ///< TODO
+      typedef std::vector<std::string                 > Vector       ; ///< TODO
+      typedef std::shared_ptr<std::vector<QueueFamily>> FamilyVector ; ///< TODO
+      typedef std::vector<const char*                 > CharVector   ; ///< TODO
       
-      ::vk::Device                           gpu                 ; ///< TODO
-      ::vk::PhysicalDevice                   physical_device     ; ///< TODO
-      ::vk::SurfaceKHR                       surface             ; ///< TODO
-      ::vk::PhysicalDeviceFeatures           features            ; ///< TODO
-      std::vector<vk::QueueFamilyProperties> properties          ; ///< TODO
-      List                                   extension_list      ; ///< TODO
-      List                                   layer_list          ; ///< TODO
-      QueueList                              queues              ; ///< TODO
-      QueueFamilies                          queue_families      ; ///< TODO
-      Priorities                             graphics_priorities ; ///< TODO
-      Priorities                             compute_priorities  ; ///< TODO
-      Priorities                             present_priorities  ; ///< TODO
-      Priorities                             transfer_priorities ; ///< TODO
+      ::vk::Device                           gpu             ; ///< TODO
+      ::vk::PhysicalDevice                   physical_device ; ///< TODO
+      ::vk::SurfaceKHR                       surface         ; ///< TODO
+      ::vk::PhysicalDeviceFeatures           features        ; ///< TODO
+      std::vector<vk::QueueFamilyProperties> properties      ; ///< TODO
+      unsigned                               id              ; ///< TODO
+      Vector                                 extension_list  ; ///< TODO
+      Vector                                 layer_list      ; ///< TODO
+      FamilyVector                           queues          ; ///< TODO
 
       /** Default Constructor
        */
@@ -135,111 +122,95 @@ namespace nyx
        */
       void findQueueFamilies() ;
       
+      /** Method to count all queues found for this device.
+       * @return The amount of queuest found for this device.
+       */
+      unsigned totalQueues() const ;
+
       /** Method to filter out extensions requested to only ones provided by the system.
        * @return The list of extensions requested that are present on the system.
        */
-      List filterExtensions() const ;
+      Vector filterExtensions() const ;
       
       /** Method to filter out layers requested to only ones provided by the system.
        * @return The list of layers requested that are present on the system.
        */
-      List filterLayers() const ;
+      Vector filterLayers() const ;
       
       /** Method to convert a list of strings to list of char* for vulkan objects.
        * @param list The list to convert.
-       * @return A List of const char* pointing to string list's strings.
+       * @return A Vector of const char* pointing to string list's strings.
        */
-      CharList listToCharList( List& list ) ;
+      CharVector listToCharVector( Vector& list ) ;
     };
     
-    QueueCount::QueueCount()
+    bool QueueFamily::compute()
     {
-      this->count = 0 ;
+      if( this->prop->queueFlags & vk::QueueFlagBits::eCompute ) return true ;
+      return false ;
     }
 
-    unsigned QueueCount::index( unsigned family )
+    bool QueueFamily::graphics()
     {
-      if( family != UINT32_MAX )
-      {
-        return this->count++ ;
-      }
-      return 0 ;
+      if( this->prop->queueFlags & vk::QueueFlagBits::eGraphics ) return true ;
+      return false ;
     }
     
-    vk::QueueFlags QueueCount::mask( unsigned family )
+    bool QueueFamily::present( vk::SurfaceKHR surface )
     {
-      family = family ;
-      if( this->queues.size() != 0 )
-      {
-        auto prop = std::get<1>( this->queues[ 0 ] ) ;
-        return prop->queueFlags ;
-      }
-      else
-      return static_cast<vk::QueueFlags>( 0 ) ;
-    }
-
-    unsigned QueueCount::getQueue()
-    {
+      vk::Bool32 support = false ;
       
-      for( auto tup : this->queues )
-      {
-        auto family = std::get<0>( tup ) ;
-        auto prop   = std::get<1>( tup ) ;
-
-        if( prop->queueCount != 0 )
-        {
-          return family ;
-        }
-      }
-
-      return UINT32_MAX ;
+      Vulkan::add( this->p_dev.getSurfaceSupportKHR( this->family, surface, &support ) ) ;
+      return support ;
     }
     
-    QueueFamilies& QueueFamilies::operator=( const QueueFamilies& family )
+    vkg::Queue& QueueFamily::makeQueue( const vkg::Device& device )
     {
-      this->total_families = family.total_families ;
-      this->graphics       = family.graphics       ;
-      this->compute        = family.compute        ;
-      this->present        = family.present        ;
-      this->transfer       = family.transfer       ;
-      this->priority_map   = family.priority_map   ;
+      vkg::Queue queue ;
+      if( this->queues.size() < this->prop->queueCount )
+      {
+        queue.initialize( device, device.device().getQueue( this->family, this->queues.size() ), this->family, static_cast<unsigned>( this->prop->queueFlags ) ) ;
+        this->queues.push_back( queue ) ;
+      }
       
-      return *this ;
+      return this->queues[ 0 ] ;
     }
 
     DeviceData::DeviceData()
     {
+      this->id = UINT32_MAX ;
 //      this->extension_list = { "VK_KHR_buffer_device_address" } ;
-      this->graphics_priorities = { 1.0f } ;
-      this->compute_priorities  = { 1.0f } ;
-      this->transfer_priorities = { 1.0f } ;
-      this->present_priorities  = { 1.0f } ;
     }
-    
+
     DeviceData& DeviceData::operator=( const DeviceData& data )
     {
-      this->gpu                 = data.gpu                 ;
-      this->physical_device     = data.physical_device     ;
-      this->surface             = data.surface             ;
-      this->features            = data.features            ;
-      this->properties          = data.properties          ;
-      this->extension_list      = data.extension_list      ;
-      this->queues              = data.queues              ;
-      this->queue_families      = data.queue_families      ;
-      this->graphics_priorities = data.graphics_priorities ;
-      this->compute_priorities  = data.compute_priorities  ;
-      this->present_priorities  = data.present_priorities  ;
-      this->transfer_priorities = data.transfer_priorities ;
+      this->id              = data.id                  ;
+      this->gpu             = data.gpu                 ;
+      this->physical_device = data.physical_device     ;
+      this->surface         = data.surface             ;
+      this->features        = data.features            ;
+      this->properties      = data.properties          ;
+      this->extension_list  = data.extension_list      ;
+      this->queues          = data.queues              ;
       
       return *this ;
     }
-
-    DeviceData::List DeviceData::filterLayers() const
+    
+    unsigned DeviceData::totalQueues() const
     {
-      List                               list             ;
+      return this->queues->size() ;
+    }
+
+    DeviceData::Vector DeviceData::filterLayers() const
+    {
+      Vector                             list             ;
       std::vector<::vk::LayerProperties> available_layers ;
       
-      available_layers = this->physical_device.enumerateDeviceLayerProperties() ;
+      auto result = this->physical_device.enumerateDeviceLayerProperties() ;
+      
+      vkg::Vulkan::add( result.result ) ;
+      
+      available_layers = result.value ;
         
       for( const auto& prop : available_layers )
       {
@@ -254,9 +225,9 @@ namespace nyx
       return list ;
     }
 
-    DeviceData::CharList DeviceData::listToCharList( List& list )
+    DeviceData::CharVector DeviceData::listToCharVector( Vector& list )
     {
-      DeviceData::CharList char_list ;
+      DeviceData::CharVector char_list ;
       
       for( auto &str : list )
       {
@@ -271,27 +242,25 @@ namespace nyx
       typedef std::vector<::vk::DeviceQueueCreateInfo> CreateInfos ;
       
       ::vk::DeviceCreateInfo info            ;
-      DeviceData::CharList   ext_list_char   ;
-      DeviceData::CharList   layer_list_char ;
+      DeviceData::CharVector ext_list_char   ;
+      DeviceData::CharVector layer_list_char ;
       CreateInfos            queue_infos     ;
-      unsigned               queue_id        ;
-      unsigned               num_queues      ;
-      
+      std::vector<float>     priorities      ;
+
       this->extension_list = this->filterExtensions()                     ;
       this->layer_list     = this->filterLayers()                         ;
-      ext_list_char        = this->listToCharList( this->extension_list ) ;
-      layer_list_char      = this->listToCharList( this->layer_list     ) ;
+      ext_list_char        = this->listToCharVector( this->extension_list ) ;
+      layer_list_char      = this->listToCharVector( this->layer_list     ) ;
 
-      queue_infos.resize( this->queue_families.total_families.size() ) ;
+      queue_infos.resize( this->totalQueues() ) ;
 
-      for( unsigned i = 0; i < this->queue_families.total_families.size(); i++ )
+      for( unsigned i = 0; i < this->totalQueues(); i++ )
       {
-        queue_id        = this->queue_families.total_families[ i        ] ;
-        auto priorities = this->queue_families.priority_map  [ queue_id ] ;
-        num_queues      = priorities.size()                               ;
-
-        queue_infos[ i ].setQueueFamilyIndex( queue_id          ) ;
-        queue_infos[ i ].setQueueCount      ( num_queues        ) ;
+        queue_infos[ i ].setQueueFamilyIndex( i                                      ) ;
+        queue_infos[ i ].setQueueCount      ( this->queues->at( i ).prop->queueCount ) ;
+        priorities.clear() ;
+        priorities.resize( this->queues->at( i ).prop->queueCount ) ;
+        std::fill( priorities.begin(), priorities.end(), 1.0f ) ;
         queue_infos[ i ].setPQueuePriorities( priorities.data() ) ;
       }
       
@@ -310,63 +279,31 @@ namespace nyx
     
     void DeviceData::findQueueFamilies()
     {
-      unsigned       id      ;
-      ::vk::Bool32   support ;
-
+      unsigned id ;
+      
+      this->queues = std::make_shared<std::vector<QueueFamily>>()         ;
       this->properties = this->physical_device.getQueueFamilyProperties() ;
       id   = 0                                                            ;
-      
-      for( auto& queue : this->properties )
+
+      for( id = 0; id < this->properties.size(); id++ )
       {
-        if( this->surface )
-        {
-          this->physical_device.getSurfaceSupportKHR( id, this->surface, &support ) ;
-          
-          if( support )
-          {
-            this->present_priorities.resize( std::min( static_cast<unsigned>( this->present_priorities.size() ), queue.queueCount ) ) ;
-            
-            this->queue_families.present.queues.push_back( std::make_tuple( id, &queue ) ) ;
-            this->queue_families.priority_map[ id ] = this->present_priorities             ;
-          }
-        }
-
-        if( queue.queueFlags & ::vk::QueueFlagBits::eGraphics )
-        {
-            this->graphics_priorities.resize( std::min( static_cast<unsigned>( this->graphics_priorities.size() ), queue.queueCount ) ) ;
-            
-            this->queue_families.graphics.queues.push_back( std::make_tuple( id, &queue ) ) ;
-            this->queue_families.priority_map[ id ] = this->graphics_priorities             ;
-        }
-        
-        if( queue.queueFlags & ::vk::QueueFlagBits::eCompute )
-        {
-            this->compute_priorities.resize( std::min( static_cast<unsigned>( this->compute_priorities.size() ), queue.queueCount ) ) ;
-            
-            this->queue_families.compute.queues.push_back( std::make_tuple( id, &queue ) ) ;
-            this->queue_families.priority_map[ id ] = this->compute_priorities             ;
-        }
-        
-        if( queue.queueFlags & ::vk::QueueFlagBits::eTransfer )
-        {
-          this->transfer_priorities.resize( std::min( static_cast<unsigned>( this->transfer_priorities.size() ), queue.queueCount ) ) ;
-            
-          this->queue_families.transfer.queues.push_back( std::make_tuple( id, &queue ) ) ;
-          this->queue_families.priority_map[ id ] = this->transfer_priorities             ;
-        }
-        
-        this->queue_families.total_families.push_back( id ) ;
-
-        id++ ;
+        this->queues->push_back( QueueFamily() ) ;
+        this->queues->at( id ).p_dev  = this->physical_device   ;
+        this->queues->at( id ).prop   = &this->properties[ id ] ;
+        this->queues->at( id ).family = id                      ;
       }
     }
 
-    DeviceData::List DeviceData::filterExtensions() const
+    DeviceData::Vector DeviceData::filterExtensions() const
     {
-      List                                   list                 ;
+      Vector                                   list               ;
       std::vector<::vk::ExtensionProperties> available_extentions ;
       
-      available_extentions = this->physical_device.enumerateDeviceExtensionProperties() ;
+      auto result = this->physical_device.enumerateDeviceExtensionProperties() ;
+      
+      vkg::Vulkan::add( result.result ) ;
+      
+      available_extentions = result.value ;
       
       for( const auto& ext : available_extentions )
       {
@@ -419,6 +356,11 @@ namespace nyx
       return data().gpu ;
     }
     
+    Device::operator unsigned() const
+    {
+      return data().id ;
+    }
+
     Device& Device::operator=( const Device& src )
     {
       *this->device_data = *src.device_data ;
@@ -446,20 +388,22 @@ namespace nyx
       return data().gpu ;
     }
 
-    void Device::initialize( const ::vk::PhysicalDevice& physical_device )
+    void Device::initialize( const ::vk::PhysicalDevice& physical_device, unsigned id )
     {
       data().physical_device = physical_device ;
+      data().id              = id              ;
       
       data().findQueueFamilies() ;
       data().generateDevice   () ;
     }
 
-    void Device::initialize( const ::vk::PhysicalDevice& physical_device, const ::vk::SurfaceKHR& surface )
+    void Device::initialize( const ::vk::PhysicalDevice& physical_device, unsigned id, const ::vk::SurfaceKHR& surface )
     {
       data().physical_device = physical_device ;
       data().surface         = surface         ;
-      
-      this->initialize( physical_device ) ;
+      data().id              = id              ;
+
+      this->initialize( physical_device, id ) ;
     }
     
     void Device::reset()
@@ -488,105 +432,61 @@ namespace nyx
     }
 
     //TODO These getters for queues are very bad. Do better eventually.
-    const nyx::vkg::Queue& Device::graphicsQueue()
+    const nyx::vkg::Queue& Device::graphicsQueue() const
     {
       static const nyx::vkg::Queue dummy ;
-      const unsigned family = data().queue_families.graphics.getQueue() ;
-      const unsigned mask   = static_cast<unsigned>( data().queue_families.graphics.mask( family ) ) ;
-      vk::Queue       vk_queue ;
-      nyx::vkg::Queue queue    ;
-      
-      if( data().gpu )
+
+      if( data().queues )
+      for( auto& family : *data().queues )
       {
-        vk_queue = data().gpu.getQueue( family, 0 ) ;
-        queue.initialize( *this, vk_queue, family, mask ) ;
-        data().queues.push_back( queue ) ;
-      
-        return data().queues.back() ;
+        if( family.graphics() )
+        {
+          return family.makeQueue( *this ) ;
+        }
       }
       
       return dummy ;
     }
     
-    const nyx::vkg::Queue& Device::presentQueue()
+    const nyx::vkg::Queue& Device::presentQueue( const vk::SurfaceKHR& surface ) const
     {
-      const unsigned family = data().queue_families.present.getQueue()      ;
-      const unsigned index  = data().queue_families.present.index( family ) ;
-      vk::Queue       vk_queue ;
-      nyx::vkg::Queue queue    ;
+      static const nyx::vkg::Queue dummy ;
+
+      if( data().queues )
+      for( auto& family : *data().queues )
+      {
+        if( family.present( surface ) && family.graphics() )
+        {
+          return family.makeQueue( *this ) ;
+        }
+      }
       
-      vk_queue = data().gpu.getQueue( family, index ) ;
-      queue.initialize( *this, vk_queue, family, data().queues.size() ) ;
-      
-      data().queues.push_back( queue ) ;
-      
-      return data().queues.back() ;
+      return dummy ;
     }
     
-    const nyx::vkg::Queue& Device::computeQueue()
+    const nyx::vkg::Queue& Device::computeQueue() const
     {
-      const unsigned family = data().queue_families.compute.getQueue()      ;
-      const unsigned index  = data().queue_families.compute.index( family ) ;
-      vk::Queue       vk_queue ;
-      nyx::vkg::Queue queue    ;
+      static vkg::Queue dummy ;
       
-      vk_queue = data().gpu.getQueue( family, index ) ;
-      queue.initialize( *this, vk_queue, family, data().queues.size() ) ;
-      
-      data().queues.push_back( queue ) ;
-      
-      return data().queues.back() ;
+      return dummy ;
     }
-    
-    const nyx::vkg::Queue& Device::transferQueue()
-    {
-      const unsigned family = data().queue_families.transfer.getQueue()      ;
-      const unsigned index  = data().queue_families.transfer.index( family ) ;
-      vk::Queue       vk_queue ;
-      nyx::vkg::Queue queue    ;
-      
-      vk_queue = data().gpu.getQueue( family, index ) ;
-      queue.initialize( *this, vk_queue, family, data().queues.size() ) ;
-      
-      data().queues.push_back( queue ) ;
-      
-      return data().queues.back() ;
-    }
-    
-    void Device::setGraphicsQueueCount( unsigned amt )
-    {
-      data().graphics_priorities.resize( amt ) ;
-    }
-    
-    void Device::setComputeQueueCount( unsigned amt )
-    {
-      data().compute_priorities.resize( amt ) ;
-    }
-    
-    void Device::setTransferQueueCount( unsigned amt )
-    {
-      data().transfer_priorities.resize( amt ) ;
-    }
-    
-    void Device::setGraphicsPriority( unsigned queue_index, float priority )
-    {
-      if( queue_index < data().graphics_priorities.size() ) data().graphics_priorities[ queue_index ] = priority ;
-    }
-    
-    void Device::setComputePriority( unsigned queue_index, float priority )
-    {
-      if( queue_index < data().compute_priorities.size() ) data().compute_priorities[ queue_index ] = priority ;
-    }
-    
-    void Device::setTransferPriority( unsigned queue_index, float priority )
-    {
-      if( queue_index < data().transfer_priorities.size() ) data().transfer_priorities[ queue_index ] = priority ;
-    }
-    
-    void Device::setPresentPriority( unsigned queue_index, float priority )
-    {
-      if( queue_index < data().present_priorities.size() ) data().present_priorities[ queue_index ] = priority ;
-    }
+//    
+//    const nyx::vkg::Queue& Device::transferQueue()
+//    {
+////      const unsigned family = data().queue_families.transfer.getQueue()      ;
+////      const unsigned index  = data().queue_families.transfer.index( family ) ;
+////      vk::Queue       vk_queue ;
+////      nyx::vkg::Queue queue    ;
+//      
+////      vk_queue = data().gpu.getQueue( family, index ) ;
+////      queue.initialize( *this, vk_queue, family, data().queues.size() ) ;
+////      
+////      data().queues.push_back( queue ) ;
+////      
+////      return data().queues.back() ;
+//      
+////      return queue ;
+//    }
 
     const ::vk::Device& Device::device() const
     {

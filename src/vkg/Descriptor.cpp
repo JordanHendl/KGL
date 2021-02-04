@@ -69,11 +69,12 @@ namespace nyx
 
       using UniformMap = std::unordered_map<std::string, Uniform> ;
       
-      UniformMap              map    ;
-      nyx::vkg::Device        device ;
-      unsigned                amount ;
-      vk::DescriptorPool      pool   ;
-      vk::DescriptorSetLayout layout ;
+      UniformMap              map       ;
+      nyx::vkg::Device        device    ;
+      unsigned                device_id ;
+      unsigned                amount    ;
+      vk::DescriptorPool      pool      ;
+      vk::DescriptorSetLayout layout    ;
       
       /** Default constructor.
        */
@@ -256,8 +257,9 @@ namespace nyx
         }
       }
       
-      data().device = shader.device() ;
-      data().layout = shader.layout() ;
+      data().device_id = shader.device()                   ;
+      data().device    = Vulkan::device( shader.device() ) ;
+      data().layout    = shader.layout()                   ;
 
       this->initialize() ;
     }

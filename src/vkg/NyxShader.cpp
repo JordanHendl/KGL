@@ -25,6 +25,7 @@
 #include "NyxShader.h"
 #include "Device.h"
 #include "Image.h"
+#include "Vulkan.h"
 #include <nyxfile/NyxFile.h>
 #include <library/Array.h>
 #include <library/Image.h>
@@ -366,8 +367,8 @@ namespace nyx
       for( auto it : this->modules )
       {
         info.setStage ( convert( it.first ) ) ;
-        info.setModule( it.second                      ) ;
-        info.setPName ( "main"                         ) ;
+        info.setModule( it.second           ) ;
+        info.setPName ( "main"              ) ;
         
         this->infos[ iter++ ] = info ;
       }
@@ -402,9 +403,12 @@ namespace nyx
       return data().nyxfile ;
     }
 
-    void NyxShader::initialize( const nyx::vkg::Device& device, const char* nyx_path )
+    void NyxShader::initialize( unsigned device, const char* nyx_path )
     {
-      data().device = device ;
+      if( !Vulkan::initialized() ) Vulkan::initialize() ;
+
+      data().device = Vulkan::device( device ) ;
+      
       data().nyxfile.load( nyx_path ) ;
       
       data().parse() ;
@@ -413,9 +417,9 @@ namespace nyx
       data().makePipelineShaderInfos() ;
     }
 
-    void NyxShader::initialize( const nyx::vkg::Device& device )
+    void NyxShader::initialize( unsigned device )
     {
-      data().device = device ;
+      data().device = Vulkan::device( device ) ;
       
       data().makeDescriptorLayout()    ;
       data().makeShaderModules()       ;
@@ -494,7 +498,7 @@ namespace nyx
       data().spirv_map[ vkg::convert( stage ) ] = info ;
     }
     
-    const nyx::vkg::Device& NyxShader::device() const
+    unsigned NyxShader::device() const
     {
       return data().device ;
     }

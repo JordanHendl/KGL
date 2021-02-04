@@ -15,8 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NYX_VULKAN_H
-#define NYX_VULKAN_H
+#pragma once
 
 #include "Device.h"
 #include "Instance.h"
@@ -91,6 +90,11 @@ namespace nyx
   
   class Image ;
   
+  /** Forward declared generic window object.
+   */
+  template<typename OS, typename Framework>
+  class BaseWindow ;
+
   /** Forward declared Linux window
    */
   namespace lx
@@ -219,25 +223,28 @@ namespace nyx
              */
             enum
             {
-              None,
-              Success,
-              Not_Ready,
-              Incomplete,
-              OutOfHostMemory,
-              DeviceLost,
-              FeatureNotPresent,
-              ExtensionNotPresent,
-              LayerNotPresent,
-              Unknown,
-              SuboptimalSwapchain,
-              Fragmentation,
-              InvalidExternalHandle,
-              SurfaceLost,
-              NativeWindowInUse,
-              SuboptimalKHR,
-              MemoryMapFailed,
-              ValidationFailed,
-              InvalidDevice,
+              None,                  ///< No Error.
+              Success,               ///< Success. Nothing to do.
+              DeviceNotFound,        ///< The requested device is not found.
+              Not_Ready,             ///< Device is not yet ready to do the operation.
+              Incomplete,            ///< The operation was incomplete.
+              OutOfHostMemory,       ///< Host memory has been depleted.
+              DeviceLost,            ///< Device has been lost aka shits fucked up.
+              FeatureNotPresent,     ///< The feature is not present in this system.
+              ExtensionNotPresent,   ///< The requested extension is not present in this system ( should be fine though ).
+              LayerNotPresent,       ///< The requested validation layer is not present in this system.
+              Unknown,               ///< Unknown error.
+              Fragmentation,         ///< TODO
+              InvalidExternalHandle, ///< TODO
+              InitializationFailed,  ///< TODO
+              IncompatibleSurface,   ///< TODO
+              SurfaceLost,           ///< TODO
+              NativeWindowInUse,     ///< TODO
+              SuboptimalKHR,         ///< TODO
+              OutOfDataKHR,
+              MemoryMapFailed,       ///< TODO
+              ValidationFailed,      ///< TODO
+              InvalidDevice,         ///< TODO
             };
 
             /** Default constructor.
@@ -308,6 +315,56 @@ namespace nyx
          */
         static void add( vk::Result error ) ;
         
+        /** Method to set the name of this application.
+         * @param application_name The name of this application.
+         */
+        static void setApplicationName( const char* application_name ) ;
+        
+        /** Method to check whether the device is available on this system.
+         * @param id The id of device to check.
+         * @return Whether or not the device exists on the system.
+         */
+        static bool hasDevice( unsigned id ) ;
+
+        /** Static method to add a validation layer to this vulkan library's runtime.
+         * @param layer_name The name to associate with the layer.
+         */
+        static void addValidationLayer( const char* layer_name ) ;
+        
+        /** Static method to add an extension to this library's instance, if the extension is available.
+         * @param extension The extension name to load.
+         */
+        static void addInstanceExtension( const char* extension ) ;
+        
+        /** Static method to add a device extension to this library. 
+         * @param extension The extension to enable, if applicable.
+         * @param idx The id of device to apply the extension to. By default applies to all devices.
+         */
+        static void addDeviceExtension( const char* extension, unsigned idx = 100 ) ;
+        
+        /** Method to synchronize with all gpu operation on the input device.
+         * @param gpu The device to wait for all operations to complete on.
+         */
+        static void deviceSynchronize( unsigned gpu = 0 ) ;
+
+        /** Static method to retrieve a graphics queue from this library.
+         * @param gpu The gpu to generate the queue on.
+         * @return A Queue capable of doing graphics.
+         */
+        static vkg::Queue graphicsQueue( unsigned gpu = 0 ) ;
+        
+        /** Static method to retrieve a graphics queue from this library.
+         * @param gpu The gpu to generate the queue on.
+         * @return A Queue capable of doing graphics.
+         */
+        static vkg::Queue computeQueue( unsigned gpu = 0 ) ;
+
+        /** Static method to retrieve a graphics queue from this library.
+         * @param gpu The gpu to generate the queue on.
+         * @return A Queue capable of doing graphics.
+         */
+        static vkg::Queue presentQueue( const vk::SurfaceKHR& surface, unsigned gpu = 0 ) ;
+
         /** Static method to allow a custom error handler to be set for this library.
          * @param error_handler The error handler to be used by this library.
          */
@@ -317,6 +374,73 @@ namespace nyx
          * @param handler The error handler to be used by this library.
          */
         static void setErrorHandler( Vulkan::ErrorHandler* handler ) ;
+
+        /** Static method to check if this library is initialized of not.
+         * @return Whether or not this library is initialized.
+         */
+        static bool initialized() ;
+
+        /** Static method to initialize this implementation with a vulkan instance.
+         */
+        static void initialize() ;
+        
+        /** Static method to initialize this implementation with a vulkan instance.
+         */
+        static void initDevices( const vk::SurfaceKHR& surface ) ;
+
+        /** Method to retrieve the platform-specific instance extension names for the surface of this system.
+         * @return String names of the platform-specific extensions needed by this system for a vulkan surface.
+         */
+        static const char* platformSurfaceInstanceExtensions() ;
+
+      private:
+        
+        /** Typedef to avoid using void* directly.
+         */
+        typedef void* Data ;
+
+        /** Friend declaration of memory object to use this implementation for.
+         */
+        template<typename OS, typename Framework>
+        friend class nyx::BaseWindow ;
+        
+        friend class nyx::Memory<Vulkan>         ;
+        friend class nyx::vkg::Buffer            ;
+        friend class nyx::vkg::CommandBuffer     ;
+        friend class nyx::vkg::CommandBufferData ;
+        friend class nyx::vkg::Descriptor        ;
+        friend class nyx::vkg::DescriptorPool    ;
+        friend class nyx::vkg::Device            ;
+        friend class nyx::vkg::RenderPass        ;
+        friend class nyx::vkg::RenderPassData    ;
+        friend class nyx::vkg::Instance          ;
+        friend class nyx::vkg::Image             ;
+        friend class nyx::vkg::Pipeline          ;
+        friend class nyx::vkg::Queue             ;
+        friend class nyx::vkg::NyxShader         ;
+        friend class nyx::vkg::Swapchain         ;
+        friend class nyx::vkg::SwapchainData     ;
+        friend class nyx::vkg::Synchronization   ;
+
+        /** Default constructor.
+         */
+        Vulkan() = default ;
+  
+        /** Default Deconstructor.
+         */
+        ~Vulkan() = default ;
+
+        /** Static method for retrieving a vulkan surface from a window's window.
+         * @param window The Win32 window to get a surface from.
+         * @return A Valid vulkan surface.
+         */
+        static Vulkan::Context contextFromBaseWindow( const nyx::win32::Window& window ) ;
+        
+        /** Static method for retrieving a vulkan surface from a linux window.
+         * @param window The Linux window to get a surface from.
+         * @return A Valid vulkan surface.
+         */
+        static Vulkan::Context contextFromBaseWindow( const nyx::lx::Window& window ) ;
 
         /** Static method to convert a library format to the implementation-specific format.
          * @param stage The library stage to convert.
@@ -378,53 +502,13 @@ namespace nyx
          */
         static Error convert( vk::Result error ) ;
 
-        /** Static method to initialize this implementation with a vulkan instance.
-         * @param instance
-         */
-        static void initialize( const ::vk::Instance& instance ) ;
-        
-        /** Static method for retrieving a vulkan surface from a window's window.
-         * @param window The Win32 window to get a surface from.
-         * @return A Valid vulkan surface.
-         */
-        static Vulkan::Context contextFromBaseWindow( const nyx::win32::Window& window ) ;
-        
-        /** Static method for retrieving a vulkan surface from a linux window.
-         * @param window The Linux window to get a surface from.
-         * @return A Valid vulkan surface.
-         */
-        static Vulkan::Context contextFromBaseWindow( const nyx::lx::Window& window ) ;
-
-        /** Method to retrieve the platform-specific instance extension names for the surface of this system.
-         * @return String names of the platform-specific extensions needed by this system for a vulkan surface.
-         */
-        static const char* platformSurfaceInstanceExtensions() ;
-
-      private:
-        
-        /** Typedef to avoid using void* directly.
-         */
-        typedef void* Data ;
-        
-        /** Friend declaration of memory object to use this implementation for.
-         */
-        friend class ::nyx::Memory<Vulkan> ;
-  
-        /** Default constructor.
-         */
-        Vulkan() = default ;
-  
-        /** Default Deconstructor.
-         */
-        ~Vulkan() = default ;
-  
         /** Method to copy data from the host ( RAM ) to the GPU ( VRAM ).
          * @param src The source data on the host.
          * @param dst The memory handle to write to on the GPU
          * @param gpu The device to use for this operation.
          * @param amt The amount of data to copy.
          */
-        void copyToDevice( const void* src, Memory& dst, Vulkan::Device& gpu, unsigned amt, unsigned src_offset = 0, unsigned dst_offset = 0 ) ;
+        void copyToDevice( const void* src, Memory& dst, unsigned gpu, unsigned amt, unsigned src_offset = 0, unsigned dst_offset = 0 ) ;
   
         /** Method to copy data from the GPU ( VRAM ) to the host ( RAM ).
          * @param src The source memory handle on the GPU.
@@ -432,20 +516,26 @@ namespace nyx
          * @param gpu The device to use for this operation.
          * @param amt The amount of data to copy.
          */
-        void copyToHost( const Memory& src, Data dst, Vulkan::Device& gpu, unsigned amt, unsigned src_offset = 0, unsigned dst_offset = 0 ) ;
-  
+        void copyToHost( const Memory& src, Data dst, unsigned gpu, unsigned amt, unsigned src_offset = 0, unsigned dst_offset = 0 ) ;
+        
+        /** Static method to retrieve a device from this object.
+         * @param id The id of device to grab.
+         * @return A const-reference to the device object.
+         */
+        static const vkg::Device& device( unsigned id = 0 ) ;
+
         /** Method to release the input memory handle.
          * @param mem The memory object to release.
          * @param gpu The device the memory object was allocated on.
          */
-        void free( Memory& mem, Vulkan::Device& gpu ) ;
+        void free( Memory& mem, unsigned gpu ) ;
         
         /** Method to create & allocate memory on the GPU.
          * @param size The size of the memory to allocate.
          * @param gpu The GPU to allocate data on.
          * @return Allocated memory on the GPU.
          */
-        Memory createMemory( const Vulkan::Device& gpu, unsigned size, unsigned filter = 0xFFFFFFF ) ;
+        Memory createMemory( unsigned gpu, unsigned size, unsigned filter = 0xFFFFFFF ) ;
         
         /** Method to create & allocate memory on the GPU.
          * @param size The size of the memory to allocate.
@@ -453,10 +543,14 @@ namespace nyx
          * @param mem_flags The memory property flags to use for creation of this memory object.
          * @return Allocated memory on the GPU.
          */
-        Memory createMemory( const Vulkan::Device& gpu, unsigned size, nyx::MemoryFlags mem_flags, unsigned filter = 0xFFFFFFF ) ;
+        Memory createMemory( unsigned gpu, unsigned size, nyx::MemoryFlags mem_flags, unsigned filter = 0xFFFFFFF ) ;
+        
+        /** Static method to retrieve the instance of this library.
+         * @return The instance associated with this library.
+         */
+        static const vkg::Instance& instance() ; 
     };
   }
 }
 
-#endif
 

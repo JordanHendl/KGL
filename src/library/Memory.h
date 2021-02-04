@@ -151,14 +151,14 @@ namespace nyx
        * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
        */
       template<typename ... MEMORY_FLAGS>
-      void initialize( const typename Framework::Device& gpu, unsigned sz, bool host_alloc, MEMORY_FLAGS... mem_flags ) ;
+      void initialize( unsigned gpu, unsigned sz, bool host_alloc, MEMORY_FLAGS... mem_flags ) ;
       
       /** Method to initialize this memory object with the input parameters.
        * @param sz The size in bytes to store in this object.
        * @param gpu The implementation-specific GPU to use for all gpu operations.
        * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
        */      
-      void initialize( const typename Framework::Device& gpu, unsigned sz, bool host_alloc = true ) ;
+      void initialize( unsigned gpu, unsigned sz, bool host_alloc = true ) ;
       
       /** Method to initialize this memory object with the input parameters.
        * @param sz The size in bytes to store in this object.
@@ -167,14 +167,14 @@ namespace nyx
        * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
        */
       template<typename ... MEMORY_FLAGS>
-      void initialize( const typename Framework::Device& gpu, unsigned sz, unsigned filter, bool host_alloc, MEMORY_FLAGS... mem_flags ) ;
+      void initialize( unsigned gpu, unsigned sz, unsigned filter, bool host_alloc, MEMORY_FLAGS... mem_flags ) ;
       
       /** Method to initialize this memory object with the input parameters.
        * @param sz The size in bytes to store in this object.
        * @param gpu The implementation-specific GPU to use for all gpu operations.
        * @param host_alloc Flag whether or not to allocate a copy of the date on the host ( CPU-side ).
        */      
-      void initialize( const typename Framework::Device& gpu, unsigned sz, unsigned filter, bool host_alloc = true ) ;
+      void initialize( unsigned gpu, unsigned sz, unsigned filter, bool host_alloc = true ) ;
         
       /** Method to retrieve the host buffer of this object's data.
        * @return The host-buffer containing this object's data.
@@ -184,7 +184,7 @@ namespace nyx
       /** Method to retrieve the implementation-specific device used by this object.
        * @return The implementation-specific device used by the object.
        */
-      const typename Framework::Device& device() const ;
+      unsigned device() const ;
 
       /** Method to retrieve the offset into the memory handle this object's allowed to use.
        * @return The offset into the memory handle this object is allowed to use.
@@ -263,13 +263,13 @@ namespace nyx
       typedef bool           Flag   ;
       typedef unsigned char* Data   ;
       
-      Flag                  dirty_bit  ;
-      Flag                  host_alloc ;
-      Data                  data       ;
-      Size                  byte_size  ;
-      Size                  mem_offset ;
+      Flag                       dirty_bit  ;
+      Flag                       host_alloc ;
+      Data                       data       ;
+      Size                       byte_size  ;
+      Size                       mem_offset ;
       Framework                  impl       ;
-      typename Framework::Device gpu        ;
+      unsigned                   gpu        ;
       typename Framework::Memory memory_ptr ;
   };
   
@@ -366,7 +366,7 @@ namespace nyx
 
   template<typename Framework>
   template< typename ... MEMORY_FLAGS>
-  void Memory<Framework>::initialize( const typename Framework::Device& gpu, unsigned sz, bool host_alloc, MEMORY_FLAGS... mem_flags ) 
+  void Memory<Framework>::initialize( unsigned gpu, unsigned sz, bool host_alloc, MEMORY_FLAGS... mem_flags ) 
   {
     this->byte_size  = sz  ;
     this->gpu        = gpu ;
@@ -380,7 +380,7 @@ namespace nyx
   }
 
   template<typename Framework>
-  void Memory<Framework>::initialize( const typename Framework::Device& gpu, unsigned sz, bool host_alloc ) 
+  void Memory<Framework>::initialize( unsigned gpu, unsigned sz, bool host_alloc ) 
   {
     this->byte_size  = sz  ;
     this->gpu        = gpu ;
@@ -395,7 +395,7 @@ namespace nyx
 
   template<typename Framework>
   template< typename ... MEMORY_FLAGS>
-  void Memory<Framework>::initialize( const typename Framework::Device& gpu, unsigned sz, unsigned filter, bool host_alloc, MEMORY_FLAGS... mem_flags ) 
+  void Memory<Framework>::initialize( unsigned gpu, unsigned sz, unsigned filter, bool host_alloc, MEMORY_FLAGS... mem_flags ) 
   {
     this->byte_size  = sz  ;
     this->gpu        = gpu ;
@@ -409,7 +409,7 @@ namespace nyx
   }
 
   template<typename Framework>
-  void Memory<Framework>::initialize( const typename Framework::Device& gpu, unsigned sz, unsigned filter, bool host_alloc ) 
+  void Memory<Framework>::initialize( unsigned gpu, unsigned sz, unsigned filter, bool host_alloc ) 
   {
     this->byte_size  = sz  ;
     this->gpu        = gpu ;
@@ -454,7 +454,7 @@ namespace nyx
   }
 
   template<typename Framework>
-  const typename Framework::Device& Memory<Framework>::device() const
+  unsigned Memory<Framework>::device() const
   {
     return this->gpu ;
   }

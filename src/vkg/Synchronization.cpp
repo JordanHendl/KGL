@@ -24,6 +24,7 @@
 
 #include "Synchronization.h"
 #include "Device.h"
+#include "Vulkan.h"
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <limits.h>
@@ -40,8 +41,7 @@ namespace nyx
       typedef std::vector<vk::Semaphore> SemList   ; ///< TODO
       typedef std::vector<vk::Fence    > FenceList ; ///< TODO
       
-      vk::Device         device            ; ///< TODO
-      vk::PhysicalDevice p_device          ; ///< TODO
+      vkg::Device        device            ; ///< TODO
       vk::Fence          signal_fence      ; ///< TODO
       SemList            signal_sems       ; ///< TODO
       FenceList          wait_fences       ; ///< TODO
@@ -89,7 +89,7 @@ namespace nyx
 
     const vk::PhysicalDevice& Synchronization::physicalDevice() const
     {
-      return data().p_device ;
+      return data().device.physicalDevice() ;
     }
     
     void Synchronization::setMakeFence( bool value )
@@ -97,32 +97,33 @@ namespace nyx
       data().should_make_fence = value ;
     }
     
-    void Synchronization::initialize( const nyx::vkg::Device& device, unsigned num_sems )
+    void Synchronization::initialize( unsigned device, unsigned num_sems )
     {
       vk::SemaphoreCreateInfo sem_info   ;
       vk::FenceCreateInfo     fence_info ;
-
-      data().device   = device.device()         ;
-      data().p_device = device.physicalDevice() ;
       
-      data().signal_sems  .resize( num_sems   ) ;
+      Vulkan::initialize() ;
+      
+      data().device   = Vulkan::device( device ) ;
+      
+      data().signal_sems.resize( num_sems   ) ;
       
       fence_info.setFlags( vk::FenceCreateFlagBits::eSignaled ) ;
       
       for( auto &sem : data().signal_sems )
       {
-        sem = data().device.createSemaphore( sem_info, nullptr ) ;
+        sem = data().device.device().createSemaphore( sem_info, nullptr ) ;
       }
       
       if( data().should_make_fence )
       {
-        data().signal_fence = data().device.createFence( fence_info, nullptr ) ;
+        data().signal_fence = data().device.device().createFence( fence_info, nullptr ) ;
       }
     }
     
     void Synchronization::resetFence()
     {
-      data().device.resetFences( 1, &data().signal_fence ) ;
+      vkg::Vulkan::add( data().device.device().resetFences( 1, &data().signal_fence ) ) ;
     }
 
     void Synchronization::waitOn( const nyx::vkg::Synchronization& sync )
@@ -197,10 +198,18 @@ namespace nyx
       return &data().signal_fence ;
     }
     
+    void Synchronization::swap()
+    {
+      SynchronizationData::SemList tmp ;
+      
+      tmp                = data().wait_sems   ;
+      data().wait_sems   = data().signal_sems ;
+      data().signal_sems = tmp                ;
+    }
     void Synchronization::waitOnFences()
     {
-      data().device.waitForFences( 1, &data().signal_fence, true, UINT64_MAX ) ;
-      data().device.resetFences  ( 1, &data().signal_fence                   ) ;
+      vkg::Vulkan::add( data().device.device().waitForFences( 1, &data().signal_fence, true, UINT64_MAX ) ) ;
+      vkg::Vulkan::add( data().device.device().resetFences  ( 1, &data().signal_fence                   ) ) ;
     }
     
     void Synchronization::clear()
@@ -213,10 +222,10 @@ namespace nyx
     {
       for( auto& sem : data().signal_sems )
       {
-        data().device.destroy( sem ) ;
+        data().device.device().destroy( sem ) ;
       }
 
-      data().device.destroy( data().signal_fence ) ;
+      data().device.device().destroy( data().signal_fence ) ;
     }
 
     SynchronizationData& Synchronization::data()

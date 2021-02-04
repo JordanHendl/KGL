@@ -140,7 +140,7 @@ namespace nyx
          * @param host_local Whether to allocate a host-copy of this data.
          * @return Whether or not this buffer was successfully initialized.
          */
-        bool initialize( const nyx::vkg::Device& gpu, unsigned size, bool host_local = false ) ;
+        bool initialize( unsigned gpu, unsigned size, bool host_local = false ) ;
         
         /** Method to initialize this object using the input parameters.
          * @param gpu The device to use for all GPU calls.
@@ -148,7 +148,7 @@ namespace nyx
          * @param host_local Whether to allocate a host-copy of this data.
          * @return Whether or not this buffer was successfully initialized.
          */
-        bool initialize( const nyx::vkg::Device& gpu, unsigned size, bool host_local, nyx::ArrayFlags flags ) ;
+        bool initialize( unsigned gpu, unsigned size, bool host_local, nyx::ArrayFlags flags ) ;
         
         /** Method to return the size of this object on the GPU.
          * @return The size in bytes of this object on the GPU.
@@ -167,7 +167,7 @@ namespace nyx
         /** Method to reitreve the device used for this buffer.
          * @return Const-reference to the device used for this buffer.
          */
-        const nyx::vkg::Device& device() ;
+        unsigned device() const ;
 
         /** Method to sync this buffer to the device.
          */
@@ -200,7 +200,7 @@ namespace nyx
          * @param buffer_flags The flags to use for buffer creation.
          * @return 
          */
-        bool initializeBase( const nyx::vkg::Device& gpu, unsigned size, bool host_local, unsigned buffer_flags ) ;
+        bool initializeBase( unsigned gpu, unsigned size, bool host_local, unsigned buffer_flags ) ;
         
         /** Forward-declared structure to contain this object's internal data.
          */

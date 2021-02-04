@@ -21,12 +21,7 @@
  *
  * Created on December 30, 2020, 2:26 PM
  */
-
-#ifndef NYX_VKG_KGSHADER_H
-#define NYX_VKG_KGSHADER_H
-
-#include "Device.h"
-
+#pragma once
 
 /** Vulkan C typedefs for forward decleration.
  */
@@ -134,13 +129,13 @@ namespace nyx
          * @param device The library device to use for all vulkan operations.
          * @param kg_path The C-string path to the .kg file in the filesystem.
          */
-        void initialize( const nyx::vkg::Device& device, const char* nyx_path ) ;
+        void initialize( unsigned device, const char* nyx_path ) ;
         
         /** Method to initialize this shader with the provided input.
          * @note Initializes all data set manually.
          * @param device The library device to use for all vulkan operations.
          */
-        void initialize( const nyx::vkg::Device& device ) ;
+        void initialize( unsigned device ) ;
         
         /** Method to retrieve the number of shader stages this shader contains.
          * @return The number of shader stages this shader contains.
@@ -198,7 +193,7 @@ namespace nyx
         /** Method to retrieve the device used for this object's creation.
          * @return Const reference to the device used for this object's creation.
          */
-        const nyx::vkg::Device& device() const ;
+        unsigned device() const ;
 
         /** Method to retrieve the descriptor set layout of this vulkan shader.
          * @return The descriptor set layout of this vulkan shader.
@@ -242,5 +237,4 @@ namespace nyx
     };
   }
 }
-#endif /* KGSHADER_H */
 

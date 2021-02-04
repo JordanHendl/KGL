@@ -53,7 +53,8 @@ namespace nyx
       Formats                    formats        ; ///< TODO
       Modes                      modes          ; ///< TODO
       Images                     images         ; ///< TODO
-      nyx::vkg::Queue            present_queue  ; ///< TODO
+      vkg::Queue                 queue  ; ///< TODO
+      vkg::Device                device         ;
       vk::SwapchainKHR           swapchain      ; ///< TODO
       vk::SurfaceCapabilitiesKHR capabilities   ; ///< TODO
       vk::SurfaceFormatKHR       surface_format ; ///< TODO
@@ -119,18 +120,22 @@ namespace nyx
       info.setQueueFamilyIndexCount( 0                           ) ;
       info.setQueueFamilyIndices   ( nullptr                     ) ;
       
-      vkg::Vulkan::add( this->present_queue.device().device().createSwapchainKHR( &info, nullptr, &this->swapchain ) ) ;
+      vkg::Vulkan::add( this->device.device().createSwapchainKHR( &info, nullptr, &this->swapchain ) ) ;
     }
 
     void SwapchainData::generateImages()
     {
-      std::vector<vk::Image> imgs = this->present_queue.device().device().getSwapchainImagesKHR( this->swapchain ) ;
+      auto result = this->device.device().getSwapchainImagesKHR( this->swapchain ) ;
+      
+      vkg::Vulkan::add( result.result ) ;
+      
+      std::vector<vk::Image> imgs = result.value ;
       
       this->images.resize( imgs.size() ) ;
       for( unsigned index = 0; index < this->images.size(); index++ )
       {
         this->images[ index ].setFormat( nyx::vkg::Vulkan::convert( this->surface_format.format ) ) ;
-        this->images[ index ].initialize( this->present_queue.device(), nyx::vkg::Vulkan::convert( this->surface_format.format ), this->extent.width, this->extent.height, imgs[ index ] ) ;
+        this->images[ index ].initialize( this->queue.device(), nyx::vkg::Vulkan::convert( this->surface_format.format ), this->extent.width, this->extent.height, imgs[ index ] ) ;
       }
     }
     
@@ -147,11 +152,19 @@ namespace nyx
     
     void SwapchainData::findProperties()
     {
-      const vk::PhysicalDevice device = this->present_queue.device().physicalDevice() ;
+      const vk::PhysicalDevice device = this->device.physicalDevice() ;
 
-      this->formats      = device.getSurfaceFormatsKHR     ( this->surface ) ;
-      this->capabilities = device.getSurfaceCapabilitiesKHR( this->surface ) ;
-      this->modes        = device.getSurfacePresentModesKHR( this->surface ) ;
+      auto result1 = device.getSurfaceFormatsKHR     ( this->surface ) ;
+      auto result2 = device.getSurfaceCapabilitiesKHR( this->surface ) ;
+      auto result3 = device.getSurfacePresentModesKHR( this->surface ) ;
+      
+      vkg::Vulkan::add( result1.result ) ;
+      vkg::Vulkan::add( result2.result ) ;
+      vkg::Vulkan::add( result3.result ) ;
+      
+      this->formats      = result1.value ;
+      this->capabilities = result2.value ;
+      this->modes        = result3.value ;
     }
     
     void SwapchainData::chooseExtent()
@@ -209,12 +222,13 @@ namespace nyx
       return data().swapchain ;
     }
 
-    void Swapchain::initialize(  const nyx::vkg::Queue& present_queue, const vk::SurfaceKHR& surface )
+    void Swapchain::initialize( const nyx::vkg::Queue& present_queue, const vk::SurfaceKHR& surface )
     {
-      data().present_queue = present_queue ;
-      data().surface       = surface       ;
-      
-      
+      Vulkan::initialize() ;
+
+      data().queue   = present_queue                           ;
+      data().surface = surface                                 ;
+      data().device  = Vulkan::device( data().queue.device() ) ;
       data().fences.clear() ;
       data().findProperties() ;
       data().chooseExtent  () ;
@@ -223,27 +237,26 @@ namespace nyx
       
       data().syncs .resize( this->count() ) ;
       data().fences.resize( this->count() ) ;
-      for( auto& sync : data().syncs ) sync.initialize( present_queue.device(), 1 ) ;
+      for( auto& sync : data().syncs ) sync.initialize( data().device, 1 ) ;
     }
 
     const nyx::vkg::Synchronization& Swapchain::acquire()
     {
-      const auto device    = data().present_queue.device().device() ;
-      const unsigned index = data().current_frame                   ;
+      const auto device    = data().device.device() ;
+      const unsigned index = data().current_frame   ;
       if( data().fences[ index ] ) 
       {
-        device.waitForFences( 1, &data().fences[ index ], VK_TRUE, UINT64_MAX ) ;
-        device.resetFences( 1, &data().fences[ index ] ) ;
+        vkg::Vulkan::add( device.waitForFences( 1, &data().fences[ index ], VK_TRUE, UINT64_MAX ) ) ;
+        vkg::Vulkan::add( device.resetFences( 1, &data().fences[ index ]                        ) ) ;
       }
       
       data().syncs[ index ].resetFence() ;
       auto result = device.acquireNextImageKHR( data().swapchain, UINT64_MAX, data().syncs[ index ].signal(), data().syncs[ index ].signalFence() ) ;
       
-      if( result.result == vk::Result::eErrorOutOfDateKHR || result.result == vk::Result::eSuboptimalKHR )
+      if( result.result == vk::Result::eErrorOutOfDateKHR )
       {
-        device.waitIdle() ;
-        this->reset() ;
-        this->initialize( data().present_queue, data().surface ) ;
+        vkg::Vulkan::add( device.waitIdle() ) ;
+        this->initialize( data().queue, data().surface ) ;
       }
       else
       {
@@ -256,12 +269,32 @@ namespace nyx
       return data().syncs[ index ] ;
     }
 
+    void Swapchain::submit()
+    {
+      const unsigned index = data().acquired.front() ;
+      
+      if( data().queue.submit( *this, index ) == nyx::vkg::Vulkan::Error::OutOfDataKHR )
+      {
+        Vulkan::deviceSynchronize( data().queue.device() ) ;
+        this->initialize( data().queue, data().surface ) ;
+      }
+
+      data().acquired.pop() ;
+
+      data().syncs[ index ].clear() ;
+    }
+
     void Swapchain::submit( const nyx::vkg::Synchronization& sync )
     {
       const unsigned index = data().acquired.front() ;
       
       data().syncs[ index ].waitOn( sync ) ;
-      data().present_queue.submit( *this, index, data().syncs[ index ] ) ;
+      if( data().queue.submit( *this, index, data().syncs[ index ] ) == nyx::vkg::Vulkan::Error::OutOfDataKHR )
+      {
+        Vulkan::deviceSynchronize( data().queue.device() ) ;
+        this->initialize( data().queue, data().surface ) ;
+      }
+
       data().acquired.pop() ;
 
       data().syncs[ index ].clear() ;
@@ -272,9 +305,9 @@ namespace nyx
       return data().images.data() ;
     }
     
-    const nyx::vkg::Device& Swapchain::device() const
+    unsigned Swapchain::device() const
     {
-      return data().present_queue.device() ;
+      return data().queue.device() ;
     }
     
     const vk::Format& Swapchain::format() const
@@ -304,7 +337,7 @@ namespace nyx
 
     unsigned Swapchain::current() const
     {
-      return data().acquired.back() ;
+      return data().acquired.front() ;
     }
     
     const nyx::vkg::Image& Swapchain::image( unsigned idx ) const
@@ -332,7 +365,7 @@ namespace nyx
         }
         
         data().images.clear() ;
-        data().present_queue.device().device().destroy( data().swapchain ) ;
+        data().device.device().destroy( data().swapchain ) ;
       }
     }
 

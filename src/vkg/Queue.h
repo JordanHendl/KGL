@@ -44,7 +44,8 @@ namespace nyx
     class Synchronization ;
     class CommandBuffer   ;
     class Device          ;
-    
+    class QueueFamily     ;
+
     /** Class for managing a vulkan queue. 
      * This object should only be created via a library device object.
      */
@@ -113,7 +114,7 @@ namespace nyx
         /** Method to retrive the library device used for this object's queue creation.
          * @return The library device used for this object's creation.
          */
-        const nyx::vkg::Device& device() const ;
+        unsigned device() const ;
         
         /** Method to submit a command to a queue.
          * @note This object handles concurrent CPU-side access to vulkan queues.
@@ -146,13 +147,20 @@ namespace nyx
          * @param img_index The image index acquired by the swapchain.
          * @param sync The synchronization object to use for syncing the GPU operation.
          */
-        void submit( const nyx::vkg::Swapchain& swapchain, unsigned img_index, const nyx::vkg::Synchronization& sync ) ;
+        unsigned submit( const nyx::vkg::Swapchain& swapchain, unsigned img_index, const nyx::vkg::Synchronization& sync ) ;
+        
+        /** Method to submit a swapchain present operation to this queue.
+         * @param swapchain The swapchain to submit the present operation for.
+         * @param img_index The image index acquired by the swapchain.
+         * @param sync The synchronization object to use for syncing the GPU operation.
+         */
+        unsigned submit( const nyx::vkg::Swapchain& swapchain, unsigned img_index ) ;
 
       private:
         
         /** Friend decleration. This object should only be initialized through a device.
          */
-        friend class nyx::vkg::Device ;
+        friend class nyx::vkg::QueueFamily ;
 
         /** Method to initialize this object for use by the library device.
          * @param device The device used in the creation of this object.
@@ -160,7 +168,6 @@ namespace nyx
          * @param queue_id The unique queue-id of this object.
          */
         void initialize( const nyx::vkg::Device& device, const vk::Queue& queue, unsigned queue_family, unsigned queue_id ) ;
-        
 
         /** Forward Declared structure to contain this object's internal data.
          */

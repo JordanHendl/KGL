@@ -93,7 +93,7 @@ namespace nyx
         /** Method to retrieve the library device used for this object.
          * @return The device used to initialize this object.
          */
-        const nyx::vkg::Device& device() const ;
+        unsigned device() const ;
 
         /** Method to set the vulkan format to use for the swapchain creation.
          * @param format The format of the swapchain's images.
@@ -141,6 +141,11 @@ namespace nyx
          */
         const nyx::vkg::Synchronization& acquire() ;
         
+        /** Method to submit this swapchain's presentation to the queue used for it's initialization.
+         * @param sync The synchronization object used to sync this operation so that it occurs after other GPU events.
+         */
+        void submit() ;
+
         /** Method to submit this swapchain's presentation to the queue used for it's initialization.
          * @param sync The synchronization object used to sync this operation so that it occurs after other GPU events.
          */

@@ -26,6 +26,7 @@
 #include "CommandBuffer.h"
 #include "Device.h"
 #include "Synchronization.h"
+#include "Vulkan.h"
 #include <vulkan/vulkan.hpp>
 #include <limits>
 #include <mutex>
@@ -37,7 +38,7 @@ namespace nyx
   {
     /** Static mutex map for whenever queues are accessed.
      */
-    static std::map<unsigned, std::mutex> mutex_map ;
+    static std::map<vk::Queue, std::mutex> mutex_map ;
     
     /** Structure to encompass a Queue's internal data.
      */
@@ -131,7 +132,7 @@ namespace nyx
       return data().queue ;
     }
 
-    const nyx::vkg::Device& Queue::device() const
+    unsigned Queue::device() const
     {
       return data().device ;
     }
@@ -149,12 +150,12 @@ namespace nyx
       
       if( cmd_buff.level() == nyx::vkg::CommandBuffer::Level::Primary )
       {
-        mutex_map[ data().family ].lock() ;
-        data().queue.submit( 1, &data().submit, dummy ) ;
+        mutex_map[ data().queue ].lock() ;
+        vkg::Vulkan::add( data().queue.submit( 1, &data().submit, dummy ) ) ;
 
         // No synchronization given, must wait.
         data().queue.waitIdle() ; 
-        mutex_map[ data().family ].unlock() ;
+        mutex_map[ data().queue ].unlock() ;
       }
     }
     
@@ -174,13 +175,30 @@ namespace nyx
 
       if( cmd_buff.level() == nyx::vkg::CommandBuffer::Level::Primary )
       {
-        mutex_map[ data().family ].lock() ;
-        data().queue.submit( 1, &data().submit, sync.signalFence() ) ;
-        mutex_map[ data().family ].unlock() ;
+        mutex_map[ data().queue ].lock() ;
+        vkg::Vulkan::add( data().queue.submit( 1, &data().submit, sync.signalFence() ) ) ;
+        mutex_map[ data().queue ].unlock() ;
       }
     }
     
-    void Queue::submit( const nyx::vkg::Swapchain& swapchain, unsigned img_index, const nyx::vkg::Synchronization& sync )
+    unsigned Queue::submit( const nyx::vkg::Swapchain& swapchain, unsigned img_index )
+    {
+      vk::PresentInfoKHR info ;
+      
+      info.setPImageIndices     ( &img_index             ) ;
+      info.setSwapchainCount    ( 1                      ) ;
+      info.setPSwapchains       ( &swapchain.swapchain() ) ;
+      info.setWaitSemaphoreCount( 0                      ) ;
+      info.setPWaitSemaphores   ( 0                      ) ;
+      
+      mutex_map[ data().queue ].lock() ;
+      auto result = data().queue.presentKHR( &info ) ;
+      mutex_map[ data().queue ].unlock() ;
+      
+      return static_cast<unsigned>( Vulkan::convert( result ) ) ;
+    }
+
+    unsigned Queue::submit( const nyx::vkg::Swapchain& swapchain, unsigned img_index, const nyx::vkg::Synchronization& sync )
     {
       vk::PresentInfoKHR info ;
       
@@ -190,9 +208,11 @@ namespace nyx
       info.setWaitSemaphoreCount( sync.numWaitSems()     ) ;
       info.setPWaitSemaphores   ( sync.waits()           ) ;
       
-      mutex_map[ data().family ].lock() ;
-      data().queue.presentKHR( &info ) ;
-      mutex_map[ data().family ].unlock() ;
+      mutex_map[ data().queue ].lock() ;
+      auto result = data().queue.presentKHR( &info ) ;
+      mutex_map[ data().queue ].unlock() ;
+      
+      return static_cast<unsigned>( Vulkan::convert( result ) ) ;
     }
     
     void Queue::submit( const vk::CommandBuffer& cmd_buff )
@@ -204,12 +224,12 @@ namespace nyx
       data().submit.setCommandBufferCount  ( 1         ) ;
       data().submit.setPCommandBuffers     ( &cmd_buff ) ;
 
-      mutex_map[ data().family ].lock() ;
-      data().queue.submit( 1, &data().submit, dummy ) ;
+      mutex_map[ data().queue ].lock() ;
+      vkg::Vulkan::add( data().queue.submit( 1, &data().submit, dummy ) ) ;
 
       // No synchronization given, must wait.
       data().queue.waitIdle() ; 
-      mutex_map[ data().family ].unlock() ;
+      mutex_map[ data().queue ].unlock() ;
     }
     
     void Queue::submit( const vk::CommandBuffer& cmd_buff, const nyx::vkg::Synchronization& sync )
@@ -225,9 +245,9 @@ namespace nyx
       data().submit.setPWaitSemaphores     ( sync.waits()       ) ;
       data().submit.setPWaitDstStageMask   ( &flags             ) ;
 
-      mutex_map[ data().family ].lock() ;
-      data().queue.submit( 1, &data().submit, sync.signalFence() ) ;
-      mutex_map[ data().family ].unlock() ;
+      mutex_map[ data().queue ].lock() ;
+      vkg::Vulkan::add( data().queue.submit( 1, &data().submit, sync.signalFence() ) ) ;
+      mutex_map[ data().queue ].unlock() ;
     }
 
     void Queue::initialize( const nyx::vkg::Device& device, const vk::Queue& queue, unsigned queue_family, unsigned mask )

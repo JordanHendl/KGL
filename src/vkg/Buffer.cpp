@@ -33,14 +33,13 @@ namespace nyx
   {
     using IMPL = nyx::vkg::Vulkan ;
     
-    constexpr char* BUFFER_ADDRESS_EXT_NAME = VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME ;
-
     /** Structure to encompass a vulkan buffer's internal data.
      */
     struct BufferData
     {
       nyx::Memory<IMPL>      internal_memory ;
       ::nyx::vkg::Device     device          ;
+      unsigned               device_id       ;
       vk::MemoryRequirements requirements    ;
       vk::DeviceAddress      address         ;
       vk::BufferUsageFlags   usage_flags     ;
@@ -71,7 +70,7 @@ namespace nyx
       
       info.setBuffer( this->buffer ) ;
       
-      if( this->device.hasExtension( nyx::vkg::BUFFER_ADDRESS_EXT_NAME ) )
+      if( this->device.hasExtension( VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME ) )
       {
         this->address = this->device.device().getBufferAddress( &info ) ;
       }
@@ -82,8 +81,8 @@ namespace nyx
       ::vk::BufferCreateInfo info   ;
       ::vk::Buffer           buffer ;
       
-      info.setSize       ( size                                                              ) ;
-      if( this->device.hasExtension( nyx::vkg::BUFFER_ADDRESS_EXT_NAME ) )
+      info.setSize       ( size                                                    ) ;
+      if( this->device.hasExtension( VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME ) )
       {
         info.setUsage      ( this->usage_flags | vk::BufferUsageFlagBits::eShaderDeviceAddress ) ;
       }
@@ -163,21 +162,24 @@ namespace nyx
       return this->initialize( prealloc.device(), size == 0 ? prealloc.size() : size ) ;
     }
     
-    bool Buffer::initialize( const nyx::vkg::Device& gpu, unsigned size, bool host_local, nyx::ArrayFlags flags )
+    bool Buffer::initialize( unsigned gpu, unsigned size, bool host_local, nyx::ArrayFlags flags )
     {
       data().usage_flags = static_cast<vk::BufferUsageFlags>( static_cast<VkBufferUsageFlags>( flags.value() ) ) ;
       
       return this->initialize( gpu, size, host_local ) ;
     }
 
-    bool Buffer::initialize( const nyx::vkg::Device& gpu, unsigned size, bool host_local )
+    bool Buffer::initialize( unsigned gpu, unsigned size, bool host_local )
     {
       unsigned needed_size ;
+      
+      Vulkan::initialize() ;
 
-      data().device       = gpu                                                       ;
-      data().buffer       = data().createBuffer( size )                               ;
-      data().requirements = gpu.device().getBufferMemoryRequirements( data().buffer ) ; 
-      data().host_local   = host_local                                                ;
+      data().device_id    = gpu                                                                 ;
+      data().device       = Vulkan::device( gpu )                                               ;
+      data().buffer       = data().createBuffer( size )                                         ;
+      data().requirements = data().device.device().getBufferMemoryRequirements( data().buffer ) ; 
+      data().host_local   = host_local                                                          ;
 
       if( !data().preallocated )
       {
@@ -229,9 +231,9 @@ namespace nyx
       }
     }
     
-    const nyx::vkg::Device& Buffer::device()
+    unsigned Buffer::device() const
     {
-      return data().device ;
+      return data().device_id ;
     }
 
     unsigned Buffer::size() const 

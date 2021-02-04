@@ -22,9 +22,8 @@
  * Created on January 9, 2021, 6:04 AM
  */
 
-#ifndef NYX_VKG_WINDOW_H
-#define NYX_VKG_WINDOW_H
-
+#pragma once
+#ifdef _WIN32
 // Win32 Forward declares.
 #ifndef _WINDEF_
   struct  HINSTANCE__            ; 

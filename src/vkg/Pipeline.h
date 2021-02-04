@@ -81,7 +81,7 @@ namespace nyx
          * @param device The device to use for generating this compute pipeline.
          * @param kg_path The path to the KgShader file on disk to use for this pipeline.
          */
-        void initialize( const nyx::vkg::Device& device, const char* kg_path ) ;
+        void initialize( unsigned device, const char* kg_path ) ;
 
         /** Method to initialize this graphics pipeline with the input renderpass and shader.
          * @param pass The render pass to use for this pipeline creation.

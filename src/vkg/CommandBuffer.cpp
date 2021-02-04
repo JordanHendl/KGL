@@ -41,8 +41,8 @@ namespace nyx
 {
   namespace vkg
   {
-    typedef unsigned QueueFamily ;
-    typedef std::map<QueueFamily, vk::CommandPool> PoolMap ;
+    typedef unsigned Family ;
+    typedef std::map<Family, vk::CommandPool> PoolMap ;
     static PoolMap pool_map ;
 
     struct CommandBufferData
@@ -50,6 +50,7 @@ namespace nyx
       typedef std::vector<vk::CommandBuffer> CmdBuffers ;
       
       vk::PipelineBindPoint      bind_point          ;
+      vkg::Device                device              ;
       nyx::vkg::Queue            queue               ;
       vk::Pipeline               pipeline            ;
       vk::PipelineLayout         pipeline_layout     ;
@@ -67,7 +68,7 @@ namespace nyx
        * @param queue_family
        * @return A Reference to the created Command Pool.
        */
-      vk::CommandPool& pool( QueueFamily queue_family ) ;
+      vk::CommandPool& pool( Family queue_family ) ;
     };
     
     
@@ -79,11 +80,11 @@ namespace nyx
       this->started_render_pass = false                         ;
     }
     
-    vk::CommandPool& CommandBufferData::pool( QueueFamily queue_family )
+    vk::CommandPool& CommandBufferData::pool( Family queue_family )
     {
-      const PoolMap::iterator          iter = pool_map.find( queue_family ) ;
-      const vk::CommandPoolCreateFlags flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer ; // TODO make this configurable.
-      const vk::Device                 device = this->queue.device().device() ;
+      const PoolMap::iterator          iter   = pool_map.find( queue_family )                      ;
+      const vk::CommandPoolCreateFlags flags  = vk::CommandPoolCreateFlagBits::eResetCommandBuffer ; // TODO make this configurable.
+      const vk::Device                 device = this->device.device()                              ;
 
       vk::CommandPoolCreateInfo info ;
       vk::CommandPool           pool ;
@@ -156,12 +157,16 @@ namespace nyx
       vk::CommandBufferLevel        cmd_level ;
       vk::CommandPool               pool      ;
       vk::Device                    device    ;
+      
       data().queue = queue ;
       data().level = level ;
+
+      Vulkan::initialize() ;
+      data().device = Vulkan::device( queue.device() ) ;
       
-      device       = queue.device().device()                                                                         ;
-      pool         = data().pool( data().queue.family() )                                                            ;
-      cmd_level    = level == Level::Primary ? vk::CommandBufferLevel::ePrimary : vk::CommandBufferLevel::eSecondary ;
+      device    = data().device.device()                                                                          ;
+      pool      = data().pool( data().queue.family() )                                                            ;
+      cmd_level = level == Level::Primary ? vk::CommandBufferLevel::ePrimary : vk::CommandBufferLevel::eSecondary ;
       
       info.setCommandBufferCount( count     ) ;
       info.setLevel             ( cmd_level ) ;
@@ -195,9 +200,9 @@ namespace nyx
       return data().queue ;
     }
 
-    const nyx::vkg::Device& CommandBuffer::device() const
+    unsigned CommandBuffer::device() const
     {
-      return data().queue.device() ;
+      return data().device ;
     }
     
     CommandBuffer::Level CommandBuffer::level() const
@@ -261,15 +266,15 @@ namespace nyx
       info.setPClearValues   ( &render_pass.clearColors() ) ;
       info.setRenderArea     ( render_pass.area()         ) ;
       info.setRenderPass     ( render_pass.pass()         ) ;
-      info.setFramebuffer    ( render_pass.next()         ) ;
+      info.setFramebuffer    ( render_pass.framebuffers()[ index ]         ) ;
       
-      if( index < data().cmd_buffers.size() )
+      for( auto &cmd_buff : data().cmd_buffers )
       {
-        vkg::Vulkan::add( data().cmd_buffers[ index ].begin          ( &data().begin_info ) ) ;
-                          data().cmd_buffers[ index ].beginRenderPass( &info, flags         ) ;
-
-        data().started_render_pass = true ;
+        vkg::Vulkan::add( cmd_buff.begin          ( &data().begin_info ) ) ;
+                          cmd_buff.beginRenderPass( &info, flags         ) ;
       }
+      
+      data().started_render_pass = true ;
     }
 
     void CommandBuffer::record( const nyx::vkg::RenderPass& render_pass )
@@ -294,14 +299,14 @@ namespace nyx
 
     void CommandBuffer::record( unsigned index )
     {
-      if( index < data().cmd_buffers.size() ) data().cmd_buffers[ index ].begin( &data().begin_info ) ;
+      if( index < data().cmd_buffers.size() ) vkg::Vulkan::add( data().cmd_buffers[ index ].begin( &data().begin_info ) ) ;
     }
 
     void CommandBuffer::record()
     {
       for( auto &cmd_buff : data().cmd_buffers )
       {
-        cmd_buff.begin( &data().begin_info ) ;
+        vkg::Vulkan::add( cmd_buff.begin( &data().begin_info ) ) ;
       }
     }
 
@@ -313,7 +318,7 @@ namespace nyx
         {
           cmd_buff.endRenderPass() ;
         }
-        cmd_buff.end() ;
+        vkg::Vulkan::add( cmd_buff.end() ) ;
       }
       data().started_render_pass = false ;
     }
@@ -327,15 +332,15 @@ namespace nyx
           data().cmd_buffers[ index ].endRenderPass() ;
         }
 
-        data().cmd_buffers[ index ].end() ;
+        vkg::Vulkan::add( data().cmd_buffers[ index ].end() ) ;
       }
       data().started_render_pass = false ;
     }
 
     void CommandBuffer::reset()
     {
-      const vk::CommandPool pool   = data().pool( data().queue.family() ) ;
-      const vk::Device      device = data().queue.device().device()       ;
+      const vk::CommandPool pool   = data().pool( data().queue.family()              ) ;
+      const vk::Device      device = data().device.device()                            ;
       
       device.freeCommandBuffers( pool, data().cmd_buffers.size(), data().cmd_buffers.data() ) ;
       data().cmd_buffers.clear() ;

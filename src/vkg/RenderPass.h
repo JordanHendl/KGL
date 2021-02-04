@@ -95,7 +95,7 @@ namespace nyx
         /** Method to initialize this object & Generate a vulkan render pass.
          * @param device The Library device to use for the operation.
          */
-        void initialize( const nyx::vkg::Device& device ) ;
+        void initialize( unsigned device ) ;
 
         /** Method to initialize this object & Generate a vulkan render pass.
          * @param swapchain The swapchain to use as a target for this tenderpass.
@@ -120,7 +120,7 @@ namespace nyx
         /** Method to retrieve the library device used for this object.
          * @return The library device used for this object.
          */
-        const nyx::vkg::Device& device() const ;
+        unsigned device() const ;
         
         /** Method to retrieve the viewport of this render pass.
          * @return The viewport of this render pass at the specified index.

@@ -30,6 +30,7 @@
 #include "Device.h"
 #include "Vulkan.h"
 #include "Buffer.h"
+#include "CommandBuffer.h"
 #include <library/Memory.h>
 #include <library/Image.h>
 #include <vulkan/vulkan.hpp>
@@ -206,11 +207,13 @@ namespace nyx
       return *this ;
     }
 
-    void Image::copy( const Image& src, const nyx::vkg::CommandBuffer& buffer )
+    void Image::copy( const Image& src, nyx::vkg::Queue& queue )
     {
       vk::ImageCopy info    ;
       vk::Extent3D  extent  ;
-
+      vkg::CommandBuffer buffer ;
+      
+      buffer.initialize( queue, 1 ) ;
       extent.setHeight( std::min( this->height(), src.height() ) ) ;
       extent.setWidth ( std::min( this->width (), src.width () ) ) ;
       extent.setDepth ( std::min( this->layers(), src.layers() ) ) ;
@@ -222,27 +225,35 @@ namespace nyx
       info.setDstSubresource( data().subresource     ) ;
       
       
-      this->transition( nyx::vkg::Vulkan::convert( vk::ImageLayout::eTransferDstOptimal ), buffer ) ; 
-      src .transition ( nyx::vkg::Vulkan::convert( vk::ImageLayout::eTransferSrcOptimal ), buffer ) ; 
+      this->transition( nyx::vkg::Vulkan::convert( vk::ImageLayout::eTransferDstOptimal ), queue ) ; 
+      src .transition ( nyx::vkg::Vulkan::convert( vk::ImageLayout::eTransferSrcOptimal ), queue ) ; 
+      
+      buffer.record() ;
       for( unsigned index = 0; index < buffer.size(); index++ )
       {
         buffer.buffer( index ).copyImage( src.data().image, src.data().layout, data().image, data().layout, 1, &info ) ;
       }
-      src  .revertLayout ( buffer ) ;
-      this->revertLayout( buffer ) ;
+      buffer.stop() ;
+      
+      queue.submit( buffer ) ;
+      buffer.reset() ;
+      src  .revertLayout ( queue ) ;
+      this->revertLayout( queue ) ;
       
     }
     
-    void Image::copy( const nyx::vkg::Buffer& src, const nyx::vkg::CommandBuffer& buffer )
+    void Image::copy( const nyx::vkg::Buffer& src, nyx::vkg::Queue& queue )
     {
       vk::BufferImageCopy info   ;
       vk::Extent3D        extent ;
       vk::Offset3D        offset ;
+      vkg::CommandBuffer  buffer ;
       
       offset.setX( 0 ) ;
       offset.setY( 0 ) ;
       offset.setZ( 0 ) ;
       
+      buffer.initialize( queue, 1 ) ;
       extent.setHeight( this->height() ) ;
       extent.setWidth ( this->width () ) ;
       extent.setDepth ( this->layers() ) ;
@@ -255,12 +266,18 @@ namespace nyx
       info.setImageExtent      ( extent             ) ;
       
       
-      this->transition( nyx::ImageLayout::TransferDst, buffer ) ; 
+      this->transition( nyx::ImageLayout::TransferDst, queue ) ; 
+      
+      buffer.record() ;
       for( unsigned index = 0; index < buffer.size(); index++ )
       {
         buffer.buffer( index ).copyBufferToImage( src.buffer(), data().image, vk::ImageLayout::eTransferDstOptimal, 1, &info ) ;
       }
-      this->revertLayout( buffer ) ;
+      buffer.stop() ;
+      
+      queue.submit( buffer ) ;
+      buffer.reset() ;
+      this->revertLayout( queue ) ;
     }
     
     bool Image::initialized() const
@@ -273,28 +290,30 @@ namespace nyx
       return true ;
     }
 
-    bool Image::initialize( const vkg::Device& device, nyx::ImageFormat format, unsigned width, unsigned height, unsigned num_layers )
+    bool Image::initialize( unsigned device, nyx::ImageFormat format, unsigned width, unsigned height, unsigned num_layers )
     {
-      data().device = device     ;
-      data().width  = width      ;
-      data().height = height     ;
-      data().layers = num_layers ;
+      Vulkan::initialize() ;
+
+      data().device = Vulkan::device( device ) ;
+      data().width  = width                    ;
+      data().height = height                   ;
+      data().layers = num_layers               ;
       
       data().format = nyx::vkg::Vulkan::convert( format ) ;
       data().subresource.setLayerCount( num_layers ) ;
       
       data().image = data().createImage() ;
 
-      data().requirements = device.device().getImageMemoryRequirements( data().image ) ;
+      data().requirements = data().device.device().getImageMemoryRequirements( data().image ) ;
       
       if( !data().preallocated )
       {
-        data().memory.initialize( device, data().requirements.size, data().requirements.memoryTypeBits, false ) ;
+        data().memory.initialize( data().device, data().requirements.size, data().requirements.memoryTypeBits, false ) ;
       }
       
       if( data().requirements.size <= data().memory.size() - data().memory.offset() )
       {
-        vkg::Vulkan::add( device.device().bindImageMemory( data().image, data().memory.memory(), data().memory.offset() ) ) ;
+        vkg::Vulkan::add( data().device.device().bindImageMemory( data().image, data().memory.memory(), data().memory.offset() ) ) ;
         
         data().view    = data().createView ()   ;
         data().sampler = data().createSampler() ;
@@ -305,12 +324,14 @@ namespace nyx
       return false ;
     }
 
-    bool Image::initialize( const nyx::vkg::Device& gpu, nyx::ImageFormat format, unsigned width, unsigned height, vk::Image prealloc, unsigned num_layers )
+    bool Image::initialize( unsigned device, nyx::ImageFormat format, unsigned width, unsigned height, vk::Image prealloc, unsigned num_layers )
     {
-      data().device = gpu        ;
-      data().width  = width      ;
-      data().height = height     ;
-      data().layers = num_layers ;
+      Vulkan::initialize() ;
+
+      data().device    = Vulkan::device( device ) ;
+      data().width     = width                    ;
+      data().height    = height                   ;
+      data().layers    = num_layers               ;
       
       data().image   = prealloc                            ;
       data().layout  = vk::ImageLayout::ePresentSrcKHR     ;
@@ -375,8 +396,10 @@ namespace nyx
       return vkg::Vulkan::convert( data().layout ) ;
     }
 
-    void Image::transition( const nyx::ImageLayout& layout, const nyx::vkg::CommandBuffer& cmd_buff ) const
+    void Image::transition( const nyx::ImageLayout& layout, nyx::vkg::Queue& queue ) const
     {
+      vkg::CommandBuffer buffer ;
+      
       vk::ImageMemoryBarrier    barrier    ;
       vk::ImageSubresourceRange range      ;
       vk::PipelineStageFlags    src        ;
@@ -386,33 +409,53 @@ namespace nyx
       
       new_layout = nyx::vkg::Vulkan::convert( layout ) ;
       
+      buffer.initialize( queue, 1 ) ;
       range.setBaseArrayLayer( 0                               ) ;
       range.setBaseMipLevel  ( 0                               ) ;
       range.setLevelCount    ( 1                               ) ;
       range.setLayerCount    ( this->layers()                  ) ;
       range.setAspectMask    ( vk::ImageAspectFlagBits::eColor ) ;
-
+      
+      auto mask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
+                   VK_ACCESS_INDEX_READ_BIT |
+                   VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+                   VK_ACCESS_UNIFORM_READ_BIT |
+                   VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+                   VK_ACCESS_SHADER_READ_BIT |
+                   VK_ACCESS_SHADER_WRITE_BIT |
+                   VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                   VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                   VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+                   VK_ACCESS_TRANSFER_READ_BIT |
+                   VK_ACCESS_TRANSFER_WRITE_BIT |
+                   VK_ACCESS_HOST_READ_BIT |
+                   VK_ACCESS_HOST_WRITE_BIT ;
       barrier.setOldLayout       ( data().layout                    ) ;
       barrier.setNewLayout       ( new_layout                       ) ;
       barrier.setImage           ( data().image                     ) ;
       barrier.setSubresourceRange( range                            ) ;
-      barrier.setSrcAccessMask   ( vk::AccessFlagBits::eMemoryWrite ) ;
-      barrier.setDstAccessMask   ( vk::AccessFlagBits::eMemoryRead  ) ;
+      barrier.setSrcAccessMask   ( static_cast<vk::AccessFlags>( mask ) ) ;
+      barrier.setDstAccessMask   ( static_cast<vk::AccessFlags>( mask ) ) ;
       
       dep_flags = vk::DependencyFlagBits::eDeviceGroupKHR ;
       src       = vk::PipelineStageFlagBits::eAllCommands ;
       dst       = vk::PipelineStageFlagBits::eAllCommands ;
       
-      for( unsigned index = 0; index < cmd_buff.size(); index++ )
+      buffer.record() ;
+      for( unsigned index = 0; index < buffer.size(); index++ )
       {
-        cmd_buff.buffer( index ).pipelineBarrier( src, dst, dep_flags, 0, nullptr, 0, nullptr, 1, &barrier ) ;
+        buffer.buffer( index ).pipelineBarrier( src, dst, dep_flags, 0, nullptr, 0, nullptr, 1, &barrier ) ;
       }
+      buffer.stop() ;
       
       data().old_layout = data().layout ;
       data().layout     = new_layout    ;
+      
+      queue.submit( buffer ) ;
     }
 
-    void Image::revertLayout( const nyx::vkg::CommandBuffer& cmd_buff ) const 
+    void Image::revertLayout( nyx::vkg::Queue& cmd_buff ) const 
     {
       if( data().old_layout != vk::ImageLayout::eUndefined )
       {

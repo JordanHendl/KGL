@@ -22,6 +22,7 @@
  * Created on January 9, 2021, 6:04 AM
  */
 
+#ifdef _WIN32
 #include "Window.h"
 #include <windows.h>
 #include <windowsx.h>
@@ -373,3 +374,4 @@ namespace nyx
     }
   }
 }
+#endif

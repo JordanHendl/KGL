@@ -105,6 +105,7 @@ namespace nyx
       ::vk::AttachmentReference   attach_ref  ;
       ::vk::SubpassDescription    sub_desc    ;
       ::vk::Viewport              viewport    ;
+      ::vk::SubpassDependency     dependency  ;
       
       viewport.setX       ( 0    ) ;
       viewport.setY       ( 0    ) ;
@@ -132,10 +133,17 @@ namespace nyx
       sub_desc.setPipelineBindPoint   ( ::vk::PipelineBindPoint::eGraphics ) ;
       sub_desc.setColorAttachmentCount( 1                                  ) ;
       sub_desc.setPColorAttachments   ( &this->attach_references[ 0 ]      ) ;
-      
+
+      dependency.srcSubpass = VK_SUBPASS_EXTERNAL ;
+      dependency.dstSubpass = 0 ;
+      dependency.setSrcStageMask( vk::PipelineStageFlagBits::eColorAttachmentOutput ) ;
+      dependency.setDstStageMask( vk::PipelineStageFlagBits::eColorAttachmentOutput ) ;
+      dependency.setDstAccessMask( vk::AccessFlagBits::eColorAttachmentWrite ) ;
+
       this->viewports.push_back( viewport ) ;
       
-      this->sub_descriptions.push_back( sub_desc ) ;
+      this->sub_dependencies.push_back( dependency ) ;
+      this->sub_descriptions.push_back( sub_desc   ) ;
       this->width   = 0 ;
       this->height  = 0 ;
       this->layers  = 0 ;
@@ -244,9 +252,11 @@ namespace nyx
       return *this ;
     }
 
-    void RenderPass::initialize( const nyx::vkg::Device& device )
+    void RenderPass::initialize( unsigned device )
     {
-      data().device = device ;
+      if( !Vulkan::initialized() ) Vulkan::initialize() ;
+
+      data().device = Vulkan::device( device ) ;
       
       data().area.extent.width  = data().width  ;
       data().area.extent.height = data().height ;
@@ -256,9 +266,11 @@ namespace nyx
     
     void RenderPass::initialize( const nyx::vkg::Swapchain& swapchain )
     {
-      data().device = swapchain.device() ;
-      data().width  = swapchain.width()  ;
-      data().height = swapchain.height() ; 
+      if( !Vulkan::initialized() ) Vulkan::initialize() ;
+
+      data().device = Vulkan::device( swapchain.device() ) ;
+      data().width  = swapchain.width()                    ;
+      data().height = swapchain.height()                   ; 
       
       data().area.extent.width  = data().width  ;
       data().area.extent.height = data().height ;
@@ -276,6 +288,7 @@ namespace nyx
     {
       return data().render_pass ;
     }
+
     const vk::Rect2D& RenderPass::area() const
     {
       return data().area ;
@@ -309,7 +322,7 @@ namespace nyx
       return data().clear_color ;
     }
 
-    const nyx::vkg::Device& RenderPass::device() const
+    unsigned RenderPass::device() const
     {
       return data().device ;
     }

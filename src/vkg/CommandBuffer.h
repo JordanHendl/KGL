@@ -123,7 +123,7 @@ namespace nyx
         /** Method to retrive the library device associated with this object.
          * @return The library device associated with this object.
          */
-        const nyx::vkg::Device& device() const ;
+        unsigned device() const ;
         
         /** Method to retrieve the specified command buffer at the index.
          * @param idx The index of command buffer to retrieve.

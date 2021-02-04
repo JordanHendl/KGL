@@ -21,9 +21,7 @@
  *
  * Created on December 23, 2020, 8:03 PM
  */
-
-#ifndef NYX_VKG_DEVICE_H
-#define NYX_VKG_DEVICE_H
+#pragma once
 
 namespace vk
 {
@@ -126,6 +124,10 @@ namespace nyx
          */
         operator ::vk::Device() ;
         
+        /** Convertion operator for an unsigned integer. Retrieves the ID of this device.
+         */
+        operator unsigned() const ;
+
         /** Method to retrieve whether or not this object is initialized.
          * @return Whether or not this object is initialized.
          */
@@ -134,13 +136,13 @@ namespace nyx
         /** Method to initialize this object with the input physical device.
          * @param physical_device The physical device to use for this device's definitions.
          */
-        void initialize( const ::vk::PhysicalDevice& physical_device ) ;
+        void initialize( const ::vk::PhysicalDevice& physical_device, unsigned id ) ;
         
         /** Method to initialize this object with the input physical device.
          * @param physical_device The physical device to use for this device's definitions.
          * @param surface The surface to use to generate a present queue.
          */
-        void initialize( const ::vk::PhysicalDevice& physical_device, const ::vk::SurfaceKHR& surface ) ;
+        void initialize( const ::vk::PhysicalDevice& physical_device, unsigned id, const ::vk::SurfaceKHR& surface ) ;
         
         /** Method to add a validation layer to this device upon it's creation.
          * @param layer_name The name of the validation layer to use. If it is invalid, it is skipped.
@@ -165,17 +167,17 @@ namespace nyx
         /** Method to retrieve a graphics queue from the device, if available.
          * @return A const reference to a created graphics queue.
          */
-        const nyx::vkg::Queue& graphicsQueue() ;
+        const nyx::vkg::Queue& graphicsQueue() const ;
         
         /** Method to retrieve a present queue from the device, if available.
          * @return A const reference to the created present queue.
          */
-        const nyx::vkg::Queue& presentQueue() ;
+        const nyx::vkg::Queue& presentQueue( const vk::SurfaceKHR& surface ) const ;
         
         /** Method to retrieve a compute queue from the device, if available.
          * @return A const reference to the created present queue.
          */
-        const nyx::vkg::Queue& computeQueue() ;
+        const nyx::vkg::Queue& computeQueue() const ;
         
         /** Method to retrieve a transfer queue from the device, if available.
          * @return A const reference to the created transfer queue.
@@ -219,6 +221,4 @@ namespace nyx
     };
   }
 }
-
-#endif /* DEVICE_H */
 

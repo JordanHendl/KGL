@@ -232,7 +232,7 @@ namespace nyx
        * @param device The implementation-specific device to use for this object.
        * @param host_alloc Whether or not to allocate this object on the host as well.
        */
-      void initialize( const typename Impl::Device& device, unsigned size, bool host_alloc = true ) ;
+      void initialize( unsigned device, unsigned size, bool host_alloc = true ) ;
       
       /** Method to initialize this object & allocate data.
        * @param size The number of elements allocated to this object.
@@ -242,7 +242,7 @@ namespace nyx
        * @param buffer_flags The implementation-specific buffer flags to use for buffer creation.
        */
       template<typename ... ARRAY_FLAGS>
-      void initialize( const typename Impl::Device& device, unsigned size, bool host_alloc, ARRAY_FLAGS... array_flags ) ;
+      void initialize( unsigned device, unsigned size, bool host_alloc, ARRAY_FLAGS... array_flags ) ;
       
       /** Method to initialize this object & allocate data.
        * @note See Array::initialized() for whether allocation was successful.
@@ -273,7 +273,7 @@ namespace nyx
       /** Method to retrieve a const reference to this object's implementation-specific GPU device.
        * @return Const-reference to this object's internal device.
        */
-      const typename Impl::Device& device() const ;
+      unsigned device() const ;
       
       /** Method to retrieve a reference to this object's internal memory.
        * @return Reference to this object's internal memory.
@@ -444,7 +444,7 @@ namespace nyx
   }
 
   template<typename Impl, class Type>
-  void Array<Impl, Type>::initialize( const typename Impl::Device& device, unsigned size, bool host_alloc )
+  void Array<Impl, Type>::initialize( unsigned device, unsigned size, bool host_alloc )
   {
     this->count = size ;
     this->arr_buffer.initialize( device, size * sizeof( Type ), host_alloc ) ;
@@ -452,7 +452,7 @@ namespace nyx
   
   template<typename Impl, class Type>
   template<typename ... ARRAY_FLAGS>
-  void Array<Impl, Type>::initialize( const typename Impl::Device& device, unsigned size, bool host_alloc, ARRAY_FLAGS... array_flags )
+  void Array<Impl, Type>::initialize( unsigned device, unsigned size, bool host_alloc, ARRAY_FLAGS... array_flags )
   {
     this->count = size ;
     this->arr_buffer.initialize( device, size * sizeof( Type ), host_alloc, array_flags... ) ;
@@ -487,7 +487,7 @@ namespace nyx
   }
   
   template<typename Impl, class Type>
-  const typename Impl::Device& Array<Impl, Type>::device() const
+  unsigned Array<Impl, Type>::device() const
   {
     return this->arr_buffer.device() ;
   }

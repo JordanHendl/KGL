@@ -124,18 +124,18 @@ namespace nyx
        * @param src The image to copy from.
        * @param cmd Reference to a valid command record to record the copy operation to.
        */
-      void copy( const Image& src, const typename Impl::CommandRecord& cmd ) ;
+      void copy( const Image& src, typename Impl::Queue& cmd ) ;
 
       /** Method to perform a deep copy on the input image.
        * @param src The image to copy from.
        * @param cmd Reference to a valid command record to record the copy operation to.
        */
-      void copy( const typename Impl::Buffer& src, const typename Impl::CommandRecord& cmd ) ;
+      void copy( const typename Impl::Buffer& src, typename Impl::Queue& cmd ) ;
 
       /** Method to retrieve the device associated with this image.
        * @return the GPU Device associated with this image.
        */
-      const typename Impl::Device& device() const ;
+      unsigned device() const ;
       
       /** Method to check whether this object is initialized or not.
        * @return Whether this object is initialized or not.
@@ -149,7 +149,7 @@ namespace nyx
        * @param layers The number of layers in the image.
        * @return Whether or not this image was able to successfully initialize.
        */
-      bool initialize( const typename Impl::Device& gpu, unsigned width, unsigned height, unsigned layers = 1 ) ;
+      bool initialize( unsigned gpu, unsigned width, unsigned height, unsigned layers = 1 ) ;
       
       /** Method to initialize this image with preallocated memory.
        * @param prealloc The preallocated memory to use for this image's memory.
@@ -185,7 +185,7 @@ namespace nyx
        * @param layout The implementaion-specific layout to transition this image to.
        * @param record The implementation-specific Command Record to use for this operation.
        */
-      void transition( const typename nyx::ImageLayout& layout, typename Impl::CommandRecord& record ) ;
+      void transition( const typename nyx::ImageLayout& layout, typename Impl::Queue& record ) ;
       
       /** Method to set the mip-levels of this image.
        * @param num_levels The number of mip levels to use for this image.
@@ -259,19 +259,19 @@ namespace nyx
   }
 
   template<typename Impl, ImageFormat Format>
-  void Image<Impl, Format>::copy( const Image& src, const typename Impl::CommandRecord& cmd ) 
+  void Image<Impl, Format>::copy( const Image& src, typename Impl::Queue& cmd ) 
   {
     this->impl_image.copy( src, cmd ) ;
   }
   
   template<typename Impl, ImageFormat Format>
-  void Image<Impl, Format>::copy( const typename Impl::Buffer& src, const typename Impl::CommandRecord& cmd )
+  void Image<Impl, Format>::copy( const typename Impl::Buffer& src, typename Impl::Queue& cmd )
   {
     this->impl_image.copy( src, cmd ) ;
   }
   
   template<typename Impl, ImageFormat Format>
-  const typename Impl::Device& Image<Impl, Format>::device() const
+  unsigned Image<Impl, Format>::device() const
   {
     return this->impl_image.device() ;
   }
@@ -283,7 +283,7 @@ namespace nyx
   }
   
   template<typename Impl, ImageFormat Format>
-  bool Image<Impl, Format>::initialize( const typename Impl::Device& gpu, unsigned width, unsigned height, unsigned layers )
+  bool Image<Impl, Format>::initialize( unsigned gpu, unsigned width, unsigned height, unsigned layers )
   {
     return this->impl_image.initialize( gpu, Format, width, height, layers ) ;
   }
@@ -313,7 +313,7 @@ namespace nyx
   }
 
   template<typename Impl, ImageFormat Format>
-  void Image<Impl, Format>::transition( const typename nyx::ImageLayout& layout, typename Impl::CommandRecord& record )
+  void Image<Impl, Format>::transition( const typename nyx::ImageLayout& layout, typename Impl::Queue& record )
   {
     this->impl_image.transition( layout, record ) ;
   }

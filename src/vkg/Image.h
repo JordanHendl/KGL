@@ -60,6 +60,7 @@ namespace nyx
     class CommandBuffer ;
     class RenderPass    ;
     class Swapchain     ;
+    class Queue         ;
 
     /** Abstraction of a Vulkan Image.
      */
@@ -91,7 +92,7 @@ namespace nyx
          * @param src The image to copy from.
          * @param buffer Reference to a valid vulkan command buffer to record the copy operation to.
          */
-        void copy( const Image& src, const nyx::vkg::CommandBuffer& buffer ) ;
+        void copy( const Image& src, nyx::vkg::Queue& buffer ) ;
 
       private:
         
@@ -110,7 +111,7 @@ namespace nyx
          * @param src The image to copy from.
          * @param buffer Reference to a valid vulkan command buffer to record the copy operation to.
          */
-        void copy( const nyx::vkg::Buffer& src, const nyx::vkg::CommandBuffer& buffer ) ;
+        void copy( const nyx::vkg::Buffer& src, nyx::vkg::Queue& buffer ) ;
 
         /** Method to determine if this object was initialized or not.
          * @return Whether or not this object was initialized.
@@ -123,7 +124,7 @@ namespace nyx
          * @param height The height of the image in pixels.
          * @param num_layers The number of layers of the image.
          */
-        bool initialize( const nyx::vkg::Device& gpu, nyx::ImageFormat format, unsigned width, unsigned height, unsigned num_layers = 1 ) ;
+        bool initialize( unsigned gpu, nyx::ImageFormat format, unsigned width, unsigned height, unsigned num_layers = 1 ) ;
         
         /** Method to initialize this object with the input parameters.
          * @note Uses any set values from other setters in initialization.
@@ -131,7 +132,7 @@ namespace nyx
          * @param height The height of the image in pixels.
          * @param num_layers The number of layers of the image.
          */
-        bool initialize( const nyx::vkg::Device& gpu, nyx::ImageFormat format, unsigned width, unsigned height, vk::Image prealloc, unsigned num_layers = 1 ) ;
+        bool initialize( unsigned gpu, nyx::ImageFormat format, unsigned width, unsigned height, vk::Image prealloc, unsigned num_layers = 1 ) ;
 
         /** Method to initialize this object with the input parameters.
          * @note Uses any set values from other setters in initialization.
@@ -197,12 +198,12 @@ namespace nyx
          * @param layout The layout to transition this image to.
          * @param cmd_buff The Vulkan command buffer to record the transition operation to.
          */
-        void transition( const nyx::ImageLayout& layout, const nyx::vkg::CommandBuffer& cmd_buff ) const ;
+        void transition( const nyx::ImageLayout& layout, nyx::vkg::Queue& queue ) const ;
         
         /** Method to transition the image back to it's last known layout.
          * @param cmd_buff The Vulkan command buffer to record the transition operation to.
          */
-        void revertLayout( const nyx::vkg::CommandBuffer& cmd_buff ) const ;
+        void revertLayout( nyx::vkg::Queue& queue ) const ;
         
         /** Method to retrieve the vulkan image view associated with this image.
          * @return The vulkan image view associated with this image.
