@@ -28,8 +28,9 @@
 #include <iostream> 
 static const unsigned object_input_expected = 250 ;
 static const unsigned only_type_expected    = 480 ;
-static unsigned object_input = 0 ;
-static unsigned only_type    = 0 ;
+static unsigned object_input = 0     ;
+static unsigned only_type    = 0     ;
+static bool     exited       = false ;
 class Object
 {
 public :
@@ -48,6 +49,12 @@ void onlyKeyUp( const nyx::Event& event )
   {
     only_type = only_type_expected ;
   }
+}
+
+void setExit( const nyx::Event& event )
+{
+  event.type() ;
+  exited = true ;
 }
 
 static Object            obj     ;
@@ -72,6 +79,15 @@ bool checkTypeOnlyInput()
   return false ;
 }
 
+bool getExit()
+{
+  nyx::Event tmp = nyx::makeKeyEvent( nyx::Event::Type::WindowExit, nyx::Key::A ) ;
+  event.pushEvent( tmp ) ;
+  
+  if( exited == true ) return true ;
+  return false ;
+}
+
 bool testWindowCreation()
 {
   nyx::lx::Window window ;
@@ -83,16 +99,19 @@ bool testWindowCreation()
     return true ;
   }
   
+  
   return false ;
 }
 int main() 
 {
   event.enroll( &obj, &Object::inputB, nyx::Key::B, "OnlyBMethod" ) ;
   event.enroll( &onlyKeyUp, nyx::Key::A, "OnlyA" ) ;
+  event.enroll( &setExit, nyx::Event::Type::WindowExit, "Exit" ) ;
   
   manager.initialize( "Nyx Linux Library" ) ;
   manager.add( "1) Linux Event Handler: Method Only Specific Key Events Test."   , &checkMethodInput   ) ;
   manager.add( "2) Linux Event Handler: Function Only Specific Type Events Test.", &checkMethodInput   ) ;
+  manager.add( "2) Linux Event Handler: Exit Test"                               , &getExit            ) ;
   manager.add( "3) Linux Window Creation Test."                                  , &testWindowCreation ) ;
 
   return manager.test( athena::Output::Verbose ) ;

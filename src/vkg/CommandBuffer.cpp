@@ -36,15 +36,16 @@
 #include <vulkan/vulkan.hpp>
 #include <map>
 #include <vector>
-
+#include <mutex>
 namespace nyx
 {
   namespace vkg
   {
     typedef unsigned Family ;
-    typedef std::map<Family, vk::CommandPool> PoolMap ;
-    static PoolMap pool_map ;
-
+    typedef std::unordered_map<Family, vk::CommandPool>     PoolMap ;
+    typedef std::unordered_map<vk::CommandPool, std::mutex> MutexMap ;
+    static PoolMap  pool_map ;
+    static MutexMap mutex_map ;
     struct CommandBufferData
     {
       typedef std::vector<vk::CommandBuffer> CmdBuffers ;
@@ -173,7 +174,9 @@ namespace nyx
       info.setCommandPool       ( pool      ) ;
       
       data().cmd_buffers.resize( count ) ;
+      mutex_map[ pool ].lock() ;
       vkg::Vulkan::add( device.allocateCommandBuffers( &info, data().cmd_buffers.data() ) ) ;
+      mutex_map[ pool ].unlock() ;
     }
 
     void CommandBuffer::combine( const CommandBuffer& cmd )

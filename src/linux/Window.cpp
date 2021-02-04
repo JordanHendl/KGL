@@ -352,29 +352,50 @@ namespace nyx
     
     void Window::handleEvents()
     {
-      xcb_atom_t wmDeleteWin ;
+      // Prepare notification for window destruction
+      xcb_intern_atom_cookie_t  protocols_cookie = xcb_intern_atom( data().connection, 1, 12, "WM_PROTOCOLS" ) ;
+      xcb_intern_atom_reply_t  *protocols_reply  = xcb_intern_atom_reply( data().connection, protocols_cookie, 0 ) ;
+      xcb_intern_atom_cookie_t  delete_cookie    = xcb_intern_atom( data().connection, 0, 16, "WM_DELETE_WINDOW" ) ;
+      xcb_intern_atom_reply_t  *delete_reply     = xcb_intern_atom_reply( data().connection, delete_cookie, 0 ) ;
+      xcb_change_property( data().connection, XCB_PROP_MODE_REPLACE, data().window, (*protocols_reply).atom, 4, 32, 1, &(*delete_reply).atom ) ;
 
       xcb_generic_event_t        *event          ;
       xcb_client_message_event_t *client_message ;
 
+      free( protocols_reply ) ;
       while( ( event = xcb_poll_for_event( data().connection ) ) )
       {
         switch( event->response_type & ~0x80 )
         {
-          case XCB_CLIENT_MESSAGE:
+          // Resized
+          case XCB_CONFIGURE_NOTIFY :
+          {
+            xcb_configure_notify_event_t *configure_event = reinterpret_cast<xcb_configure_notify_event_t*>( event ) ;
+            
+            data().width  = configure_event->width  ;
+            data().height = configure_event->height ;
+            break ;
+          }
+          // Message 
+          case XCB_CLIENT_MESSAGE :
+          {
             client_message = reinterpret_cast<xcb_client_message_event_t*>( event ) ;
             
-            if( client_message->data.data32[ 0 ] == wmDeleteWin )
+            if( client_message->data.data32[ 0 ] == ( *delete_reply ).atom )
             {
+              nyx::Event event = nyx::makeKeyEvent( Event::Type::WindowExit, nyx::Key::A ) ;
+              manager.pushEvent( event ) ;
               
+              free( delete_reply ) ;
             }
             break ;
-          case XCB_BUTTON_PRESS:
+          }
+          case XCB_BUTTON_PRESS :
+          {
             handleMousePress( reinterpret_cast<xcb_button_press_event_t*>( event ) ) ;
-            
             break ;
-            
-          case XCB_BUTTON_RELEASE:
+          } 
+          case XCB_BUTTON_RELEASE :
           {
             handleMouseRelease( reinterpret_cast<xcb_button_release_event_t*>( event ) ) ;
             
@@ -390,10 +411,10 @@ namespace nyx
             data().has_mouse = false ;
             break ;
           }
+          // Mouse is moving on the window.
           case XCB_MOTION_NOTIFY:
           {
 //            auto motion = reinterpret_cast<xcb_enter_notify_event_t*>( event ) ;
-            std::cout << "Motion Notify" << std::endl ;
             break ;
           }
           case XCB_KEY_PRESS:

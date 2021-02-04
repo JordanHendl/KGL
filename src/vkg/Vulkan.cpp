@@ -311,9 +311,9 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case vk::Result::eErrorDeviceLost           : return Vulkan::Error::DeviceLost           ;
         case vk::Result::eSuccess                   : return Vulkan::Error::Success              ;
         case vk::Result::eErrorFeatureNotPresent    : return Vulkan::Error::FeatureNotPresent    ;
-        case vk::Result::eErrorOutOfDateKHR         : return Vulkan::Error::OutOfDataKHR         ;
         case vk::Result::eErrorInitializationFailed : return Vulkan::Error::InitializationFailed ;
-        case vk::Result::eSuboptimalKHR             : return Vulkan::Error::SuboptimalKHR        ;
+        case vk::Result::eErrorOutOfDateKHR         : return Vulkan::Error::RecreateSwapchain    ;
+        case vk::Result::eSuboptimalKHR             : return Vulkan::Error::RecreateSwapchain    ;
         default : return Vulkan::Error::Unknown ;
       }
     }
@@ -495,10 +495,6 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       data.validation_layers.clear() ;
     }
       
-//    void Vulkan::initDevices( const vk::SurfaceKHR& surface )
-//    {
-//    }
-
     void Vulkan::copyToDevice( const void* src, Vulkan::Memory& dst, unsigned gpu, unsigned amt, unsigned src_offset, unsigned dst_offset )
     {
       Vulkan::initialize() ;

@@ -138,11 +138,10 @@ athena::Result instance_initialization_test()
 
 athena::Result window_creation_test()
 {
-  window.initialize( "Test", 1080, 720 ) ;
+  window.initialize( "Test", 1280, 1024 ) ;
   
   if( !window.initialized() ) return athena::Result::Fail ;
   
-//  Impl::initDevices( window.context() ) ;
   return true ;
 }
 
@@ -403,11 +402,11 @@ athena::Result pipeline_test()
   // Initialize vulkan objects.
   pass.setFinalLayout( nyx::ImageLayout::PresentSrc ) ;
 
-  pass       .initialize( swapchain                       ) ;
+  buffer     .initialize( 20, graphics_queue, 1           ) ;
   shader     .initialize( device                          ) ;
   pool       .initialize( shader, 50                      ) ;
+  pass       .initialize( swapchain                       ) ;
   pipeline   .initialize( pass, shader                    ) ;
-  buffer     .initialize( 20, graphics_queue, 1           ) ;
   syncs      .initialize( swapchain.count(), device, 0    ) ;
   descriptors.initialize( 50, pool                        ) ;
  
@@ -419,7 +418,16 @@ athena::Result pipeline_test()
     descriptors.current().set( "info", uniform ) ;
 
     syncs.current().waitOnFences() ;
-    syncs.current().waitOn( swapchain.acquire() ) ;
+    if( swapchain.acquire() == Impl::Error::RecreateSwapchain )
+    {
+      pass    .reset() ;
+      pipeline.reset() ;
+      buffer  .reset() ;
+      
+      pass    .initialize( swapchain             ) ;
+      pipeline.initialize( pass, shader          ) ;
+      buffer  .initialize( 20, graphics_queue, 1 ) ;
+    }
     
     buffer.current().record( pass, swapchain.current() ) ;
     
@@ -435,7 +443,17 @@ athena::Result pipeline_test()
     
     Impl::deviceSynchronize( device ) ;
 
-    swapchain.submit( syncs ) ;
+    if( swapchain.submit() == Impl::Error::RecreateSwapchain )
+    {
+      pass    .reset() ;
+      pipeline.reset() ;
+      buffer  .reset() ;
+      
+      pass    .initialize( swapchain             ) ;
+      pipeline.initialize( pass, shader          ) ;
+      buffer  .initialize( 20, graphics_queue, 1 ) ;
+    }
+
     syncs.current().clear() ;
 
     syncs      .advance() ;

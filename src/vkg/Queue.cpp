@@ -38,7 +38,7 @@ namespace nyx
   {
     /** Static mutex map for whenever queues are accessed.
      */
-    static std::map<vk::Queue, std::mutex> mutex_map ;
+    static std::unordered_map<vk::Queue, std::mutex> mutex_map ;
     
     /** Structure to encompass a Queue's internal data.
      */
@@ -137,10 +137,11 @@ namespace nyx
       return data().device ;
     }
     
-    void Queue::submit( const nyx::vkg::CommandBuffer& cmd_buff )
+    void Queue::submit( const nyx::vkg::CommandBuffer& cmd_buff, bool sync )
     {
-      static const vk::Fence dummy ;
-
+      vk::FenceCreateInfo fence_info  ;
+      vk::Fence           fence       ;
+      unsigned            fence_count ;
       data().submit = vk::SubmitInfo() ;
       
       data().submit.setCommandBufferCount( cmd_buff.size()    ) ;
@@ -148,15 +149,24 @@ namespace nyx
       data().submit.setWaitSemaphoreCount( 0 ) ;
       data().submit.setSignalSemaphoreCount( 0 ) ;
       
+      fence_count = 0 ;
+      if( sync )
+      {
+        fence       = data().device.device().createFence( fence_info, nullptr ) ;
+        fence_count = 1                                                         ;
+      }
+
       if( cmd_buff.level() == nyx::vkg::CommandBuffer::Level::Primary )
       {
         mutex_map[ data().queue ].lock() ;
-        vkg::Vulkan::add( data().queue.submit( 1, &data().submit, dummy ) ) ;
+        vkg::Vulkan::add( data().queue.submit( 1, &data().submit, fence ) ) ;
 
         // No synchronization given, must wait.
-        data().queue.waitIdle() ; 
+        vkg::Vulkan::add( data().device.device().waitForFences( fence_count, &fence, true, UINT64_MAX ) ) ;
         mutex_map[ data().queue ].unlock() ;
       }
+      
+      if( sync ) data().device.device().destroy( fence ) ;
     }
     
     void Queue::submit( const nyx::vkg::CommandBuffer& cmd_buff, const nyx::vkg::Synchronization& sync )

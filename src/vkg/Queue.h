@@ -120,7 +120,7 @@ namespace nyx
          * @note This object handles concurrent CPU-side access to vulkan queues.
          * @param cmd_buff The command buffer to submit.
          */
-        void submit( const nyx::vkg::CommandBuffer& cmd_buff ) ;
+        void submit( const nyx::vkg::CommandBuffer& cmd_buff, bool sync = true ) ;
         
         /** Method to submit a command to a queue.
          * @note This object handles concurrent CPU-side access to vulkan queues.

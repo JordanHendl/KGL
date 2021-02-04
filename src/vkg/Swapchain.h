@@ -137,19 +137,14 @@ namespace nyx
         unsigned current() const ;
 
         /** Method to tell this swapchain to acquire the next image in it's frambuffers.
-         * @return The synchronization object used for syncing this acquire with other GPU operations.
+         * @return The vkg library error to associate with this operation.
          */
-        const nyx::vkg::Synchronization& acquire() ;
+        unsigned acquire() ;
         
         /** Method to submit this swapchain's presentation to the queue used for it's initialization.
          * @param sync The synchronization object used to sync this operation so that it occurs after other GPU events.
          */
-        void submit() ;
-
-        /** Method to submit this swapchain's presentation to the queue used for it's initialization.
-         * @param sync The synchronization object used to sync this operation so that it occurs after other GPU events.
-         */
-        void submit( const nyx::vkg::Synchronization& sync ) ;
+        unsigned submit() ;
         
         /** Method to reset this object and deallocate all data.
          */

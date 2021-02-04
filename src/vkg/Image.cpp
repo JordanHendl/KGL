@@ -416,27 +416,13 @@ namespace nyx
       range.setLayerCount    ( this->layers()                  ) ;
       range.setAspectMask    ( vk::ImageAspectFlagBits::eColor ) ;
       
-      auto mask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
-                   VK_ACCESS_INDEX_READ_BIT |
-                   VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
-                   VK_ACCESS_UNIFORM_READ_BIT |
-                   VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
-                   VK_ACCESS_SHADER_READ_BIT |
-                   VK_ACCESS_SHADER_WRITE_BIT |
-                   VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-                   VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                   VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
-                   VK_ACCESS_TRANSFER_READ_BIT |
-                   VK_ACCESS_TRANSFER_WRITE_BIT |
-                   VK_ACCESS_HOST_READ_BIT |
-                   VK_ACCESS_HOST_WRITE_BIT ;
       barrier.setOldLayout       ( data().layout                    ) ;
       barrier.setNewLayout       ( new_layout                       ) ;
       barrier.setImage           ( data().image                     ) ;
       barrier.setSubresourceRange( range                            ) ;
-      barrier.setSrcAccessMask   ( static_cast<vk::AccessFlags>( mask ) ) ;
-      barrier.setDstAccessMask   ( static_cast<vk::AccessFlags>( mask ) ) ;
+      
+      barrier.setSrcAccessMask   ( vk::AccessFlagBits::eMemoryRead | vk::AccessFlagBits::eColorAttachmentWrite ) ;
+      barrier.setDstAccessMask   ( vk::AccessFlagBits::eMemoryRead | vk::AccessFlagBits::eColorAttachmentWrite ) ;
       
       dep_flags = vk::DependencyFlagBits::eDeviceGroupKHR ;
       src       = vk::PipelineStageFlagBits::eAllCommands ;

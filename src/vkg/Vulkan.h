@@ -240,6 +240,7 @@ namespace nyx
               IncompatibleSurface,   ///< TODO
               SurfaceLost,           ///< TODO
               NativeWindowInUse,     ///< TODO
+              RecreateSwapchain,     ///< An error to represent a swapchain should be recreated.
               SuboptimalKHR,         ///< TODO
               OutOfDataKHR,
               MemoryMapFailed,       ///< TODO
@@ -384,10 +385,6 @@ namespace nyx
          */
         static void initialize() ;
         
-        /** Static method to initialize this implementation with a vulkan instance.
-         */
-        static void initDevices( const vk::SurfaceKHR& surface ) ;
-
         /** Method to retrieve the platform-specific instance extension names for the surface of this system.
          * @return String names of the platform-specific extensions needed by this system for a vulkan surface.
          */

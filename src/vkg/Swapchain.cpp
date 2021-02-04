@@ -62,7 +62,8 @@ namespace nyx
       vk::Extent2D               extent         ; ///< TODO
       std::queue<unsigned>       acquired       ; ///< The images acquired from this swapchain.
       unsigned                   current_frame  ; ///< The frame counter used to monitor swapchain presenting.
-      
+      bool                       skip_frame     ;
+
       /** Default constructor.
        */
       SwapchainData() ;
@@ -96,7 +97,8 @@ namespace nyx
     
     SwapchainData::SwapchainData()
     {
-      this->current_frame = 0 ;
+      this->current_frame = 0     ;
+      this->skip_frame    = false ;
     }
 
     void SwapchainData::makeSwapchain()
@@ -240,7 +242,7 @@ namespace nyx
       for( auto& sync : data().syncs ) sync.initialize( data().device, 1 ) ;
     }
 
-    const nyx::vkg::Synchronization& Swapchain::acquire()
+    unsigned Swapchain::acquire()
     {
       const auto device    = data().device.device() ;
       const unsigned index = data().current_frame   ;
@@ -253,10 +255,13 @@ namespace nyx
       data().syncs[ index ].resetFence() ;
       auto result = device.acquireNextImageKHR( data().swapchain, UINT64_MAX, data().syncs[ index ].signal(), data().syncs[ index ].signalFence() ) ;
       
-      if( result.result == vk::Result::eErrorOutOfDateKHR )
+      if( result.result == vk::Result::eErrorOutOfDateKHR || result.result == vk::Result::eSuboptimalKHR )
       {
         vkg::Vulkan::add( device.waitIdle() ) ;
         this->initialize( data().queue, data().surface ) ;
+
+        data().skip_frame = true ;
+        return Vulkan::Error::RecreateSwapchain ;
       }
       else
       {
@@ -266,40 +271,39 @@ namespace nyx
         data().current_frame = ( index + 1 ) % data().syncs.size() ;
       }
       
-      return data().syncs[ index ] ;
+      data().syncs[ index ].waitOn( data().syncs[ index ] ) ;
+      return Vulkan::Error::Success ;
     }
 
-    void Swapchain::submit()
+    unsigned Swapchain::submit()
     {
       const unsigned index = data().acquired.front() ;
       
-      if( data().queue.submit( *this, index ) == nyx::vkg::Vulkan::Error::OutOfDataKHR )
+      if( !data().skip_frame )
       {
-        Vulkan::deviceSynchronize( data().queue.device() ) ;
-        this->initialize( data().queue, data().surface ) ;
+        if( data().queue.submit( *this, index, data().syncs[ index ] ) == nyx::vkg::Vulkan::Error::RecreateSwapchain )
+        {
+          Vulkan::deviceSynchronize( data().queue.device() ) ;
+          this->initialize( data().queue, data().surface ) ;
+          
+          data().acquired.pop() ;
+          data().syncs[ index ].clear() ;
+          
+          return Vulkan::Error::RecreateSwapchain ;
+        }
+      }
+      else
+      {
+        data().skip_frame = true ;
       }
 
       data().acquired.pop() ;
 
       data().syncs[ index ].clear() ;
-    }
-
-    void Swapchain::submit( const nyx::vkg::Synchronization& sync )
-    {
-      const unsigned index = data().acquired.front() ;
       
-      data().syncs[ index ].waitOn( sync ) ;
-      if( data().queue.submit( *this, index, data().syncs[ index ] ) == nyx::vkg::Vulkan::Error::OutOfDataKHR )
-      {
-        Vulkan::deviceSynchronize( data().queue.device() ) ;
-        this->initialize( data().queue, data().surface ) ;
-      }
-
-      data().acquired.pop() ;
-
-      data().syncs[ index ].clear() ;
+      return Vulkan::Error::Success ;
     }
-    
+
     const nyx::vkg::Image* Swapchain::images() const
     {
       return data().images.data() ;

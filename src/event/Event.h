@@ -22,8 +22,7 @@
  * Created on January 5, 2021, 8:18 PM
  */
 
-#ifndef EVENT_H
-#define EVENT_H
+#pragma once 
 
 namespace nyx
 {
@@ -166,6 +165,7 @@ namespace nyx
         JoystickAxis,
         JoystickButton,
         JoystickInitialize,
+        WindowExit,
       };
       
       /** Default constructor.
@@ -418,6 +418,4 @@ namespace nyx
     this->enrollBase( callback, keysym, key ) ;
   }
 }
-
-#endif /* EVENT_H */
 
