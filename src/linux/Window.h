@@ -80,6 +80,11 @@ namespace nyx
          */
         void setMonitor( unsigned monitor_id ) ;
         
+        /** Method to set the title of this window.
+         * @param value The string to set to the title.
+         */
+        void setTitle( const char* value ) ;
+
         /** Method to set whether the window should be fullscreen or not.
          * @param value Whether or not the window should be fullscreen.
          */

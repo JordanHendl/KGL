@@ -24,6 +24,8 @@
 
 #include "Window.h"
 #include <event/Event.h>
+#include <stdio.h>
+#include <cstring>
 #include <string>
 #include <xcb/xcb.h>
 #include <iostream>
@@ -195,6 +197,13 @@ namespace nyx
        */
       WindowData() ;
       
+      void setWindowBorderless( bool value ) ;
+      void setWindowMaximized( bool value ) ;
+      void setWindowMinimized( bool value ) ;
+      void setWindowTitle( const char* value ) ;
+      void setWindowWidth( unsigned value ) ;
+      void setWindowHeight( unsigned value ) ;
+      
       /** Method to create the X11 window.
        */
       void create() ;
@@ -207,6 +216,167 @@ namespace nyx
       this->screen     = nullptr ;
     }
     
+    void WindowData::setWindowBorderless( bool value )
+    {
+      xcb_intern_atom_cookie_t cookie3 = xcb_intern_atom(connection, 0, strlen ( "_MOTIF_WM_HINTS" ), "_MOTIF_WM_HINTS" ) ;
+      xcb_intern_atom_reply_t *reply3  = xcb_intern_atom_reply ( connection, cookie3, NULL ) ;
+      
+      // motif hints
+      struct MotifHints
+      {
+          uint32_t   flags;
+          uint32_t   functions;
+          uint32_t   decorations;
+          int32_t    input_mode;
+          uint32_t   status;
+      };
+      
+      MotifHints hints;
+      
+      hints.flags       = 2             ;
+      hints.functions   = 0             ;
+      hints.decorations = value ? 0 : 3 ;
+      hints.input_mode  = 0             ;
+      hints.status      = 0             ;
+      
+      xcb_change_property ( this->connection,
+                            XCB_PROP_MODE_REPLACE,
+                            this->window,
+                            reply3->atom,
+                            reply3->atom,
+                            32,  
+                            5,   
+                            &hints ) ;
+      
+      free( reply3 ) ;
+      xcb_flush( this->connection ) ;
+    }
+
+    void WindowData::setWindowMaximized( bool value )
+    {
+      value = value ;
+    }
+
+    void WindowData::setWindowMinimized( bool value )
+    {
+      value = value ;
+    }
+
+    void WindowData::setWindowTitle( const char* value )
+    {
+      std::string str = value ;
+      
+      xcb_change_property( this->connection, XCB_PROP_MODE_REPLACE,
+                           this->window,
+                           XCB_ATOM_WM_NAME,
+                           XCB_ATOM_STRING,
+                           8,
+                           str.size(),
+                           str.c_str() ) ;
+
+      xcb_flush( this->connection ) ;
+    }
+
+    void WindowData::setWindowWidth( unsigned value )
+    {
+      struct WMSizeHints
+      {
+        uint32_t flags;
+        int32_t  x, y;
+        int32_t  width, height;
+        int32_t  min_width, min_height;
+        int32_t  max_width, max_height;
+        int32_t  width_inc, height_inc;
+        int32_t  min_aspect_num, min_aspect_den;
+        int32_t  max_aspect_num, max_aspect_den;
+        int32_t  base_width, base_height;
+        uint32_t win_gravity;
+      } ;
+      
+      enum WMSizeHintsFlag
+      {
+        WM_SIZE_HINT_US_POSITION   = 1U << 0,
+        WM_SIZE_HINT_US_SIZE       = 1U << 1,
+        WM_SIZE_HINT_P_POSITION    = 1U << 2,
+        WM_SIZE_HINT_P_SIZE        = 1U << 3,
+        WM_SIZE_HINT_P_MIN_SIZE    = 1U << 4,
+        WM_SIZE_HINT_P_MAX_SIZE    = 1U << 5,
+        WM_SIZE_HINT_P_RESIZE_INC  = 1U << 6,
+        WM_SIZE_HINT_P_ASPECT      = 1U << 7,
+        WM_SIZE_HINT_BASE_SIZE     = 1U << 8,
+        WM_SIZE_HINT_P_WIN_GRAVITY = 1U << 9
+      };
+      
+      struct WMSizeHints hints ;
+      hints.flags = WM_SIZE_HINT_P_WIN_GRAVITY ;
+      hints.win_gravity = XCB_GRAVITY_STATIC ;
+      
+//      if ( centerWindow )
+//      hints.win_gravity = XCB_GRAVITY_CENTER;
+//      else
+//      {
+        hints.flags |= WM_SIZE_HINT_P_SIZE;
+        hints.x = value ;
+        hints.y = this->height ;
+//      }
+      
+      xcb_change_property(this->connection, XCB_PROP_MODE_REPLACE, this->window,
+        XCB_ATOM_WM_NORMAL_HINTS, XCB_ATOM_WM_SIZE_HINTS,
+          32, sizeof(struct WMSizeHints) >> 2, &hints);
+    }
+
+    void WindowData::setWindowHeight( unsigned value )
+    {
+      struct WMSizeHints
+      {
+        uint32_t flags;
+        int32_t  x, y;
+        int32_t  width, height;
+        int32_t  min_width, min_height;
+        int32_t  max_width, max_height;
+        int32_t  width_inc, height_inc;
+        int32_t  min_aspect_num, min_aspect_den;
+        int32_t  max_aspect_num, max_aspect_den;
+        int32_t  base_width, base_height;
+        uint32_t win_gravity;
+      } ;
+      
+      enum WMSizeHintsFlag
+      {
+        WM_SIZE_HINT_US_POSITION   = 1U << 0,
+        WM_SIZE_HINT_US_SIZE       = 1U << 1,
+        WM_SIZE_HINT_P_POSITION    = 1U << 2,
+        WM_SIZE_HINT_P_SIZE        = 1U << 3,
+        WM_SIZE_HINT_P_MIN_SIZE    = 1U << 4,
+        WM_SIZE_HINT_P_MAX_SIZE    = 1U << 5,
+        WM_SIZE_HINT_P_RESIZE_INC  = 1U << 6,
+        WM_SIZE_HINT_P_ASPECT      = 1U << 7,
+        WM_SIZE_HINT_BASE_SIZE     = 1U << 8,
+        WM_SIZE_HINT_P_WIN_GRAVITY = 1U << 9
+      };
+      
+      struct WMSizeHints hints ;
+      hints.flags = WM_SIZE_HINT_P_WIN_GRAVITY ;
+      hints.win_gravity = XCB_GRAVITY_STATIC ;
+//      {
+//        .flags       = WM_SIZE_HINT_P_WIN_GRAVITY,
+//        .win_gravity = XCB_GRAVITY_STATIC
+//      } ;
+      
+//      if ( centerWindow )
+//      hints.win_gravity = XCB_GRAVITY_CENTER;
+//      else
+//      {
+        hints.flags |= WM_SIZE_HINT_P_SIZE;
+        hints.x = this->width ;
+        hints.y = value ;
+//      }
+      
+      xcb_change_property(this->connection, XCB_PROP_MODE_REPLACE, this->window,
+        XCB_ATOM_WM_NORMAL_HINTS, XCB_ATOM_WM_SIZE_HINTS,
+          32, sizeof(struct WMSizeHints) >> 2, &hints);
+    }
+
     void WindowData::create()
     {
       const unsigned event_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK ;
@@ -325,6 +495,11 @@ namespace nyx
       data().monitor = monitor_id ;
     }
     
+    void Window::setTitle( const char* value )
+    {
+      data().title = value ;
+    }
+
     void Window::setFullscreen( bool value )
     {
       data().fullscreen = value ; 
@@ -338,6 +513,11 @@ namespace nyx
     void Window::setBorderless( bool value )
     {
       data().borderless = value ;
+      
+      if( data().connection )
+      {
+        data().setWindowBorderless( value ) ;
+      }
     }
 
     void Window::setMinimize( bool value )

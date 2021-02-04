@@ -108,6 +108,11 @@ namespace nyx
        */
       void setBorderless( bool value ) ;
       
+      /** Method to set the title of the window.
+       * @param value The title of the window.
+       */
+      void setTitle( const char* title ) ;
+
       /** Method to set whether or not the window should be minimized or not.
        * @param value Whether or not the window should be minimized.
        */
@@ -192,6 +197,12 @@ namespace nyx
   void BaseWindow<OS, Framework>::setResizable( bool value )
   {
     this->os_window.setResizable( value ) ;
+  }
+  
+  template<typename OS, typename Framework>
+  void BaseWindow<OS, Framework>::setTitle( const char* value )
+  {
+    this->os_window.setTitle( value ) ;
   }
 
   template<typename OS, typename Framework>
