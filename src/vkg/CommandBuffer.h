@@ -34,7 +34,7 @@ namespace nyx
   template<typename Impl, typename Type>
   class Array ;
   
-  enum class PipelineStage ;
+  enum class PipelineStage : unsigned ;
   namespace vkg
   {
     /** Forward declared library objects.

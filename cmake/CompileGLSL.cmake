@@ -70,7 +70,7 @@ FUNCTION( GLSL_COMPILE )
         ADD_CUSTOM_COMMAND(
           POST_BUILD
           OUTPUT ${NAME}_compilation
-          COMMAND nyxmaker -v -i ${GLSL_INCLUDE_DIR} ${TARGETS} -o ${NYXFILE_DIR}/${NAME}
+          COMMAND nyxmaker -v -h -i ${GLSL_INCLUDE_DIR} ${TARGETS} -o ${NYXFILE_DIR}/${NAME}
           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
 

@@ -78,7 +78,7 @@ namespace nyx
      */
     static inline nyx::ShaderStage nyxStageFromVulkan( const vk::ShaderStageFlagBits& flag ) ;
 
-    struct KgShaderData
+    struct NyxShaderData
     {
       using SPIRVMap      = std::map<vk::ShaderStageFlagBits, vk::ShaderModuleCreateInfo> ; ///< TODO
       using ShaderModules = std::map<nyx::ShaderStage, vk::ShaderModule>                  ; ///< TODO
@@ -119,7 +119,7 @@ namespace nyx
 
       /** Default constructor.
        */
-      KgShaderData() ;
+      NyxShaderData() ;
     };
     
     unsigned numIterationsFromType( const char* type )
@@ -251,12 +251,12 @@ namespace nyx
       }
     }
 
-    KgShaderData::KgShaderData()
+    NyxShaderData::NyxShaderData()
     {
       this->rate = vk::VertexInputRate::eVertex ;
     }
     
-    void KgShaderData::parse()
+    void NyxShaderData::parse()
     {
       std::map<std::string, ::vk::DescriptorSetLayoutBinding> binding_map ;
       vk::DescriptorSetLayoutBinding                          binding     ;
@@ -331,7 +331,7 @@ namespace nyx
       
     }
     
-    void KgShaderData::makeDescriptorLayout()
+    void NyxShaderData::makeDescriptorLayout()
     {
       vk::DescriptorSetLayoutCreateInfo info ;
       
@@ -341,7 +341,7 @@ namespace nyx
       this->layout = this->device.device().createDescriptorSetLayout( info, nullptr ) ;
     }
     
-    void KgShaderData::makeShaderModules()
+    void NyxShaderData::makeShaderModules()
     {
       vk::ShaderModule mod ;
       
@@ -355,7 +355,7 @@ namespace nyx
       }
     }
     
-    void KgShaderData::makePipelineShaderInfos()
+    void NyxShaderData::makePipelineShaderInfos()
     {
       vk::PipelineShaderStageCreateInfo info ;
       unsigned iter ;
@@ -376,12 +376,12 @@ namespace nyx
 
     NyxShader::NyxShader()
     {
-      this->shader_data = new KgShaderData() ;
+      this->shader_data = new NyxShaderData() ;
     }
 
     NyxShader::NyxShader( const NyxShader& shader )
     {
-      this->shader_data = new KgShaderData() ;
+      this->shader_data = new NyxShaderData() ;
       
       *this->shader_data = *shader.shader_data ;
     }
@@ -410,6 +410,20 @@ namespace nyx
       data().device = Vulkan::device( device ) ;
       
       data().nyxfile.load( nyx_path ) ;
+      
+      data().parse() ;
+      data().makeDescriptorLayout()    ;
+      data().makeShaderModules()       ;
+      data().makePipelineShaderInfos() ;
+   }
+
+    void NyxShader::initialize( unsigned device, const unsigned char* nyx_bytes, unsigned size )
+    {
+      if( !Vulkan::initialized() ) Vulkan::initialize() ;
+
+      data().device = Vulkan::device( device ) ;
+      
+      data().nyxfile.load( nyx_bytes, size ) ;
       
       data().parse() ;
       data().makeDescriptorLayout()    ;
@@ -539,12 +553,12 @@ namespace nyx
       data().infos      .clear() ;
     }
 
-    KgShaderData& NyxShader::data()
+    NyxShaderData& NyxShader::data()
     {
       return *this->shader_data ;
     }
 
-    const KgShaderData& NyxShader::data() const
+    const NyxShaderData& NyxShader::data() const
     {
       return *this->shader_data ;
     }

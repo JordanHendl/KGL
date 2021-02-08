@@ -16,13 +16,10 @@
  */
 
 /* 
- * File:   Library.cpp
- * Author: Jordan Hendl
+ * File:   Computer.cpp
+ * Author: jhendl
  * 
- * Created on December 30, 2020, 8:15 PM
+ * Created on February 6, 2021, 9:41 PM
  */
 
-#include "Library.h"
-
-
-
+#include "Computer.h"

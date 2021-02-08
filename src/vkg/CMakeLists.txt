@@ -11,6 +11,7 @@ IF( ${Vulkan_FOUND} )
          Instance.cpp
          Image.cpp
          RenderPass.cpp
+         Renderer.cpp
          Queue.cpp
          Synchronization.cpp
          Pipeline.cpp
@@ -27,6 +28,7 @@ IF( ${Vulkan_FOUND} )
          Instance.h
          Image.h
          RenderPass.h
+         Renderer.h
          Synchronization.h
          Queue.h
          Pipeline.h

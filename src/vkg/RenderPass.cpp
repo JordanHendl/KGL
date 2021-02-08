@@ -144,10 +144,10 @@ namespace nyx
       
       this->sub_dependencies.push_back( dependency ) ;
       this->sub_descriptions.push_back( sub_desc   ) ;
-      this->width   = 0 ;
-      this->height  = 0 ;
-      this->layers  = 0 ;
-      this->current = 0 ;
+      this->width   = 1280 ;
+      this->height  = 720  ;
+      this->layers  = 1    ;
+      this->current = 0    ;
     }
     
     ::vk::RenderPass RenderPassData::makeRenderPass()
@@ -168,13 +168,17 @@ namespace nyx
 
     void RenderPassData::makeFramebuffers()
     {
-      vk::FramebufferCreateInfo info      ;
-      unsigned                  index     ;
-      vk::ImageView             view[ 1 ] ;
+      constexpr unsigned num_buffers = 3 ;
 
+      vk::FramebufferCreateInfo info        ;
+      unsigned                  index       ;
+      vk::ImageView             view[ 1 ]   ;
       index = 0 ;
       info.setRenderPass( this->render_pass ) ;
       
+      this->images      .resize( num_buffers ) ;
+      this->framebuffers.resize( num_buffers ) ;
+
       for( auto& image : this->images )
       {
         auto format = nyx::vkg::Vulkan::convert( this->attach_descriptions[ 0 ].format ) ;
@@ -260,6 +264,9 @@ namespace nyx
       
       data().area.extent.width  = data().width  ;
       data().area.extent.height = data().height ;
+
+      data().viewports[ 0 ].width  = data().width ;
+      data().viewports[ 0 ].height = data().height ;
       data().render_pass = data().makeRenderPass() ;
       data().makeFramebuffers() ;
     }
@@ -444,13 +451,13 @@ namespace nyx
     void RenderPass::setFramebufferWidth( unsigned width )
     {
       data().area.extent.width = width ;
-      data().width = width ;
+      data().width             = width ;
     }
 
     void RenderPass::setFramebufferHeight( unsigned height )
     {
       data().area.extent.height = height ;
-      data().height = height ;
+      data().height             = height ;
     }
 
     void RenderPass::setFramebufferLayers( unsigned layers )
@@ -458,49 +465,62 @@ namespace nyx
       data().layers = layers ;
     }
 
-    void RenderPass::setAttachmentNumSamples( const ::vk::SampleCountFlagBits& flags, unsigned idx )
+    void RenderPass::setAttachmentNumSamples( unsigned num_samples, unsigned idx )
     {
+      vk::SampleCountFlagBits flags ;
+      switch( num_samples )
+      {
+        case 1  : flags = vk::SampleCountFlagBits::e1  ; break ;
+        case 2  : flags = vk::SampleCountFlagBits::e2  ; break ;
+        case 4  : flags = vk::SampleCountFlagBits::e4  ; break ;
+        case 8  : flags = vk::SampleCountFlagBits::e8  ; break ;
+        case 16 : flags = vk::SampleCountFlagBits::e16 ; break ;
+        case 32 : flags = vk::SampleCountFlagBits::e32 ; break ;
+        case 64 : flags = vk::SampleCountFlagBits::e64 ; break ;
+        default : flags = vk::SampleCountFlagBits::e1  ; break ;
+      }
+
       if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setSamples( flags ) ;
     }
 
-    void RenderPass::setAttachmentLoadOp( const ::vk::AttachmentLoadOp& op, unsigned idx  )
+    void RenderPass::setAttachmentLoad( bool val, unsigned idx  )
     {
-      if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setLoadOp( op ) ;
+      if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setLoadOp( val ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eClear ) ;
     }
 
-    void RenderPass::setAttachmentStoreOp( const ::vk::AttachmentStoreOp& op, unsigned idx )
+    void RenderPass::setAttachmentStore( bool val, unsigned idx )
     {
-      if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setStoreOp( op ) ;
+      if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setStoreOp( val ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare ) ;
     }
 
-    void RenderPass::setAttachmentStencilLoadOp( const ::vk::AttachmentLoadOp& op, unsigned idx )
+    void RenderPass::setAttachmentStencilLoad( bool val, unsigned idx )
     {
-      if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setStencilLoadOp( op ) ;
+      if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setStencilLoadOp( val ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eDontCare ) ;
     }
 
-    void RenderPass::setAttachmentStencilStoreOp( const ::vk::AttachmentStoreOp& op, unsigned idx )
+    void RenderPass::setAttachmentStencilStore( bool val, unsigned idx )
     {
-      if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setStencilStoreOp( op ) ;
+      if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setStencilStoreOp( val ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare ) ;
     }
 
-    void RenderPass::setAttachmentInitialLayout( const ::vk::ImageLayout& layout, unsigned idx )
+    void RenderPass::setAttachmentInitialLayout( const nyx::ImageLayout& layout, unsigned idx )
     {
-      if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setInitialLayout( layout ) ;
+      if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setInitialLayout( vkg::Vulkan::convert( layout ) ) ;
     }
 
-    void RenderPass::setAttachmentFinalLayout( const ::vk::ImageLayout& layout, unsigned idx )
+    void RenderPass::setAttachmentFinalLayout( const nyx::ImageLayout& layout, unsigned idx )
     {
-      if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setFinalLayout( layout ) ;
+      if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setFinalLayout( vkg::Vulkan::convert( layout ) ) ;
     }
 
-    void RenderPass::setAttachmentFormat( const ::vk::Format& format, unsigned idx )
+    void RenderPass::setAttachmentFormat( const nyx::ImageFormat& format, unsigned idx )
     {
-      if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setFormat( format ) ;
+      if( idx < data().attach_descriptions.size() ) data().attach_descriptions[ idx ].setFormat( vkg::Vulkan::convert( format ) ) ;
     }
 
-    void RenderPass::setReferenceLayout( const ::vk::ImageLayout& layout, unsigned idx )
+    void RenderPass::setReferenceLayout( const nyx::ImageLayout& layout, unsigned idx )
     {
-      if( idx < data().attach_references.size() ) data().attach_references[ idx ].setLayout( layout ) ;
+      if( idx < data().attach_references.size() ) data().attach_references[ idx ].setLayout( vkg::Vulkan::convert( layout ) ) ;
     }
 
     void RenderPass::setSubpassPipelineBindPoint( const ::vk::PipelineBindPoint& point, unsigned idx )

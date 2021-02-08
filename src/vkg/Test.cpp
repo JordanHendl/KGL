@@ -28,6 +28,9 @@
 #include <library/Image.h>
 #include <library/Window.h>
 #include <template/List.h>
+#include <library/Renderer.h>
+#include <nyxfile/NyxFile.h>
+#include <shaders/headers/draw.h>
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <algorithm>
@@ -36,7 +39,6 @@
 #include <athena/Manager.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#include "nyxfile/NyxFile.h"
 
 constexpr unsigned device = 0 ;
 
@@ -375,6 +377,19 @@ athena::Result test_image_size()
   return true ;
 }
 
+athena::Result test_renderer_init()
+{
+  nyx::Renderer<Impl, nyx::ImageFormat::RGBA8> renderer ;
+  nyx::RGBAImage<Impl>                         image    ;
+
+  renderer.setDimensions( 1920, 1080 ) ;
+  renderer.initialize( device, nyx::bytes::draw, sizeof( nyx::bytes::draw ) ) ;
+  image = renderer.framebuffer<0>() ;
+  
+  if( image.width() != 1920 || image.height() != 1080 ) return false ;
+  return true ;
+}
+
 athena::Result pipeline_test()
 {
   Impl::Array<float>   data     ;
@@ -504,6 +519,7 @@ athena::Result test_image_copy()
   
   return true ;
 }
+
 int main()
 {
   manager.initialize( "Nyx VULKAN Library" ) ;
@@ -524,7 +540,8 @@ int main()
   manager.add( "15) Image::initialize Test"              , &test_image_initialization     ) ;
   manager.add( "16) Image::size Test"                    , &test_image_size               ) ;
   manager.add( "17) Image::copy Test"                    , &test_image_copy               ) ;
-  manager.add( "18) Pipeline Test"                       , &pipeline_test                 ) ;
+  manager.add( "18) Renderer::initialize Test"           , &test_renderer_init            ) ;
+  manager.add( "29) Pipeline Test"                       , &pipeline_test                 ) ;
   
   return manager.test( athena::Output::Verbose ) ;
 }

@@ -16,23 +16,10 @@
  */
 
 /* 
- * File:   Library.h
- * Author: Jordan Hendl
- *
- * Created on December 30, 2020, 8:15 PM
+ * File:   Renderer.cpp
+ * Author: jhendl
+ * 
+ * Created on February 6, 2021, 3:43 PM
  */
 
-#ifndef LIBRARY_H
-#define LIBRARY_H
-
-namespace nyx
-{
-  class Library
-  {
-    public:
-    private:
-  };
-}
-
-#endif /* LIBRARY_H */
-
+#include "Renderer.h"

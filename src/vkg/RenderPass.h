@@ -56,7 +56,7 @@ namespace nyx
   /** Forward declared image layout.
    */
   enum class ImageLayout : unsigned ;
-
+  enum class ImageFormat : unsigned ;
   namespace vkg
   {
     class Device    ;
@@ -260,55 +260,55 @@ namespace nyx
          * @param flags The number of samples to use for the selected attachment.
          * @param idx The index of attachment to apply the parameter to.
          */
-        void setAttachmentNumSamples( const ::vk::SampleCountFlagBits& flags, unsigned idx = 0 ) ;
+        void setAttachmentNumSamples( unsigned num_samples, unsigned idx = 0 ) ;
         
         /** Method to set the load operation of the attachment at the specified index.
          * @param op The operation to use for loading the attachment.
          * @param idx The number of attachment to apply the load operation to.
          */
-        void setAttachmentLoadOp( const ::vk::AttachmentLoadOp& op, unsigned idx = 0  ) ;
+        void setAttachmentLoad( bool val, unsigned idx = 0  ) ;
         
         /** Method to set the store operation of the attachment at the specified index.
          * @param op The operation to use for store the attachment.
          * @param idx The number of attachment to apply the store operation to.
          */
-        void setAttachmentStoreOp( const ::vk::AttachmentStoreOp& op, unsigned idx = 0 ) ;
+        void setAttachmentStore( bool val, unsigned idx = 0 ) ;
         
         /** Method to set the stencil load operation of the attachment at the specified index.
          * @param op The operation to use for loading the stencil attachment.
          * @param idx The number of attachment to apply the stencil load operation to.
          */
-        void setAttachmentStencilLoadOp( const ::vk::AttachmentLoadOp& op, unsigned idx = 0 ) ;
+        void setAttachmentStencilLoad( bool val, unsigned idx = 0 ) ;
         
         /** Method to set the stencil store operation of the attachment at the specified index.
          * @param op The operation to use for storing the stencil attachment.
          * @param idx The number of attachment to apply the stencil store operation to.
          */
-        void setAttachmentStencilStoreOp( const ::vk::AttachmentStoreOp& op, unsigned idx = 0 ) ;
+        void setAttachmentStencilStore( bool val, unsigned idx = 0 ) ;
         
         /** Method to set the initial layout of the attachment at the specified index.
          * @param layout The initial layout to use for the attachment.
          * @param idx The number of attachment to apply layout to.
          */
-        void setAttachmentInitialLayout( const ::vk::ImageLayout& layout, unsigned idx = 0 ) ;
+        void setAttachmentInitialLayout( const nyx::ImageLayout& layout, unsigned idx = 0 ) ;
         
         /** Method to set the final layout of the attachment at the specified index.
          * @param layout The final layout to use for the attachment.
          * @param idx The number of attachment to apply layout to.
          */
-        void setAttachmentFinalLayout( const ::vk::ImageLayout& layout, unsigned idx = 0 ) ;
+        void setAttachmentFinalLayout( const nyx::ImageLayout& layout, unsigned idx = 0 ) ;
         
         /** Method to set the attachment format for the attachment at the specified index.
          * @param format The format to use for the specified attachment.
          * @param idx The index of attachment to apply the format to.
          */
-        void setAttachmentFormat( const ::vk::Format& format, unsigned idx = 0 ) ;
+        void setAttachmentFormat( const nyx::ImageFormat& format, unsigned idx = 0 ) ;
         
         /** Method to set the layout of the attachment reference at the specified index.
          * @param layout The layout to apply to the reference.
          * @param idx The index of reference to apply the layout to.
          */
-        void setReferenceLayout( const ::vk::ImageLayout& layout, unsigned idx = 0 ) ;
+        void setReferenceLayout( const nyx::ImageLayout& layout, unsigned idx = 0 ) ;
         
         /** Method to set the pipeline bind point of the specified subpass.
          * @param point The pipeline bind point to apply to the subpass.

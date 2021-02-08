@@ -3,6 +3,8 @@ SET( NYX_LIBRARY_SOURCES
      Array.cpp
      Image.cpp
      Window.cpp
+     Renderer.cpp
+     Nyx.cpp
    )
       
 SET( NYX_LIBRARY_HEADERS
@@ -10,6 +12,8 @@ SET( NYX_LIBRARY_HEADERS
      Array.h
      Image.h
      Window.h
+     Renderer.h
+     Nyx.h
    )
 
 SET( NYX_LIBRARY_INCLUDE_DIRS

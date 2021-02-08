@@ -193,6 +193,11 @@ namespace nyx
          * @return The layout of this image.
          */
         nyx::ImageLayout layout() const ;
+        
+        /** Method to retrieve the format of this image.
+         * @return The format of this image.
+         */
+        nyx::ImageFormat format() const ;
 
         /** Method to transition this object's layout to the specified one on the GPU.
          * @param layout The layout to transition this image to.

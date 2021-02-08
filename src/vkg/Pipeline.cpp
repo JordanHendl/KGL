@@ -233,25 +233,49 @@ namespace nyx
       return data().pipeline ;
     }
 
-    void Pipeline::initialize( unsigned device, const char* kg_path )
+    void Pipeline::initialize( unsigned device, const char* nyx_file )
     {
       Vulkan::initialize() ;
 
       data().device = Vulkan::device( device ) ;
-      data().shader.initialize( device, kg_path ) ;
+      data().shader.initialize( device, nyx_file ) ;
       
       data().createLayout() ;
       data().createPipeline() ;
     }
 
-    void Pipeline::initialize( const nyx::vkg::RenderPass& pass, const char* kg_path )
+    void Pipeline::initialize( const nyx::vkg::RenderPass& pass, const char* nyx_file )
     {
       if( !Vulkan::initialized() ) Vulkan::initialize() ;
 
       data().render_pass = pass                            ;
       data().device      = Vulkan::device( pass.device() ) ;
 
-      data().shader.initialize( pass.device(), kg_path ) ;
+      data().shader.initialize( pass.device(), nyx_file ) ;
+      
+      data().createLayout() ;
+      data().createPipeline() ;
+    }
+    
+    void Pipeline::initialize( unsigned device, const unsigned char* nyx_bytes, unsigned size )
+    {
+      Vulkan::initialize() ;
+
+      data().device = Vulkan::device( device ) ;
+      data().shader.initialize( device, nyx_bytes, size ) ;
+      
+      data().createLayout() ;
+      data().createPipeline() ;
+    }
+
+    void Pipeline::initialize( const nyx::vkg::RenderPass& pass, const unsigned char* nyx_bytes, unsigned size )
+    {
+      if( !Vulkan::initialized() ) Vulkan::initialize() ;
+
+      data().render_pass = pass                            ;
+      data().device      = Vulkan::device( pass.device() ) ;
+
+      data().shader.initialize( pass.device(), nyx_bytes, size ) ;
       
       data().createLayout() ;
       data().createPipeline() ;
