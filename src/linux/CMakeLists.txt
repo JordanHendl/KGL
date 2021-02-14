@@ -1,6 +1,6 @@
 FIND_PACKAGE( X11 ) 
 
-IF( ${X11_FOUND} )
+IF( UNIX AND NOT APPLE )
 
   SET( NYX_LINUX_SOURCES 
        Linux.cpp

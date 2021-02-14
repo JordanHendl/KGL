@@ -25,6 +25,7 @@
 #define VULKAN_HPP_NO_EXCEPTIONS
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
+#define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
 
 #include "Image.h"
 #include "Device.h"
@@ -224,7 +225,6 @@ namespace nyx
       info.setSrcSubresource( src.data().subresource ) ;
       info.setDstSubresource( data().subresource     ) ;
       
-      
       this->transition( nyx::vkg::Vulkan::convert( vk::ImageLayout::eTransferDstOptimal ), queue ) ; 
       src .transition ( nyx::vkg::Vulkan::convert( vk::ImageLayout::eTransferSrcOptimal ), queue ) ; 
       
@@ -394,6 +394,11 @@ namespace nyx
     nyx::ImageLayout Image::layout() const
     {
       return vkg::Vulkan::convert( data().layout ) ;
+    }
+    
+    nyx::ImageFormat Image::format() const
+    {
+      return vkg::Vulkan::convert( data().format ) ;
     }
 
     void Image::transition( const nyx::ImageLayout& layout, nyx::vkg::Queue& queue ) const

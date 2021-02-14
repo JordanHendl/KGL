@@ -25,6 +25,7 @@
 #define VULKAN_HPP_NO_EXCEPTIONS
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
+#define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
 
 #include "Device.h"
 #include "Queue.h"

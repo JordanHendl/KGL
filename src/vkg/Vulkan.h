@@ -29,6 +29,7 @@
 #include "Pipeline.h"
 #include "Swapchain.h"
 #include "Descriptor.h"
+#include "Renderer.h"
 
 typedef unsigned VkFlags            ;
 typedef VkFlags  VkImageUsageFlags  ;
@@ -70,6 +71,10 @@ namespace nyx
    */
   enum class ImageFormat : unsigned ;
   
+  /** Forward declared enum for a pipeline stage.
+   */
+  enum class PipelineStage : unsigned ;
+
   /** Forward decalred enum for image layout.
    */
   enum class ImageLayout : unsigned ;
@@ -109,14 +114,6 @@ namespace nyx
     class Window ;
   }
   
-    enum class PipelineStage
-  {
-    Vertex,
-    Fragment,
-    Compute,
-    TessC,
-  };
-  
   namespace vkg
   {
     /** Forward declared device declaration.
@@ -130,8 +127,6 @@ namespace nyx
     /** Forward declared image declaration.
      */
     class Image ;
-    
-
       
     /** Class that implements Vulkan functionality.
      */
@@ -154,6 +149,9 @@ namespace nyx
         using Shader          = nyx::vkg::NyxShader       ; ///< The object to manage an individual vulkan shader.
         using Swapchain       = nyx::vkg::Swapchain       ; ///< The object to manage a window's framebuffers.
         using Synchronization = nyx::vkg::Synchronization ; ///< The object used to manage synchronization in this library.
+
+        template<nyx::ImageFormat ... Formats>
+        using Renderer = nyx::vkg::Renderer<Formats...> ;
 
         template<typename Type>
         using Array  = nyx::Array <nyx::vkg::Vulkan, Type> ;
@@ -229,6 +227,7 @@ namespace nyx
               Not_Ready,             ///< Device is not yet ready to do the operation.
               Incomplete,            ///< The operation was incomplete.
               OutOfHostMemory,       ///< Host memory has been depleted.
+              OutOfDeviceMemory,     ///< Device memory has been depleted.
               DeviceLost,            ///< Device has been lost aka shits fucked up.
               FeatureNotPresent,     ///< The feature is not present in this system.
               ExtensionNotPresent,   ///< The requested extension is not present in this system ( should be fine though ).
@@ -418,6 +417,7 @@ namespace nyx
         friend class nyx::vkg::Swapchain         ;
         friend class nyx::vkg::SwapchainData     ;
         friend class nyx::vkg::Synchronization   ;
+        friend class nyx::vkg::RendererImpl      ;
 
         /** Default constructor.
          */

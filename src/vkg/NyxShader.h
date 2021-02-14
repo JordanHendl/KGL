@@ -127,9 +127,16 @@ namespace nyx
         
         /** Method to initialize this shader with the provided input.
          * @param device The library device to use for all vulkan operations.
-         * @param kg_path The C-string path to the .kg file in the filesystem.
+         * @param nyx_path The C-string path to the .nyx file in the filesystem.
          */
         void initialize( unsigned device, const char* nyx_path ) ;
+        
+        /** Method to initialize this shader with the provided input.
+         * @param device The library device to use for all vulkan operations.
+         * @param nyx_path The C-string path to the .nyx file in the filesystem.
+         * @param size The size of the byte array in elements.
+         */
+        void initialize( unsigned device, const unsigned char* nyx_bytes, unsigned size ) ;
         
         /** Method to initialize this shader with the provided input.
          * @note Initializes all data set manually.
@@ -223,17 +230,17 @@ namespace nyx
         
         /** Forward Declared structure to contain this object's internal data.
          */
-        struct KgShaderData *shader_data ;
+        struct NyxShaderData *shader_data ;
         
         /** Method to retrieve a reference to this object's internal data.
          * @return Reference to this object's internal data.
          */
-        KgShaderData& data() ;
+        NyxShaderData& data() ;
         
         /** Method to retrieve a const-reference to this object's internal data.
          * @return Const-reference to this object's internal data.
          */
-        const KgShaderData& data() const ;
+        const NyxShaderData& data() const ;
     };
   }
 }

@@ -15,49 +15,35 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Memory.h"
+/* 
+ * File:   Computer.h
+ * Author: jhendl
+ *
+ * Created on February 6, 2021, 9:41 PM
+ */
+#pragma once
+
+#include "Array.h"
 
 namespace nyx
 {
-    MemoryFlags::MemoryFlags()
+  template<typename Framework>
+  class Computer
   {
-    this->bit = MemoryFlags::DeviceLocal ;
-  }
-  
-  MemoryFlags::MemoryFlags( int flags )
-  {
-    this->set( flags ) ;
-  }
+    public:
+      Computer() ;
+      void initialize( const char* nyx_file_path ) ;
+      void initialize( const unsigned char* nyx_file_bytes ) ;
+      void dispatch() ;
+      operator const typename Framework::Computer&() const ;
+      template<typename Type>
+      void bind( const char* name, const nyx::Array<Framework, Type>& array ) ;
+      template<typename Type>
+      void push( const Type& value ) ;
 
-  MemoryFlags& MemoryFlags::operator=( int flag )
-  {
-    this->set( flag ) ;
-    
-    return *this ;
-  }
-  
-  MemoryFlags& MemoryFlags::operator|( int flag )
-  {
-    this->set( this->bit | flag ) ;
-    
-    return *this ;
-  }
-  
-  MemoryFlags::operator int() const
-  {
-    return this->value() ;
-  }
-  
-  int MemoryFlags::value() const
-  {
-    return this->bit ;
-  }
-  
-  void MemoryFlags::set( int value )
-  {
-    this->bit = value ;
-  }
+      void reset() ;
+    private:
+      typename Framework::Computer impl ;
+  };
 }
-
-
 

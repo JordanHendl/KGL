@@ -22,8 +22,9 @@
  * Created on December 27, 2020, 2:46 PM
  */
 
-#ifndef NYX_IMAGE_H
-#define NYX_IMAGE_H
+#pragma once
+
+#include "Nyx.h"
 
 namespace nyx
 {
@@ -93,6 +94,12 @@ namespace nyx
        */
       Image( const Image<Impl, Format>& image ) ;
       
+      /** Copy constructor with an framework's texture object as input. Copies texture object into this one.
+       * @warning This CAN take in a texture of the incorrect 
+       * @param texture
+       */
+      Image( const typename Impl::Texture& texture ) ;
+
       /** Default deconstructor.
        */
       ~Image() = default ;
@@ -106,7 +113,6 @@ namespace nyx
       /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
        */
       operator const typename Impl::Texture&() const ;
-      
 
       /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
        */
@@ -227,11 +233,20 @@ namespace nyx
   {
     *this = image ;
   }
-
+  
+  template<typename Impl, ImageFormat Format>
+  Image<Impl, Format>::Image( const typename Impl::Texture& image )
+  {
+    if( image.format() != Format ) nyx::handleError( nyx::Error::InvalidImageConversion ) ;
+    this->impl_image = image ;
+  }
+  
   template<typename Impl, ImageFormat Format>
   Image<Impl, Format>& Image<Impl, Format>::operator=( const Image<Impl, Format>& image )
   {
     this->impl_image = image.impl_image ;
+    
+    return *this ;
   }
 
   template<typename Impl, ImageFormat Format>
@@ -369,6 +384,3 @@ namespace nyx
   template<typename Impl>
   using RGBA32FImage = nyx::Image<Impl, ImageFormat::RGBA32F> ;
 }
-
-#endif /* IMAGE_H */
-

@@ -18,12 +18,13 @@
 #define VULKAN_HPP_NO_EXCEPTIONS
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
-
+#define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
 #include "Vulkan.h"
 #include "Device.h"
 #include "library/Image.h"
 #include <algorithm>
 #include <iostream>
+#include <library/Renderer.h>
 #include <library/Memory.h>
 #include <vector>
 #include <string>
@@ -134,7 +135,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
     {
       auto severity = error.severity() ;
 
-      std::cout << colorFromSeverity( severity ) << "-- " << severity.toString() << " | " << "Nyx::vkg Error: " << error.toString() << "." << vkg::END_COLOR << std::endl ;
+      std::cout << colorFromSeverity( severity ) << "-- " << severity.toString() << " | " << "Nyx::vkg Error: " << error.toString() << "" << vkg::END_COLOR << std::endl ;
       if( severity == Vulkan::Severity::Fatal ) exit( -1 ) ;
     }
 
@@ -216,6 +217,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case Error::SuboptimalKHR        : return "SuboptimalKHR: The VKG surface is not compatible with the window"                       ;
         case Error::OutOfDataKHR         : return "OutOfDataKHR: The VKG swapchain is not capable of presenting to the specified surface." ;
         case Error::InitializationFailed : return "InitializationFailed: Vulkan initialization failed!"                                    ;
+        case Error::OutOfDeviceMemory    : return "Out of device memory: Device memory available has been depleted."                       ;
         default : return "Unknown Error" ;
       }
     }
@@ -230,6 +232,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case Error::SuboptimalKHR        : return Severity::Warning ;
         case Error::OutOfDataKHR         : return Severity::Fatal   ;
         case Error::InitializationFailed : return Severity::Fatal   ;
+        case Error::OutOfDeviceMemory    : return Severity::Fatal   ;
         default : return Severity::Fatal ;
       }
     }
@@ -275,7 +278,6 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
     {
       data.validation_layers.push_back( layer_name ) ;
     }
-    
 
     void Vulkan::setErrorHandler( void ( *error_handler )( nyx::vkg::Vulkan::Error ) )
     {
@@ -314,6 +316,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case vk::Result::eErrorInitializationFailed : return Vulkan::Error::InitializationFailed ;
         case vk::Result::eErrorOutOfDateKHR         : return Vulkan::Error::RecreateSwapchain    ;
         case vk::Result::eSuboptimalKHR             : return Vulkan::Error::RecreateSwapchain    ;
+        case vk::Result::eErrorOutOfDeviceMemory    : return Vulkan::Error::OutOfDeviceMemory    ;
         default : return Vulkan::Error::Unknown ;
       }
     }

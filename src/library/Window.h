@@ -123,6 +123,16 @@ namespace nyx
        */
       void setMaximized( bool value ) ;
       
+      /** Method to retrieve the width of this window in pixels.
+       * @return The width of this window in pixels.
+       */
+      unsigned width() const ;
+      
+      /** Method to retrieve the height of this window in pixels.
+       * @return The height of this window in pixels.
+       */
+      unsigned height() const ;
+
       /** Method to retrieve the Library-OS specific window from this object.
        * @return The Library-OS specific window from this object.
        */
@@ -235,6 +245,18 @@ namespace nyx
     return this->os_window ;
   }
   
+  template<typename OS, typename Framework>
+  unsigned BaseWindow<OS, Framework>::width() const
+  {
+    return this->os_window.width() ;
+  }
+  
+  template<typename OS, typename Framework>
+  unsigned BaseWindow<OS, Framework>::height() const
+  {
+    return this->os_window.height() ;
+  }
+
   template<typename OS, typename Framework>
   void BaseWindow<OS, Framework>::handleEvents()
   {

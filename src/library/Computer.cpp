@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Jordan Hendl
+ * Copyright (C) 2020 Jordan Hendl
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,29 +16,10 @@
  */
 
 /* 
- * File:   Nyx.h
- * Author: Jordan Hendl
- *
- * Created on January 28, 2021, 7:23 AM
+ * File:   Computer.cpp
+ * Author: jhendl
+ * 
+ * Created on February 6, 2021, 9:41 PM
  */
 
-#ifndef NYXGLSL_H
-#define NYXGLSL_H
-
-#extension GL_EXT_buffer_reference    : enable 
-#extension GL_EXT_buffer_reference2   : enable 
-#extension GL_EXT_scalar_block_layout : enable 
-
-#define NyxBuffer layout( buffer_reference, buffer_reference_align=16, scalar ) buffer
-#define nyx_seek( iter  , pos  ) ( iter.position = pos < iter.position ? pos : iter.position ) ;
-#define nyx_get(  buff  , iter ) buff[ iter.position ]
-
-struct NyxIterator
-{
-  uint size         ;
-  uint element_size ;
-  uint position     ;
-};
-
-#endif /* NYXGLSL_H */
-
+#include "Computer.h"

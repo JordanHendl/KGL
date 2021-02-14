@@ -21,9 +21,11 @@
  * 
  * Created on January 14, 2021, 2:21 AM
  */
+
 #define VULKAN_HPP_NO_EXCEPTIONS
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
+#define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
 
 #include "Swapchain.h"
 #include "Synchronization.h"
@@ -175,9 +177,11 @@ namespace nyx
       {
         this->extent = this->capabilities.currentExtent ;
       }
-      
-      this->extent.width  = std::max( this->capabilities.minImageExtent.width , std::min( this->capabilities.maxImageExtent.width , this->extent.width  ) ) ;
-      this->extent.height = std::max( this->capabilities.minImageExtent.height, std::min( this->capabilities.maxImageExtent.height, this->extent.height ) ) ;
+      else
+      {
+        this->extent.width  = std::max( this->capabilities.minImageExtent.width , std::min( this->capabilities.maxImageExtent.width , this->extent.width  ) ) ;
+        this->extent.height = std::max( this->capabilities.minImageExtent.height, std::min( this->capabilities.maxImageExtent.height, this->extent.height ) ) ;
+      }
     }
     
     vk::PresentModeKHR SwapchainData::mode( vk::PresentModeKHR value ) 

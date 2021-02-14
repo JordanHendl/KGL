@@ -117,6 +117,16 @@ namespace nyx
         /** Method to reset this object to it's initial state.
          */
         void reset() ;
+        
+        /** Method to retrieve the width of this window in pixels.
+         * @return The width of this window in pixels
+         */
+        unsigned width() const ;
+
+        /** Method to retrieve the height of this window in pixels.
+         * @return The height of this window in pixels
+         */
+        unsigned height() const ;
 
         /** Method to retrieve the implementation-specific connection object.
          * @return The implementation-specific connection object.

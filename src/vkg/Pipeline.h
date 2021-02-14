@@ -79,15 +79,29 @@ namespace nyx
         
         /** Method to initialize this compute pipeline with the input shader.
          * @param device The device to use for generating this compute pipeline.
-         * @param kg_path The path to the KgShader file on disk to use for this pipeline.
+         * @param nyx_path The path to the NyxShader file on disk to use for this pipeline.
          */
-        void initialize( unsigned device, const char* kg_path ) ;
+        void initialize( unsigned device, const char* nyx_path ) ;
 
         /** Method to initialize this graphics pipeline with the input renderpass and shader.
          * @param pass The render pass to use for this pipeline creation.
-         * @param kg_path The path to the KgShader file on disk to use for this pipeline.
+         * @param nyx_path The path to the NyxShader file on disk to use for this pipeline.
          */
-        void initialize( const nyx::vkg::RenderPass& pass, const char* kg_path ) ;
+        void initialize( const nyx::vkg::RenderPass& pass, const char* nyx_path ) ;
+        
+        /** Method to initialize this compute pipeline with the input shader.
+         * @param device The device to use for generating this compute pipeline.
+         * @param nyx_bytes The path to the NyxShader file on disk to use for this pipeline.
+         * @param size The size in bytes of the array.
+         */
+        void initialize( unsigned device, const unsigned char* nyx_bytes, unsigned size ) ;
+
+        /** Method to initialize this graphics pipeline with the input renderpass and shader.
+         * @param pass The render pass to use for this pipeline creation.
+         * @param nyx_bytes The path to the NyxShader file on disk to use for this pipeline.
+         * @param size The size in bytes of the array.
+         */
+        void initialize( const nyx::vkg::RenderPass& pass, const unsigned char* nyx_bytes, unsigned size ) ;
         
         /** Method to initialize this compute pipeline with the input shader.
          * @param shader The shader to use to describe this pipeline.

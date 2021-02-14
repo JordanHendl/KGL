@@ -30,6 +30,7 @@
 #include <xcb/xcb.h>
 #include <iostream>
 #include <unordered_map>
+#include <xcb/xproto.h>
 
 namespace nyx
 {
@@ -358,19 +359,9 @@ namespace nyx
       struct WMSizeHints hints ;
       hints.flags = WM_SIZE_HINT_P_WIN_GRAVITY ;
       hints.win_gravity = XCB_GRAVITY_STATIC ;
-//      {
-//        .flags       = WM_SIZE_HINT_P_WIN_GRAVITY,
-//        .win_gravity = XCB_GRAVITY_STATIC
-//      } ;
-      
-//      if ( centerWindow )
-//      hints.win_gravity = XCB_GRAVITY_CENTER;
-//      else
-//      {
-        hints.flags |= WM_SIZE_HINT_P_SIZE;
-        hints.x = this->width ;
-        hints.y = value ;
-//      }
+      hints.flags |= WM_SIZE_HINT_P_SIZE;
+      hints.x = this->width ;
+      hints.y = value ;
       
       xcb_change_property(this->connection, XCB_PROP_MODE_REPLACE, this->window,
         XCB_ATOM_WM_NORMAL_HINTS, XCB_ATOM_WM_SIZE_HINTS,
@@ -498,6 +489,10 @@ namespace nyx
     void Window::setTitle( const char* value )
     {
       data().title = value ;
+      if( data().connection )
+      {
+        xcb_change_property( data().connection, XCB_PROP_MODE_REPLACE, data().window, XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8, data().title.size(), data().title.c_str() ) ;
+      }
     }
 
     void Window::setFullscreen( bool value )
@@ -618,6 +613,16 @@ namespace nyx
       {
         xcb_disconnect( data().connection ) ;
       }
+    }
+    
+    unsigned Window::width() const
+    {
+      return data().width ;
+    }
+    
+    unsigned Window::height() const
+    {
+      return data().height ;
     }
 
     xcb_connection_t* Window::connection() const

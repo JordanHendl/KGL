@@ -100,7 +100,7 @@ namespace nyx
   
   /** Container for a KgFile's data.
    */
-  struct KgFileData
+  struct NyxFileData
   {
       std::string include_directory ;
       ShaderMap   map               ;
@@ -109,35 +109,35 @@ namespace nyx
      * @param stream The stream to read from
      * @return The string that has been read.
      */
-    std::string readString( std::ifstream& stream ) const ;
+    std::string readString( std::istream& stream ) const ;
 
     /** Method to read an unsigned integer from a file stream
      * @param stream The stream to read from.
      * @return The unsigned integer that has been read.
      */
-    unsigned readUnsigned( std::ifstream& stream ) const ;
+    unsigned readUnsigned( std::istream& stream ) const ;
 
     /** Method to read a boolean from a file stream.
      * @param stream The stream to read from.
      * @return The boolean that has been read.
      */
-    bool readBoolean( std::ifstream& stream ) const ;
+    bool readBoolean( std::istream& stream ) const ;
 
     /** Method to read a magic number from a file stream.
      * @param stream The stream to read from.
      * @return The magic number read.
      */
-    unsigned long long readMagic( std::ifstream& stream ) const ;
+    unsigned long long readMagic( std::istream& stream ) const ;
 
     /** Method to read SPIRV binary data from a file stream.
      * @param stream The stream to read from.
      * @param sz The side of the binary data that is in the stream.
      * @return Pointer to allocated memory of the loaded spirv binary.
      */
-    unsigned* readSpirv( std::ifstream& stream, unsigned sz ) const ;
+    unsigned* readSpirv( std::istream& stream, unsigned sz ) const ;
   };
 
-  std::string KgFileData::readString( std::ifstream& stream ) const
+  std::string NyxFileData::readString( std::istream& stream ) const
   {
     unsigned    sz  ;
     std::string out ;
@@ -149,7 +149,7 @@ namespace nyx
     return out ;
   }
 
-  unsigned KgFileData::readUnsigned( std::ifstream& stream ) const
+  unsigned NyxFileData::readUnsigned( std::istream& stream ) const
   {
     unsigned val ;
 
@@ -157,7 +157,7 @@ namespace nyx
     return val ;
   }
 
-  bool KgFileData::readBoolean( std::ifstream& stream ) const
+  bool NyxFileData::readBoolean( std::istream& stream ) const
   {
     bool val ;
 
@@ -165,7 +165,7 @@ namespace nyx
     return val ;
   }
 
-  unsigned long long KgFileData::readMagic( std::ifstream& stream ) const
+  unsigned long long NyxFileData::readMagic( std::istream& stream ) const
   {
     unsigned long long val ;
 
@@ -173,7 +173,7 @@ namespace nyx
     return val ;
   }
 
-  unsigned* KgFileData::readSpirv( std::ifstream& stream, unsigned sz ) const
+  unsigned* NyxFileData::readSpirv( std::istream& stream, unsigned sz ) const
   {
     unsigned* data = new unsigned[ sz ] ;
     stream.read( (char*)data, sz * sizeof( unsigned ) ) ;
@@ -302,7 +302,7 @@ namespace nyx
 
   NyxFile::NyxFile()
   {
-    this->compiler_data = new KgFileData() ;
+    this->compiler_data = new NyxFileData() ;
   }
 
   NyxFile::~NyxFile()
@@ -386,6 +386,73 @@ namespace nyx
       }
     }
   }
+  
+  void NyxFile::load( const unsigned char* bytes, unsigned size )
+  {
+    std::stringstream          stream  ;
+    std::string                str     ;
+    unsigned                   sz      ;
+    unsigned long long         magic   ;
+    ::nyx::Shader      shader  ;
+    ::nyx::Uniform     uniform ;
+    ::nyx::Attribute   attr    ;
+    data().map.clear() ;
+    
+    stream.write( reinterpret_cast<const char*>( bytes ), sizeof( unsigned char ) * size ) ;
+
+    magic = data().readMagic( stream ) ;        
+    if( magic != ::nyx::MAGIC ) /*TODO: LOG ERROR HERE */ return ;
+
+    sz = data().readUnsigned( stream ) ;
+    for( unsigned it = 0; it < sz; it++ )
+    {
+      const unsigned  spirv_size     = data().readUnsigned( stream             ) ;
+      const unsigned* spirv          = data().readSpirv   ( stream, spirv_size ) ;
+      const unsigned  stage          = data().readUnsigned( stream             ) ;
+      const unsigned  num_uniforms   = data().readUnsigned( stream             ) ;
+      const unsigned  num_attributes = data().readUnsigned( stream             ) ;
+
+      shader.spirv   .clear() ;
+      shader.uniforms.clear() ;
+
+      shader.spirv     .assign( spirv, spirv + spirv_size ) ;
+      shader.uniforms  .resize( num_uniforms              ) ;
+      shader.attributes.resize( num_attributes            ) ;
+      shader.stage = static_cast<::nyx::ShaderStage>( stage ) ;
+      for( unsigned index = 0; index < num_uniforms; index++ )
+      {
+         const std::string name         = data().readString  ( stream ) ;
+         const unsigned uniform_type    = data().readUnsigned( stream ) ;
+         const unsigned uniform_binding = data().readUnsigned( stream ) ;
+         const unsigned uniform_size    = data().readUnsigned( stream ) ;
+
+         uniform.name    = name                                            ;
+         uniform.type    = static_cast<::nyx::UniformType>( uniform_type ) ;
+         uniform.binding = uniform_binding                                 ;
+         uniform.size    = uniform_size                                    ;
+
+         shader.uniforms[ index ] = uniform ;
+      }
+      for( unsigned index = 0; index < num_attributes; index++ )
+      {
+        const std::string name  = data().readString  ( stream ) ;
+        const std::string type  = data().readString  ( stream ) ;
+        const unsigned    size  = data().readUnsigned( stream ) ;
+        const unsigned location = data().readUnsigned( stream ) ;
+        const bool     input    = data().readBoolean ( stream ) ;
+
+        attr.name     = name     ;
+        attr.location = location ;
+        attr.size     = size     ;
+        attr.type     = type     ;
+        attr.input    = input    ;
+
+        shader.attributes[ index ] = attr ;
+      }
+
+      data().map.insert( { shader.stage, shader } ) ;
+    }
+  }
 
   ShaderIterator NyxFile::begin() const
   {
@@ -408,12 +475,12 @@ namespace nyx
     return data().map.size() ;
   }
 
-  KgFileData& NyxFile::data()
+  NyxFileData& NyxFile::data()
   {
     return *this->compiler_data ;
   }
 
-  const KgFileData& NyxFile::data() const
+  const NyxFileData& NyxFile::data() const
   {
     return *this->compiler_data ;
   }
