@@ -24,6 +24,9 @@
 
 #pragma once
 
+#include "Renderer.h"
+
+
 
 namespace vk
 {
@@ -133,6 +136,7 @@ namespace nyx
         /** Friend declaration.
          */
         friend class DescriptorPool ;
+        friend class RendererImpl   ;
         
         /** Forward declared structure containing this object's data.
          */

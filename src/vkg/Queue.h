@@ -116,6 +116,11 @@ namespace nyx
          */
         unsigned device() const ;
         
+        /** Method to check whether or not this object is initialized.
+         * @return Whether or not this object is initialized.
+         */
+        bool initialized() const ;
+
         /** Method to submit a command to a queue.
          * @note This object handles concurrent CPU-side access to vulkan queues.
          * @param cmd_buff The command buffer to submit.

@@ -182,10 +182,11 @@ namespace nyx
       unsigned layers() const ;
       
       /** Method to resize this object to the desired width and height.
+       * @return Whether or not this object performed a resize.
        * @param width The width in pixels to resize this object to.
        * @param height The Height in pixels to resize this object to.
        */
-      void resize( unsigned width, unsigned height ) ;
+      bool resize( unsigned width, unsigned height ) ;
 
       /** Method to transition this image to a different layout.
        * @param layout The implementaion-specific layout to transition this image to.
@@ -211,6 +212,11 @@ namespace nyx
       /** Method to reset this image and deallocate any allocated data.
        */
       void reset() ;
+      
+      /** Method to retrieve the layout of this image.
+       * @return The layout of the image.
+       */
+      nyx::ImageLayout layout() const ;
       
       /** Method to return the a const-reference to the implementation-specific image handle this image contains.
        * @return Const-Reference to the implementation-specific image handle this image contains.
@@ -290,6 +296,12 @@ namespace nyx
   {
     return this->impl_image.device() ;
   }
+  
+  template<typename Impl, ImageFormat Format>
+  nyx::ImageLayout Image<Impl, Format>::layout() const
+  {
+    return this->impl_image.layout() ;
+  }
 
   template<typename Impl, ImageFormat Format>
   bool Image<Impl, Format>::initialized() const
@@ -346,7 +358,7 @@ namespace nyx
   }
   
   template<typename Impl, ImageFormat Format>
-  void Image<Impl, Format>::resize( unsigned width, unsigned height )
+  bool Image<Impl, Format>::resize( unsigned width, unsigned height )
   {
     return this->impl_image.resize( width, height ) ;
   }

@@ -44,6 +44,7 @@ namespace nyx
     using Impl = nyx::vkg::Vulkan ;
     struct ImageData
     {
+      mutable vkg::CommandBuffer buffer       ;
       vkg::Device                device       ; ///< The library device to use for all vulkan calls.
       nyx::Memory<Impl>          memory       ; ///< The underlying memory container.
       vk::MemoryRequirements     requirements ; ///< The memory requirements for this image.
@@ -180,7 +181,7 @@ namespace nyx
       info.setSamples      ( this->num_samples             ) ;
       info.setMipLevels    ( this->num_mip                 ) ;
       info.setArrayLayers  ( this->layers                  ) ;
-      info.setInitialLayout( this->layout                  ) ;
+      info.setInitialLayout( vk::ImageLayout::eUndefined   ) ;
       info.setSharingMode  ( ::vk::SharingMode::eExclusive ) ;
       info.setTiling       ( ::vk::ImageTiling::eOptimal   ) ;
 
@@ -214,7 +215,7 @@ namespace nyx
       vk::Extent3D  extent  ;
       vkg::CommandBuffer buffer ;
       
-      buffer.initialize( queue, 1 ) ;
+      if( data().buffer.size() == 0 ) data().buffer.initialize( queue, 1 ) ;
       extent.setHeight( std::min( this->height(), src.height() ) ) ;
       extent.setWidth ( std::min( this->width (), src.width () ) ) ;
       extent.setDepth ( std::min( this->layers(), src.layers() ) ) ;
@@ -228,15 +229,12 @@ namespace nyx
       this->transition( nyx::vkg::Vulkan::convert( vk::ImageLayout::eTransferDstOptimal ), queue ) ; 
       src .transition ( nyx::vkg::Vulkan::convert( vk::ImageLayout::eTransferSrcOptimal ), queue ) ; 
       
-      buffer.record() ;
-      for( unsigned index = 0; index < buffer.size(); index++ )
-      {
-        buffer.buffer( index ).copyImage( src.data().image, src.data().layout, data().image, data().layout, 1, &info ) ;
-      }
-      buffer.stop() ;
+      data().buffer.record() ;
+      data().buffer.buffer( 0 ).copyImage( src.data().image, src.data().layout, data().image, data().layout, 1, &info ) ;
+      data().buffer.stop() ;
       
-      queue.submit( buffer ) ;
-      buffer.reset() ;
+      queue.submit( data().buffer ) ;
+      
       src  .revertLayout ( queue ) ;
       this->revertLayout( queue ) ;
       
@@ -253,7 +251,7 @@ namespace nyx
       offset.setY( 0 ) ;
       offset.setZ( 0 ) ;
       
-      buffer.initialize( queue, 1 ) ;
+      if( data().buffer.size() == 0 ) data().buffer.initialize( queue, 1 ) ;
       extent.setHeight( this->height() ) ;
       extent.setWidth ( this->width () ) ;
       extent.setDepth ( this->layers() ) ;
@@ -265,18 +263,13 @@ namespace nyx
       info.setImageSubresource ( data().subresource ) ;
       info.setImageExtent      ( extent             ) ;
       
-      
       this->transition( nyx::ImageLayout::TransferDst, queue ) ; 
       
-      buffer.record() ;
-      for( unsigned index = 0; index < buffer.size(); index++ )
-      {
-        buffer.buffer( index ).copyBufferToImage( src.buffer(), data().image, vk::ImageLayout::eTransferDstOptimal, 1, &info ) ;
-      }
-      buffer.stop() ;
+      data().buffer.record() ;
+      data().buffer.buffer( 0 ).copyBufferToImage( src.buffer(), data().image, vk::ImageLayout::eTransferDstOptimal, 1, &info ) ;
+      data().buffer.stop() ;
       
-      queue.submit( buffer ) ;
-      buffer.reset() ;
+      queue.submit( data().buffer ) ;
       this->revertLayout( queue ) ;
     }
     
@@ -293,7 +286,7 @@ namespace nyx
     bool Image::initialize( unsigned device, nyx::ImageFormat format, unsigned width, unsigned height, unsigned num_layers )
     {
       Vulkan::initialize() ;
-
+      
       data().device = Vulkan::device( device ) ;
       data().width  = width                    ;
       data().height = height                   ;
@@ -350,13 +343,20 @@ namespace nyx
       return this->initialize( prealloc.device(), format, width, height, num_layers ) ;
     }
 
-    void Image::resize( unsigned width, unsigned height )
+    bool Image::resize( unsigned width, unsigned height )
     {
+      auto queue  = Vulkan::graphicsQueue( data().device ) ;
+      auto layout = data().layout                          ;
+      
       if( data().width != width && data().height != height )
       {
         this->reset() ;
         this->initialize( data().device, nyx::vkg::Vulkan::convert( data().format ), width, height ) ;
+        this->transition( Vulkan::convert( layout ), queue ) ;
+        return true ;
       }
+      
+      return false ;
     }
     
     void Image::setUsage( const nyx::ImageUsage& usage )
@@ -403,7 +403,8 @@ namespace nyx
 
     void Image::transition( const nyx::ImageLayout& layout, nyx::vkg::Queue& queue ) const
     {
-      vkg::CommandBuffer buffer ;
+      
+      if( data().buffer.size() == 0 ) data().buffer.initialize( queue, 1 ) ;
       
       vk::ImageMemoryBarrier    barrier    ;
       vk::ImageSubresourceRange range      ;
@@ -414,7 +415,6 @@ namespace nyx
       
       new_layout = nyx::vkg::Vulkan::convert( layout ) ;
       
-      buffer.initialize( queue, 1 ) ;
       range.setBaseArrayLayer( 0                               ) ;
       range.setBaseMipLevel  ( 0                               ) ;
       range.setLevelCount    ( 1                               ) ;
@@ -433,17 +433,14 @@ namespace nyx
       src       = vk::PipelineStageFlagBits::eAllCommands ;
       dst       = vk::PipelineStageFlagBits::eAllCommands ;
       
-      buffer.record() ;
-      for( unsigned index = 0; index < buffer.size(); index++ )
-      {
-        buffer.buffer( index ).pipelineBarrier( src, dst, dep_flags, 0, nullptr, 0, nullptr, 1, &barrier ) ;
-      }
-      buffer.stop() ;
+      data().buffer.record() ;
+      data().buffer.buffer( 0 ).pipelineBarrier( src, dst, dep_flags, 0, nullptr, 0, nullptr, 1, &barrier ) ;
+      data().buffer.stop() ;
       
       data().old_layout = data().layout ;
       data().layout     = new_layout    ;
       
-      queue.submit( buffer ) ;
+      queue.submit( data().buffer ) ;
     }
 
     void Image::revertLayout( nyx::vkg::Queue& cmd_buff ) const 
@@ -502,6 +499,8 @@ namespace nyx
       {
         data().memory.deallocate() ;
       }
+
+      data().layout = vk::ImageLayout::eUndefined ;
     }
 
     ImageData& Image::data()

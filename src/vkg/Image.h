@@ -147,7 +147,7 @@ namespace nyx
          * @note This reallocates the image, so cropping, interpolation is not a part of this operation.
          * @note If the dimensions are the same, no resizing occurs.
          */
-        void resize( unsigned width, unsigned height ) ;
+        bool resize( unsigned width, unsigned height ) ;
 
         /** Method to retrieve the underlying memory of this object.
          * @return The memory representation of this object.

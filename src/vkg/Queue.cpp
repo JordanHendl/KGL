@@ -44,8 +44,11 @@ namespace nyx
      */
     struct QueueData
     {
+      vk::Fence        fence  ;
       vk::Queue        queue  ; ///< The underlying vulkan queue.
-      nyx::vkg::Device device ; ///< The device associated with this queue.
+      unsigned         dev_id ;
+      std::mutex      *mutex  ; 
+      vk::Device       device ; ///< The device associated with this queue.
       vk::SubmitInfo   submit ; ///< The submit structure created here for cacheing.
       vk::QueueFlags   mask   ; ///< The ID associated with this queue.
       unsigned         family ; ///< The queue family associated with this queue.
@@ -124,7 +127,9 @@ namespace nyx
     
     void Queue::wait() const
     {
-      data().queue.waitIdle() ;
+      data().mutex->lock() ;
+      data().queue.waitIdle() ; 
+      data().mutex->unlock() ;
     }
 
     const vk::Queue& Queue::queue() const
@@ -134,39 +139,37 @@ namespace nyx
 
     unsigned Queue::device() const
     {
-      return data().device ;
+      return data().dev_id ;
     }
     
+    bool Queue::initialized() const
+    {
+      return data().queue ;
+    }
+
     void Queue::submit( const nyx::vkg::CommandBuffer& cmd_buff, bool sync )
     {
-      vk::FenceCreateInfo fence_info  ;
-      vk::Fence           fence       ;
-      unsigned            fence_count ;
+      unsigned fence_count ;
       data().submit = vk::SubmitInfo() ;
       
-      data().submit.setCommandBufferCount( cmd_buff.size()    ) ;
-      data().submit.setPCommandBuffers   ( cmd_buff.pointer() ) ;
-      data().submit.setWaitSemaphoreCount( 0 ) ;
-      data().submit.setSignalSemaphoreCount( 0 ) ;
+      data().submit.setCommandBufferCount  ( cmd_buff.size()    ) ;
+      data().submit.setPCommandBuffers     ( cmd_buff.pointer() ) ;
+      data().submit.setWaitSemaphoreCount  ( 0                  ) ;
+      data().submit.setSignalSemaphoreCount( 0                  ) ;
       
       fence_count = 0 ;
-      if( sync )
-      {
-        fence       = data().device.device().createFence( fence_info, nullptr ) ;
-        fence_count = 1                                                         ;
-      }
 
+      if( sync ) fence_count = 1 ;
       if( cmd_buff.level() == nyx::vkg::CommandBuffer::Level::Primary )
       {
-        mutex_map[ data().queue ].lock() ;
-        vkg::Vulkan::add( data().queue.submit( 1, &data().submit, fence ) ) ;
+        data().mutex->lock() ;
+        vkg::Vulkan::add( data().queue.submit( 1, &data().submit, data().fence ) ) ;
 
         // No synchronization given, must wait.
-        vkg::Vulkan::add( data().device.device().waitForFences( fence_count, &fence, true, UINT64_MAX ) ) ;
-        mutex_map[ data().queue ].unlock() ;
+        vkg::Vulkan::add( data().device.waitForFences( fence_count, &data().fence, true, UINT64_MAX ) ) ;
+        vkg::Vulkan::add( data().device.resetFences( 1, &data().fence ) ) ;
+        data().mutex->unlock() ;
       }
-      
-      if( sync ) data().device.device().destroy( fence ) ;
     }
     
     void Queue::submit( const nyx::vkg::CommandBuffer& cmd_buff, const nyx::vkg::Synchronization& sync )
@@ -185,9 +188,9 @@ namespace nyx
 
       if( cmd_buff.level() == nyx::vkg::CommandBuffer::Level::Primary )
       {
-        mutex_map[ data().queue ].lock() ;
+        data().mutex->lock() ;
         vkg::Vulkan::add( data().queue.submit( 1, &data().submit, sync.signalFence() ) ) ;
-        mutex_map[ data().queue ].unlock() ;
+        data().mutex->unlock() ;
       }
     }
     
@@ -201,9 +204,9 @@ namespace nyx
       info.setWaitSemaphoreCount( 0                      ) ;
       info.setPWaitSemaphores   ( 0                      ) ;
       
-      mutex_map[ data().queue ].lock() ;
+      data().mutex->lock() ;
       auto result = data().queue.presentKHR( &info ) ;
-      mutex_map[ data().queue ].unlock() ;
+      data().mutex->unlock() ;
       
       return static_cast<unsigned>( Vulkan::convert( result ) ) ;
     }
@@ -218,9 +221,9 @@ namespace nyx
       info.setWaitSemaphoreCount( sync.numWaitSems()     ) ;
       info.setPWaitSemaphores   ( sync.waits()           ) ;
       
-      mutex_map[ data().queue ].lock() ;
+      data().mutex->lock() ;
       auto result = data().queue.presentKHR( &info ) ;
-      mutex_map[ data().queue ].unlock() ;
+      data().mutex->unlock() ;
       
       return static_cast<unsigned>( Vulkan::convert( result ) ) ;
     }
@@ -234,12 +237,13 @@ namespace nyx
       data().submit.setCommandBufferCount  ( 1         ) ;
       data().submit.setPCommandBuffers     ( &cmd_buff ) ;
 
-      mutex_map[ data().queue ].lock() ;
+
+      data().mutex->lock() ;
       vkg::Vulkan::add( data().queue.submit( 1, &data().submit, dummy ) ) ;
 
-      // No synchronization given, must wait.
       data().queue.waitIdle() ; 
-      mutex_map[ data().queue ].unlock() ;
+      // No synchronization given, must wait.
+      data().mutex->unlock() ;
     }
     
     void Queue::submit( const vk::CommandBuffer& cmd_buff, const nyx::vkg::Synchronization& sync )
@@ -255,17 +259,23 @@ namespace nyx
       data().submit.setPWaitSemaphores     ( sync.waits()       ) ;
       data().submit.setPWaitDstStageMask   ( &flags             ) ;
 
-      mutex_map[ data().queue ].lock() ;
+      data().mutex->lock() ;
       vkg::Vulkan::add( data().queue.submit( 1, &data().submit, sync.signalFence() ) ) ;
-      mutex_map[ data().queue ].unlock() ;
+      data().mutex->unlock() ;
     }
 
     void Queue::initialize( const nyx::vkg::Device& device, const vk::Queue& queue, unsigned queue_family, unsigned mask )
     {
-      data().device = device                              ;
-      data().queue  = queue                               ;
-      data().family = queue_family                        ;
-      data().mask   = static_cast<vk::QueueFlags>( mask ) ;
+      vk::FenceCreateInfo fence_info  ;
+
+      data().dev_id = device                                           ;
+      data().device = device.device()                                  ;
+      data().queue  = queue                                            ;
+      data().family = queue_family                                     ;
+      data().mask   = static_cast<vk::QueueFlags>( mask )              ;
+      data().mutex  = &mutex_map[ queue ]                              ;
+      data().fence  = data().device.createFence( fence_info, nullptr ) ;
+      vkg::Vulkan::add( data().device.resetFences( 1, &data().fence ) ) ;
     }
 
     QueueData& Queue::data()

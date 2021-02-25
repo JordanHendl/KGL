@@ -193,7 +193,8 @@ namespace nyx
       this->properties      = data.properties          ;
       this->extension_list  = data.extension_list      ;
       this->queues          = data.queues              ;
-      
+      this->layer_list      = data.layer_list          ;
+
       return *this ;
     }
     
@@ -468,6 +469,15 @@ namespace nyx
     const nyx::vkg::Queue& Device::computeQueue() const
     {
       static vkg::Queue dummy ;
+      
+      if( data().queues )
+      for( auto& family : *data().queues )
+      {
+        if( family.compute() )
+        {
+          return family.makeQueue( *this ) ;
+        }
+      }
       
       return dummy ;
     }

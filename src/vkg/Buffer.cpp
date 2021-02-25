@@ -39,6 +39,7 @@ namespace nyx
     {
       nyx::Memory<IMPL>      internal_memory ;
       ::nyx::vkg::Device     device          ;
+      vkg::CommandBuffer     cmd             ;
       unsigned               device_id       ;
       vk::MemoryRequirements requirements    ;
       vk::DeviceAddress      address         ;
@@ -209,18 +210,46 @@ namespace nyx
       return data().buffer ;
     }
 
-    void Buffer::copy( const Buffer& buffer, unsigned size, const nyx::vkg::CommandBuffer& cmd_buff, unsigned srcoffset, unsigned dstoffset )
+    void Buffer::copy( const Buffer& buffer, unsigned size, nyx::vkg::Queue& queue, unsigned srcoffset, unsigned dstoffset )
     { 
-      ::vk::BufferCopy region ;
+      ::vk::BufferCopy   region ;
+      vkg::CommandBuffer cmd    ;
       
       region.setSize     ( size      ) ;
       region.setSrcOffset( srcoffset ) ;
       region.setDstOffset( dstoffset ) ;
       
-      for( unsigned i = 0; i < cmd_buff.size(); i++ )
+      if( data().cmd.size() == 0 ) data().cmd.initialize( queue, 1 ) ;
+      data().cmd.record() ;
+      data().cmd.buffer( 0 ).copyBuffer( buffer.buffer(), this->buffer(), 1, &region ) ;
+      data().cmd.stop() ;
+      
+      queue.submit( data().cmd ) ;
+    }
+    
+    void Buffer::copy( const Buffer& buffer, unsigned size, unsigned srcoffset, unsigned dstoffset )
+    { 
+      auto queue = Vulkan::graphicsQueue( data().device ) ;
+      ::vk::BufferCopy   region ;
+      vkg::CommandBuffer cmd    ;
+      
+      region.setSize     ( size      ) ;
+      region.setSrcOffset( srcoffset ) ;
+      region.setDstOffset( dstoffset ) ;
+      
+      if( data().cmd.size() == 0 )
       {
-        cmd_buff.buffer( i ).copyBuffer( buffer.buffer(), this->buffer(), 1, &region ) ;
+        data().cmd.initialize( queue, 1 ) ;
       }
+      
+      data().cmd.record() ;
+      for( unsigned i = 0; i < cmd.size(); i++ )
+      {
+        data().cmd.buffer( i ).copyBuffer( buffer.buffer(), this->buffer(), 1, &region ) ;
+      }
+      data().cmd.stop() ;
+      
+      queue.submit( data().cmd ) ;
     }
     
     void Buffer::copyToDevice( const void* buffer, unsigned byte_size, unsigned srcoffset, unsigned dstoffset )

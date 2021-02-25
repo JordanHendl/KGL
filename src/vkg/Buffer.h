@@ -43,7 +43,8 @@ namespace nyx
     class CommandBuffer ;
     class Image         ;
     class Descriptor    ;
-
+    class Queue         ;
+    
     /** Class for managing a Vulkan buffer.
      */
     class Buffer
@@ -90,7 +91,16 @@ namespace nyx
          * @param srcoffset The offset of the input buffer to start at.
          * @param dstoffset The offset of this buffer to start at.
          */
-        void copy( const Buffer& buffer, unsigned byte_size, const nyx::vkg::CommandBuffer& cmd_buff, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+        void copy( const Buffer& buffer, unsigned byte_size, nyx::vkg::Queue& cmd_buff, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+        
+        /** Method to copy an input buffer into this object's data.
+         * @param buffer The buffer to copy from.
+         * @param byte_size The size in bytes to copy.
+         * @param cmd_buff The command buffer to record the copy operation to.
+         * @param srcoffset The offset of the input buffer to start at.
+         * @param dstoffset The offset of this buffer to start at.
+         */
+        void copy( const Buffer& buffer, unsigned byte_size, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
         
         /** Method to copy an input buffer into this object's data.
          * @param src Host pointer to copy data from.

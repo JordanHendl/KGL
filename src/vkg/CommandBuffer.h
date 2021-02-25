@@ -163,6 +163,11 @@ namespace nyx
         template<typename Type, typename Type2>
         void drawIndexed(const nyx::Array<vkg::Vulkan, Type2>& indices, const nyx::Array<vkg::Vulkan, Type>& vertices ) ;
         
+        /** Method to retrieve whether or not this object is recording a set of commands or not.
+         * @return Whether or not this command buffer is recording.
+         */
+        bool recording() const ;
+
         /** Method to begin all this object's command buffers record using input render pass.
          * @param render_pass Method to begin the render pass & all this object's command buffers record as well.
          * @param index The index of command buffer to start recording.
@@ -198,6 +203,7 @@ namespace nyx
         
       private:
         
+         friend class RendererImpl ;
         /** Base method to use a buffer as vertices to draw.
          * @param buffer The buffer to use for vertices.
          * @param count The amount of vertices in the buffer.
