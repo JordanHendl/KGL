@@ -129,7 +129,7 @@ namespace nyx
          * @param nyx_file_path The path to the .nyx file on the filesystem to use.
          * @param context The Framework context for this renderer to draw to.
          */
-        void initialize( unsigned device, const char* nyx_file_path, const vkg::Surface& context ) ;
+        void initialize( unsigned device, const char* nyx_file_path, unsigned long long context ) ;
   
         /** Method to initialize this object.
          * @param device The device to use for all GPU operations.
@@ -144,7 +144,7 @@ namespace nyx
          * @param size The size of the bytes array.
          * @param context The Framework context for this renderer to draw to.
          */
-        void initialize( unsigned device, const unsigned char* nyx_file_bytes, unsigned size, const vkg::Surface& context ) ;
+        void initialize( unsigned device, const unsigned char* nyx_file_bytes, unsigned size, unsigned long long context ) ;
 
         /** Method to bind an array to one of this object's values on the GPU.
          * @param name The name associated with the value in the inputted pipeline.
@@ -268,7 +268,7 @@ namespace nyx
          * @param nyx_file_path The path to the .nyx file on the filesystem to use.
          * @param context The Framework context for this renderer to draw to.
          */
-        void initialize( unsigned device, const char* nyx_file_path, const vkg::Surface& context ) ;
+        void initialize( unsigned device, const char* nyx_file_path, unsigned long long context ) ;
   
         /** Method to initialize this object.
          * @param device The device to use for all GPU operations.
@@ -283,7 +283,7 @@ namespace nyx
          * @param size The size of the byte array.
          * @param context The Framework context for this renderer to draw to.
          */
-        void initialize( unsigned device, const unsigned char* nyx_file_bytes, unsigned size, const vkg::Surface& context ) ;
+        void initialize( unsigned device, const unsigned char* nyx_file_bytes, unsigned size, unsigned long long context ) ;
   
         /** Method to add a viewport to this renderer.
          * @param viewport The viewport to add in the output of this renderer.
@@ -412,7 +412,7 @@ namespace nyx
     }
 
     template<nyx::ImageFormat ... Formats>
-    void Renderer<Formats...>::initialize( unsigned device, const char* nyx_file_path, const vkg::Surface& context )
+    void Renderer<Formats...>::initialize( unsigned device, const char* nyx_file_path, unsigned long long context )
     {
       this->impl.initialize( device, nyx_file_path, context ) ;
     }
@@ -424,7 +424,7 @@ namespace nyx
     }
 
     template<nyx::ImageFormat ... Formats>
-    void Renderer<Formats...>::initialize( unsigned device, const unsigned char* nyx_file_bytes, unsigned size, const vkg::Surface& context )
+    void Renderer<Formats...>::initialize( unsigned device, const unsigned char* nyx_file_bytes, unsigned size, unsigned long long context )
     {
       this->impl.initialize( device, nyx_file_bytes, size, context ) ;
     }

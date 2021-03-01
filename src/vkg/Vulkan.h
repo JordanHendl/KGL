@@ -135,7 +135,7 @@ namespace nyx
       public:
         using Buffer          = nyx::vkg::Buffer          ; ///< The object to handle vulkan buffer creation.
         using CommandRecord   = nyx::vkg::CommandBuffer   ; ///< The object to handle recording of vulkan commands.
-        using Context         = vk::SurfaceKHR            ; ///< The object to handle a window's context.
+        using Context         = unsigned long long        ; ///< The object to handle a window's context.
         using Descriptor      = nyx::vkg::Descriptor      ; ///< The object to manage data access in shaders.
         using DescriptorPool  = nyx::vkg::DescriptorPool  ; ///< The object to manage creating Descriptors.
         using Device          = nyx::vkg::Device          ; ///< The object to manage a hardware-accelerated device.
@@ -363,7 +363,7 @@ namespace nyx
          * @param gpu The gpu to generate the queue on.
          * @return A Queue capable of doing graphics.
          */
-        static vkg::Queue presentQueue( const vk::SurfaceKHR& surface, unsigned gpu = 0 ) ;
+        static vkg::Queue presentQueue( unsigned long long surface, unsigned gpu = 0 ) ;
 
         /** Static method to allow a custom error handler to be set for this library.
          * @param error_handler The error handler to be used by this library.

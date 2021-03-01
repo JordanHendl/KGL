@@ -417,7 +417,7 @@ namespace nyx
     {
       for( auto& ext : data().extension_list )
       {
-        if( ext == std::string( ext_name ) ) return true ;
+        if( strcmp( ext.c_str(), ext_name ) == 0 ) return true ;
       }
       
       return false ;
@@ -450,14 +450,14 @@ namespace nyx
       return dummy ;
     }
     
-    const nyx::vkg::Queue& Device::presentQueue( const vk::SurfaceKHR& surface ) const
+    const nyx::vkg::Queue& Device::presentQueue( unsigned long long surface ) const
     {
       static const nyx::vkg::Queue dummy ;
-
+      const auto vk_surface = static_cast< vk::SurfaceKHR>( reinterpret_cast<VkSurfaceKHR>( surface ) ) ;
       if( data().queues )
       for( auto& family : *data().queues )
       {
-        if( family.present( surface ) && family.graphics() )
+        if( family.present( vk_surface ) && family.graphics() )
         {
           return family.makeQueue( *this ) ;
         }

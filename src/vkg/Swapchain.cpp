@@ -61,6 +61,7 @@ namespace nyx
       vk::SurfaceCapabilitiesKHR capabilities   ; ///< TODO
       vk::SurfaceFormatKHR       surface_format ; ///< TODO
       vk::SurfaceKHR             surface        ; ///< TODO
+      unsigned long long         raw_surface    ; ///< TODO
       vk::Extent2D               extent         ; ///< TODO
       std::queue<unsigned>       acquired       ; ///< The images acquired from this swapchain.
       unsigned                   current_frame  ; ///< The frame counter used to monitor swapchain presenting.
@@ -228,14 +229,16 @@ namespace nyx
       return data().swapchain ;
     }
 
-    void Swapchain::initialize( const nyx::vkg::Queue& present_queue, const vk::SurfaceKHR& surface )
+    void Swapchain::initialize( const nyx::vkg::Queue& present_queue, unsigned long long surface )
     {
       Vulkan::initialize() ;
-
-      data().queue   = present_queue                           ;
-      data().surface = surface                                 ;
-      data().device  = Vulkan::device( data().queue.device() ) ;
+      data().surface = static_cast<vk::SurfaceKHR>( reinterpret_cast<VkSurfaceKHR>( surface ) );
+      
+      data().queue       = present_queue                           ;
+      data().device      = Vulkan::device( data().queue.device() ) ;
+      data().raw_surface = surface                                 ;
       data().fences.clear() ;
+      
       data().findProperties() ;
       data().chooseExtent  () ;
       data().makeSwapchain () ;
@@ -262,7 +265,7 @@ namespace nyx
       if( result.result == vk::Result::eErrorOutOfDateKHR || result.result == vk::Result::eSuboptimalKHR )
       {
         vkg::Vulkan::add( device.waitIdle() ) ;
-        this->initialize( data().queue, data().surface ) ;
+        this->initialize( data().queue, data().raw_surface ) ;
 
         data().skip_frame = true ;
         return Vulkan::Error::RecreateSwapchain ;
@@ -288,7 +291,7 @@ namespace nyx
         if( data().queue.submit( *this, index, data().syncs[ index ] ) == nyx::vkg::Vulkan::Error::RecreateSwapchain )
         {
           Vulkan::deviceSynchronize( data().queue.device() ) ;
-          this->initialize( data().queue, data().surface ) ;
+          this->initialize( data().queue, data().raw_surface ) ;
           
           data().acquired.pop() ;
           data().syncs[ index ].clear() ;
@@ -373,7 +376,7 @@ namespace nyx
         }
         
         data().images.clear() ;
-        data().device.device().destroy( data().swapchain ) ;
+//        data().device.device().destroy( data().swapchain ) ;
       }
     }
 

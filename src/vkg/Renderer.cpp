@@ -119,7 +119,7 @@ namespace nyx
       data().descriptor = data().pool.make() ;
     }
 
-    void RendererImpl::initialize( unsigned device, const char* nyx_file_path, const vkg::Surface& context )
+    void RendererImpl::initialize( unsigned device, const char* nyx_file_path, unsigned long long context )
     {
       data().device = device                                  ;
       data().queue  = Vulkan::presentQueue( context, device ) ;
@@ -157,7 +157,7 @@ namespace nyx
       data().descriptor = data().pool.make() ;
     }
 
-    void RendererImpl::initialize( unsigned device, const unsigned char* nyx_file_bytes, unsigned size, const vkg::Surface& context )
+    void RendererImpl::initialize( unsigned device, const unsigned char* nyx_file_bytes, unsigned size, unsigned long long context )
     {
       nyx::vkg::NyxShader shader ;
       data().device = device                                  ;
@@ -228,6 +228,8 @@ namespace nyx
       data().pass.setViewportX     ( 0, viewport.xpos()   ) ;
       data().pass.setViewportY     ( 0, viewport.ypos()   ) ;
       
+      data().pass.setScissorExtentX( viewport.width()  ) ;
+      data().pass.setScissorExtentY( viewport.height() ) ;
       if( data().pass.initialized() )
       {
         data().remake() ;
@@ -269,7 +271,7 @@ namespace nyx
         data().cmd.bind  ( data().pipeline   ) ;
         data().cmd.bind  ( data().descriptor ) ;
       }
-
+      
       data().cmd.drawIndexedBase( index, vert, index_count, vert_count, offset ) ;
     }
 

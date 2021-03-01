@@ -474,13 +474,13 @@ namespace nyx
   template<typename Framework>
   void Memory<Framework>::syncToDevice() 
   {
-    this->impl.copyToDevice( this->data, this->memory_ptr, this->gpu, this->element_sz * this->byte_size ) ;
+    this->impl.copyToDevice( this->data, this->memory_ptr, this->gpu, this->byte_size ) ;
   }
   
   template<typename Framework>
   void Memory<Framework>::syncToHost() 
   {
-    this->impl.copyToHost( static_cast<typename Framework::Memory>( this->memory_ptr ), this->data, this->gpu, this->byte_size ) ;
+    this->impl.copyToHost( this->memory_ptr, this->data, this->gpu, this->byte_size ) ;
   } 
 
   template<typename Framework>

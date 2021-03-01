@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <iostream>
 #include <library/Renderer.h>
+#include <stdint.h>
 #include <library/Memory.h>
 #include <vector>
 #include <string>
@@ -537,7 +538,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       return Vulkan::device( gpu ).computeQueue() ;
     }
     
-    vkg::Queue Vulkan::presentQueue( const vk::SurfaceKHR& surface, unsigned gpu )
+    vkg::Queue Vulkan::presentQueue( unsigned long long surface, unsigned gpu )
     {
       Vulkan::initialize() ;
       return Vulkan::device( gpu ).presentQueue( surface ) ;
@@ -560,7 +561,6 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       Vulkan::add( device.mapMemory  ( src, offset, amount, flag, &mem      ) ) ;
                    std::memcpy       ( dst, mem, static_cast<size_t>( amt )   ) ;
                    device.unmapMemory( src                                    ) ;
-                    
     }
     
     void Vulkan::free( Vulkan::Memory& mem, unsigned gpu )
@@ -635,7 +635,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         vk_surface = surface ;
       }
       
-      return vk_surface ;
+      return static_cast<unsigned long long>( surface ) ;
     }
 
     #elif __linux__
@@ -665,7 +665,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         vk_surface = surface ;
       }
       
-      return vk_surface ;
+      return reinterpret_cast<intptr_t>( surface ) ;
      }
      #endif  
    }

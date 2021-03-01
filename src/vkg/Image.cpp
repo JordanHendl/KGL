@@ -332,6 +332,7 @@ namespace nyx
       data().view    = data().createView ()                ;
       data().sampler = data().createSampler()              ;
 
+      data().preallocated = true ;
       return true ;
     }
     

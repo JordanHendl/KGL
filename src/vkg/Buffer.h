@@ -44,7 +44,7 @@ namespace nyx
     class Image         ;
     class Descriptor    ;
     class Queue         ;
-    
+    class RendererImpl  ;
     /** Class for managing a Vulkan buffer.
      */
     class Buffer
@@ -71,6 +71,8 @@ namespace nyx
         template<typename Impl, typename Type>
         friend class nyx::Array ;
         
+        friend struct BufferData ;
+        
         /** Friend decleration so the vkg::Image object can access this object's data for copy.
          */
         friend class vkg::Image ;
@@ -78,6 +80,10 @@ namespace nyx
         /** Friend decleration so the command buffer can draw this object.
          */
         friend class vkg::CommandBuffer ;
+        
+        /**
+         */
+        friend class vkg::RendererImpl ;
 
         /** Equals operator. Performs a surface copy of the input source
          * @return A reference to this object after the surface copy.
@@ -110,14 +116,10 @@ namespace nyx
          */
         void copyToDevice( const void* src, unsigned byte_size, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
         
-        /** Method to copy an input buffer into this object's data.
-         * @param size The size in bytes to copy.
-         * @param buffer The buffer to copy from.
-         * @param cmd_buff The command buffer to record the copy operation to.
-         * @param srcoffset The offset of the input buffer to start at.
-         * @param dstoffset The offset of this buffer to start at.
+        /** Method to retrieve the pointer to this object's host allocated data.
+         * @return The host pointer to this object's internal data.
          */
-        void copyToHost( const void* src, unsigned size, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+        const unsigned char* host() const ;
 
         /** Method to retrieve whether or not this object is initialized.
          * @return Whether or not this buffer is initialized
@@ -142,7 +144,7 @@ namespace nyx
          * @param size The mount of the preallocated memory to use.
          * @return Whether or not this object was successfully initialized.
          */
-        bool initialize( nyx::Memory<nyx::vkg::Vulkan>& prealloc, nyx::ArrayFlags, unsigned size ) ;
+        bool initialize( nyx::Memory<nyx::vkg::Vulkan>& prealloc, unsigned size, nyx::ArrayFlags flags ) ;
         
         /** Method to initialize this object using the input parameters.
          * @param gpu The device to use for all GPU calls.
@@ -170,6 +172,10 @@ namespace nyx
          */
         nyx::Memory<nyx::vkg::Vulkan>& memory() ;
         
+        /** Method to sync this buffer to the device.
+         */
+        void syncToDevice() ;
+        
         /** Method to sync this buffer to the host.
          */
         void syncToHost() ;
@@ -178,10 +184,6 @@ namespace nyx
          * @return Const-reference to the device used for this buffer.
          */
         unsigned device() const ;
-
-        /** Method to sync this buffer to the device.
-         */
-        void syncToDevice() ;
 
         /** Method to retrieve a const-reference to this object's internal memory container.
          * @return Const-reference to this object's internal memory container.

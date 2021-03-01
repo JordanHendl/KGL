@@ -1,6 +1,6 @@
+IF( BUILD_DOCS )
 FIND_PACKAGE( Doxygen REQUIRED dot )
-
-IF ( ${DOXYGEN_FOUND} AND BUILD_DOCS )
+IF ( ${DOXYGEN_FOUND} )
     # set input and output files
     SET( DOXYGEN_IN  ${DOXYGEN_DIR}/doxygen.cfg  )
     SET( DOXYGEN_OUT ${DOC_DIR}/doc/doxygen.cfg  )
@@ -22,4 +22,5 @@ IF ( ${DOXYGEN_FOUND} AND BUILD_DOCS )
 ELSEIF( BUILD_DOCS )
   MESSAGE( "Doxygen need to be installed to generate documentation." )
 
+ENDIF()
 ENDIF()

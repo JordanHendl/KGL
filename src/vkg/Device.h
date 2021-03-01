@@ -172,7 +172,7 @@ namespace nyx
         /** Method to retrieve a present queue from the device, if available.
          * @return A const reference to the created present queue.
          */
-        const nyx::vkg::Queue& presentQueue( const vk::SurfaceKHR& surface ) const ;
+        const nyx::vkg::Queue& presentQueue( unsigned long long surface ) const ;
         
         /** Method to retrieve a compute queue from the device, if available.
          * @return A const reference to the created present queue.

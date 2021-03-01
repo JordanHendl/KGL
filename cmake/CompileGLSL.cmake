@@ -1,9 +1,3 @@
-FUNCTION(JOIN VALUES GLUE OUTPUT)
-  STRING (REGEX REPLACE "([^\\]|^);" "\\1${GLUE}" _TMP_STR "${VALUES}")
-  STRING (REGEX REPLACE "[\\](.)" "\\1" _TMP_STR "${_TMP_STR}") #fixes escaping
-  SET (${OUTPUT} "${_TMP_STR}" PARENT_SCOPE)
-ENDFUNCTION()
-
 # Helper function to configure the test maker's global state.
 FUNCTION( CONFIGURE_GLSL_COMPILE )
   BUILD_TEST( ${ARGV} )
@@ -43,9 +37,9 @@ FUNCTION( GLSL_COMPILE )
   ENDFOREACH()
 
     IF( TARGETS )
-      IF( COMPILE_GLSL )
+      FIND_PACKAGE( Vulkan )
+      IF( COMPILE_GLSL AND ${Vulkan_FOUND} )
 
-        FIND_PACKAGE( Vulkan )
 
         # Compile SPIRV for each target.
         FOREACH( ARG ${TARGETS} )

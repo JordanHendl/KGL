@@ -37,18 +37,22 @@ namespace nyx
      */
     struct BufferData
     {
-      nyx::Memory<IMPL>      internal_memory ;
-      ::nyx::vkg::Device     device          ;
-      vkg::CommandBuffer     cmd             ;
-      unsigned               device_id       ;
-      vk::MemoryRequirements requirements    ;
-      vk::DeviceAddress      address         ;
-      vk::BufferUsageFlags   usage_flags     ;
-      vk::Buffer             buffer          ;
-      bool                   preallocated    ;
-      bool                   host_local      ;
-      bool                   initialized     ;
-      unsigned               device_size     ;
+      nyx::Memory<IMPL>          internal_memory ;
+      nyx::Memory<IMPL>          staging_memory  ;
+      std::vector<unsigned char> host_copy       ;
+      nyx::Memory<IMPL>          staging         ;
+      ::nyx::vkg::Device         device          ;
+      vkg::CommandBuffer         cmd             ;
+      unsigned                   device_id       ;
+      unsigned                   size            ;
+      vk::MemoryRequirements     requirements    ;
+      vk::DeviceAddress          address         ;
+      vk::BufferUsageFlags       usage_flags     ;
+      vk::Buffer                 buffer          ;
+      bool                       preallocated    ;
+      bool                       host_local      ;
+      bool                       initialized     ;
+      unsigned                   device_size     ;
 
       /** Helper method to create the device address, if available.
        */
@@ -58,7 +62,7 @@ namespace nyx
        * @param size The byte size of buffer to make.
        * @return A Buffer created to the input size.
        */
-      ::vk::Buffer createBuffer( unsigned size ) ;
+      ::vk::Buffer createBuffer( unsigned size, vk::BufferUsageFlags flags ) ;
       
       /** Default constructor.
        */
@@ -77,21 +81,15 @@ namespace nyx
       }
     }
 
-    ::vk::Buffer BufferData::createBuffer( unsigned size )
+    ::vk::Buffer BufferData::createBuffer( unsigned size, vk::BufferUsageFlags flags )
     {
       ::vk::BufferCreateInfo info   ;
       ::vk::Buffer           buffer ;
       
-      info.setSize       ( size                                                    ) ;
-      if( this->device.hasExtension( VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME ) )
-      {
-        info.setUsage      ( this->usage_flags | vk::BufferUsageFlagBits::eShaderDeviceAddress ) ;
-      }
-      else
-      {
-        info.setUsage      ( this->usage_flags ) ;
-      }
-      info.setSharingMode( ::vk::SharingMode::eExclusive                                     ) ;
+      info.setSize( size ) ;
+
+      info.setUsage( flags ) ;
+      info.setSharingMode( ::vk::SharingMode::eExclusive ) ;
       
       auto result = this->device.device().createBuffer( info, nullptr ) ;
       
@@ -102,6 +100,7 @@ namespace nyx
 
     BufferData::BufferData()
     {
+      this->size         = 0                                                                                 ;
       this->preallocated = false                                                                             ;
       this->usage_flags  = ::vk::BufferUsageFlagBits::eTransferSrc | ::vk::BufferUsageFlagBits::eTransferDst ;
       this->device_size  = 0                                                                                 ;
@@ -139,7 +138,12 @@ namespace nyx
         data().device.device().destroyBuffer( data().buffer ) ;
       }
       
-      if( !data().preallocated )
+      if( data().staging_memory.initialized() )
+      {
+        data().staging_memory.deallocate() ;
+      }
+      
+      if( !data().preallocated && this->initialized() )
       {
         data().internal_memory.deallocate() ;
       }
@@ -163,6 +167,14 @@ namespace nyx
       return this->initialize( prealloc.device(), size == 0 ? prealloc.size() : size ) ;
     }
     
+    bool Buffer::initialize( nyx::Memory<nyx::vkg::Vulkan>& prealloc, unsigned size, nyx::ArrayFlags flags )
+    {
+      data().internal_memory = prealloc ;
+      data().preallocated    = true     ;
+      
+      return this->initialize( prealloc.device(), size == 0 ? prealloc.size() : size, false, flags ) ;
+    }
+    
     bool Buffer::initialize( unsigned gpu, unsigned size, bool host_local, nyx::ArrayFlags flags )
     {
       data().usage_flags = static_cast<vk::BufferUsageFlags>( static_cast<VkBufferUsageFlags>( flags.value() ) ) ;
@@ -176,18 +188,22 @@ namespace nyx
       
       Vulkan::initialize() ;
 
-      data().device_id    = gpu                                                                 ;
-      data().device       = Vulkan::device( gpu )                                               ;
-      data().buffer       = data().createBuffer( size )                                         ;
+      data().device_id    = gpu                   ;
+      data().device       = Vulkan::device( gpu ) ;
+      
+      if( data().device.hasExtension( VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME ) )
+      {
+        data().usage_flags |= vk::BufferUsageFlagBits::eShaderDeviceAddress ;
+      }
+      
+      data().size         = size                                                                ;
+      data().buffer       = data().createBuffer( size, data().usage_flags )                     ;
       data().requirements = data().device.device().getBufferMemoryRequirements( data().buffer ) ; 
       data().host_local   = host_local                                                          ;
 
       if( !data().preallocated )
       {
-        if( host_local )
-          data().internal_memory.initialize( gpu, data().requirements.size, data().requirements.memoryTypeBits, host_local, nyx::MemoryFlags::HostVisible | nyx::MemoryFlags::HostCoherent ) ;
-        else
-          data().internal_memory.initialize( gpu, data().requirements.size, data().requirements.memoryTypeBits, host_local ) ;
+        data().internal_memory.initialize( gpu, data().requirements.size, data().requirements.memoryTypeBits, host_local ) ;
       }
 
       needed_size = data().internal_memory.size() - data().internal_memory.offset() ;
@@ -195,6 +211,8 @@ namespace nyx
       if( data().requirements.size <= needed_size )
       {
         vkg::Vulkan::add( data().device.device().bindBufferMemory( data().buffer, data().internal_memory.memory(), data().internal_memory.offset() ) ) ;
+        if( host_local ) data().host_copy.resize( data().requirements.size ) ;
+
         data().makeDeviceAddress() ;
         data().initialized = true ;
         return true ;
@@ -212,8 +230,7 @@ namespace nyx
 
     void Buffer::copy( const Buffer& buffer, unsigned size, nyx::vkg::Queue& queue, unsigned srcoffset, unsigned dstoffset )
     { 
-      ::vk::BufferCopy   region ;
-      vkg::CommandBuffer cmd    ;
+      ::vk::BufferCopy region ;
       
       region.setSize     ( size      ) ;
       region.setSrcOffset( srcoffset ) ;
@@ -230,36 +247,55 @@ namespace nyx
     void Buffer::copy( const Buffer& buffer, unsigned size, unsigned srcoffset, unsigned dstoffset )
     { 
       auto queue = Vulkan::graphicsQueue( data().device ) ;
-      ::vk::BufferCopy   region ;
-      vkg::CommandBuffer cmd    ;
-      
-      region.setSize     ( size      ) ;
-      region.setSrcOffset( srcoffset ) ;
-      region.setDstOffset( dstoffset ) ;
-      
-      if( data().cmd.size() == 0 )
-      {
-        data().cmd.initialize( queue, 1 ) ;
-      }
-      
-      data().cmd.record() ;
-      for( unsigned i = 0; i < cmd.size(); i++ )
-      {
-        data().cmd.buffer( i ).copyBuffer( buffer.buffer(), this->buffer(), 1, &region ) ;
-      }
-      data().cmd.stop() ;
-      
-      queue.submit( data().cmd ) ;
+      this->copy( buffer, size, queue, srcoffset, dstoffset ) ;
     }
     
     void Buffer::copyToDevice( const void* buffer, unsigned byte_size, unsigned srcoffset, unsigned dstoffset )
     { 
+      vkg::Buffer staging_buffer ;
+      
       if( data().host_local )
       {
-        data().internal_memory.copyToDevice( buffer, byte_size, srcoffset, dstoffset ) ;
+        if( !data().staging_memory.initialized() )
+        {
+          data().staging_memory.initialize( data().device, data().requirements.size, true, nyx::MemoryFlags::HostCoherent | nyx::MemoryFlags::HostVisible ) ;
+        }
+        data().staging_memory.copyToDevice( buffer, byte_size ) ;
+        staging_buffer.initialize( data().staging_memory, static_cast<unsigned>( data().requirements.size ), nyx::ArrayFlags::TransferSrc | nyx::ArrayFlags::TransferDst ) ;
+        
+        if( byte_size > this->size() ) byte_size = this->size() ;
+        this->copy( staging_buffer, byte_size, srcoffset, dstoffset ) ;
+        
+        staging_buffer.reset() ;
       }
     }
     
+    void Buffer::syncToDevice()
+    {
+      this->copyToDevice( data().host_copy.data(), data().host_copy.size() ) ;
+    }
+    
+    void Buffer::syncToHost()
+    {
+      vkg::Buffer          staging_buffer ;
+      const unsigned char* host_ptr       ;
+      if( data().host_local )
+      {
+        if( !data().staging_memory.initialized() ) 
+        {
+          data().staging_memory.initialize( data().device, data().requirements.size, true, nyx::MemoryFlags::HostCoherent | nyx::MemoryFlags::HostVisible ) ;
+        }
+        
+        staging_buffer.initialize( data().staging_memory, data().requirements.size, nyx::ArrayFlags::TransferDst ) ;
+        
+        staging_buffer.copy( *this, data().size ) ;
+        data().staging_memory.syncToHost() ;
+        host_ptr = static_cast<const unsigned char*>( data().staging_memory.hostData() ) ;
+        data().host_copy.assign( host_ptr, host_ptr + data().requirements.size         ) ;
+        staging_buffer.reset() ;
+      }
+    }
+
     unsigned Buffer::device() const
     {
       return data().device_id ;
@@ -270,6 +306,11 @@ namespace nyx
       return data().requirements.size ;
     }
     
+    const unsigned char* Buffer::host() const
+    {
+      return data().host_copy.data() ;
+    }
+
     nyx::Memory<nyx::vkg::Vulkan>& Buffer::memory()
     {
       return data().internal_memory ;

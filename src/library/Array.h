@@ -146,7 +146,7 @@ namespace nyx
        * @param index The index of data to retrieve.
        * @return The reference to this host-data at the specified index.
        */
-      Type& operator[]( unsigned index ) ;
+      const Type& operator[]( unsigned index ) ;
       
       /** Method to copy the input array into this object.
        * @param src The source buffer to copy from.
@@ -172,22 +172,6 @@ namespace nyx
        * @param dstoffset The offset of the device array to start writing to.
        */
       void copyToDevice( const Type* src, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
-      
-      /** Method to copy the date of the input host pointer to this object's host-data.
-       * @param src The host-pointer to copy from.
-       * @param amount The amount to copy.
-       * @param srcoffset The offset of the input to start copying from.
-       * @param dstoffset The offset of the host-pointer to start writing to.
-       */
-      void copyToHost( const Type* src, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
-      
-      /** Method to copy the date of the input host pointer to both of this object's data members.
-       * @param src The host-pointer to copy from.
-       * @param amount The amount to copy.
-       * @param srcoffset The offset of the input to start copying from.
-       * @param dstoffset The offset of the destination pointers to start copying to.
-       */
-      void copySynced( const Type* src, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
       
       /** Method to return the element size of this object.
        * @return The size of each element of this object.
@@ -232,7 +216,7 @@ namespace nyx
        * @param device The implementation-specific device to use for this object.
        * @param host_alloc Whether or not to allocate this object on the host as well.
        */
-      void initialize( unsigned device, unsigned size, bool host_alloc = true ) ;
+      void initialize( unsigned device, unsigned size, bool host_alloc = false ) ;
       
       /** Method to initialize this object & allocate data.
        * @param size The number of elements allocated to this object.
@@ -342,8 +326,22 @@ namespace nyx
   }
   
   template<typename Impl, class Type>
+  const Type& Array<Impl, Type>::operator []( unsigned index )
+  {
+    static Type dummy ;
+    if( index * sizeof( Type ) < this->arr_buffer.size() )
+    {
+      return *( reinterpret_cast<const Type*>( this->arr_buffer.host() ) + index ) ;
+    }
+    
+    return dummy ;
+  }
+  
+  template<typename Impl, class Type>
   void Array<Impl, Type>::copy( const Array<Impl, Type>& src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
   {
+    if( amount == 0 ) amount = sizeof( Type ) * this->count ;
+    else              amount *= sizeof( Type ) ;
     this->arr_buffer.copy( src.arr_buffer, amount, srcoffset, dstoffset ) ;
   }
   
@@ -359,19 +357,6 @@ namespace nyx
   void Array<Impl, Type>::copyToDevice( const Type* src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
   {
     this->arr_buffer.copyToDevice( static_cast<const void*>( src ), sizeof( Type ) * amount, srcoffset, dstoffset ) ;
-  }
-  
-  template<typename Impl, class Type>
-  void Array<Impl, Type>::copyToHost( const Type* src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
-  {
-    this->arr_buffer.copyToHost( static_cast<const void*>( src ), amount * sizeof( Type ), srcoffset, dstoffset ) ;
-  }
-  
-  template<typename Impl, class Type>
-  void Array<Impl, Type>::copySynced( const Type* src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
-  {
-    this->copyToDevice( src, amount, srcoffset, dstoffset ) ;
-    this->copyToHost  ( src, amount, srcoffset, dstoffset ) ;
   }
   
   template<typename Impl, class Type>

@@ -1,5 +1,5 @@
 # Find Vulkan
-FIND_PACKAGE( Vulkan 1.2 REQUIRED )
+FIND_PACKAGE( Vulkan 1.2 )
 
 # Only build if we found vulkan.
 IF( ${Vulkan_FOUND} )
