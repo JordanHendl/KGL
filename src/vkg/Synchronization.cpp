@@ -22,6 +22,11 @@
  * Created on January 8, 2021, 7:17 PM
  */
 
+#define VULKAN_HPP_ASSERT_ON_RESULT
+#define VULKAN_HPP_NOEXCEPT
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
+
 #include "Synchronization.h"
 #include "Device.h"
 #include "Vulkan.h"
@@ -112,12 +117,19 @@ namespace nyx
       
       for( auto &sem : data().signal_sems )
       {
-        sem = data().device.device().createSemaphore( sem_info, nullptr ) ;
+        auto result = data().device.device().createSemaphore( sem_info, nullptr ) ;
+        
+        vkg::Vulkan::add( result.result ) ;
+        sem = result.value ;
       }
       
       if( data().should_make_fence )
       {
-        data().signal_fence = data().device.device().createFence( fence_info, nullptr ) ;
+        auto result = data().device.device().createFence( fence_info, nullptr ) ;
+        
+        vkg::Vulkan::add( result.result ) ;
+        
+        data().signal_fence = result.value ;
       }
     }
     

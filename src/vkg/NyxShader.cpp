@@ -22,9 +22,13 @@
  * Created on December 30, 2020, 2:26 PM
  */
 
+#define VULKAN_HPP_ASSERT_ON_RESULT
+#define VULKAN_HPP_NOEXCEPT
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
+
 #include "NyxShader.h"
 #include "Device.h"
-#include "Image.h"
 #include "Vulkan.h"
 #include <nyxfile/NyxFile.h>
 #include <library/Array.h>
@@ -201,9 +205,9 @@ namespace nyx
     {
       switch( type )
       {
-        case nyx::UniformType::UBO     : desc_type = ::vk::DescriptorType::eUniformBuffer        ; break ;
-        case nyx::UniformType::SAMPLER : desc_type = ::vk::DescriptorType::eCombinedImageSampler ; break ;
-        case nyx::UniformType::SSBO    : desc_type = ::vk::DescriptorType::eStorageBuffer        ; break ;
+        case nyx::UniformType::Ubo     : desc_type = ::vk::DescriptorType::eUniformBuffer        ; break ;
+        case nyx::UniformType::Sampler : desc_type = ::vk::DescriptorType::eCombinedImageSampler ; break ;
+        case nyx::UniformType::Ssbo    : desc_type = ::vk::DescriptorType::eStorageBuffer        ; break ;
         case nyx::UniformType::None    : desc_type = ::vk::DescriptorType::eUniformBuffer        ; break ;
         default : break ;
       }
@@ -338,7 +342,10 @@ namespace nyx
       info.setBindingCount( this->descriptors.size() ) ;
       info.setPBindings   ( this->descriptors.data() ) ;
       
-      this->layout = this->device.device().createDescriptorSetLayout( info, nullptr ) ;
+      auto result = this->device.device().createDescriptorSetLayout( info, nullptr ) ;
+      vkg::Vulkan::add( result.result ) ;
+      
+      this->layout = result.value ;
     }
     
     void NyxShaderData::makeShaderModules()
@@ -349,7 +356,9 @@ namespace nyx
       
       for( auto shader : this->spirv_map )
       {
-        mod = this->device.device().createShaderModule( shader.second, nullptr ) ;
+        auto result = this->device.device().createShaderModule( shader.second, nullptr ) ;
+        vkg::Vulkan::add( result.result ) ;
+        mod = result.value ;
         
         this->modules[ nyxStageFromVulkan( shader.first ) ] = mod ;
       }

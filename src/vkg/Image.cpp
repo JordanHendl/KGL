@@ -397,6 +397,11 @@ namespace nyx
       return vkg::Vulkan::convert( data().layout ) ;
     }
     
+    const vk::Image& Image::image() const
+    {
+      return data().image ;
+    }
+    
     nyx::ImageFormat Image::format() const
     {
       return vkg::Vulkan::convert( data().format ) ;
@@ -486,7 +491,12 @@ namespace nyx
     {
       return data().layers ;
     }
-
+    
+    const vk::ImageSubresourceLayers& Image::subresource() const
+    {
+      return data().subresource ;
+    }
+    
     void Image::reset()
     {
       if( data().image )

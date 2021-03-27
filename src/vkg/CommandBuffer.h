@@ -46,7 +46,8 @@ namespace nyx
     class Pipeline   ;
     class Vulkan     ;
     class Descriptor ;
-
+    class Chain      ;
+    
     /** Class for handling command buffer generation & management.
      */
     class CommandBuffer
@@ -105,6 +106,7 @@ namespace nyx
          */
         void initialize( const nyx::vkg::Queue& queue, unsigned count, CommandBuffer::Level level = CommandBuffer::Level::Primary ) ;
         
+        bool initialized() ;
         /** Method to combine a secondary command buffer into this object.
          * @param cmd The secondary command buffer to consume into this object.
          */
@@ -204,6 +206,8 @@ namespace nyx
       private:
         
          friend class RendererImpl ;
+         friend class Chain        ;
+         
         /** Base method to use a buffer as vertices to draw.
          * @param buffer The buffer to use for vertices.
          * @param count The amount of vertices in the buffer.

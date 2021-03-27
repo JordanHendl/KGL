@@ -15,8 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NYX_ARRAY_H
-#define NYX_ARRAY_H
+#pragma once 
 
 namespace nyx
 {
@@ -111,112 +110,87 @@ namespace nyx
       
       /** Default constructor.
        */
-      Array() ;
+      inline Array() ;
       
       /** Copy constructor.
        */
-      Array( const Array<Impl, Type>& array ) ;
+      inline Array( const Array<Impl, Type>& array ) ;
       
       /** Deconstructor. Releases allocated data.
        */
-      ~Array() = default ;
+      inline ~Array() = default ;
       
       /** Equals Operator for copying the input array
        * @return Reference to this object after assignment.
        */
-      Array& operator=( const Array<Impl, Type>& array ) ;
+      inline Array& operator=( const Array<Impl, Type>& array ) ;
       
       /** Method to create an iterator for this object at the input location.
        * @param idx The index to start the iterator at.
        * @return An iterator on this object.
        */
-      Iterator<Impl, Type> iterator( unsigned idx = 0 ) ;
+      inline Iterator<Impl, Type> iterator( unsigned idx = 0 ) ;
 
       /** Implicit conversion to turn an this object into an implementation-specific version.
        * @return The underlying implmentation-specific container of this object.
        */
-      operator const typename Impl::Buffer&() const ;
+      inline operator const typename Impl::Buffer&() const ;
       
       /** Implicit conversion to turn an this object into an implementation-specific version.
        * @return The underlying implmentation-specific container of this object.
        */
-      operator typename Impl::Buffer&() ;
+      inline operator typename Impl::Buffer&() ;
       
       /** Method to retrieve the reference to the data at the specified index on the host.
        * @param index The index of data to retrieve.
        * @return The reference to this host-data at the specified index.
        */
-      const Type& operator[]( unsigned index ) ;
-      
-      /** Method to copy the input array into this object.
-       * @param src The source buffer to copy from.
-       * @param amount The amount to copy.
-       * @param The source offset to start at.
-       * @param The destination offset to start the copy at.
-       */
-      void copy( const Array<Impl, Type>& src, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
-      
-      /** Method to copy the input array into this object.
-       * @param src The source buffer to copy from.
-       * @param record The record to use for recording this command.
-       * @param amount The amount to copy.
-       * @param The source offset to start at.
-       * @param The destination offset to start the copy at.
-       */
-      void copy( const Array<Impl, Type>& src, const typename Impl::CommandRecord& record, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
-      
-      /** Method to copy the date of the input host pointer to the device.
-       * @param src The host-pointer to copy from.
-       * @param amount The amount to copy.
-       * @param srcoffset The offset of the input to start copying from.
-       * @param dstoffset The offset of the device array to start writing to.
-       */
-      void copyToDevice( const Type* src, unsigned amount = 0, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
+      inline const Type& operator[]( unsigned index ) ;
       
       /** Method to return the element size of this object.
        * @return The size of each element of this object.
        */
-      unsigned elementSize() const ;
+      inline unsigned elementSize() const ;
       
       /** Method to synchronize this object's host data to the device.
        */
-      void syncToDevice() ;
+      inline void syncToDevice() ;
       
       /** Method to synchronize this object's device data to the host.
        */
-      void syncToHost() ;
+      inline void syncToHost() ;
       
       /** Whether the data in this object is dirty and needs to be synchronized.
        * @return Whether the data in this object is dirty.
        */
-      bool dirty() ;
+      inline bool dirty() ;
       
       /** Method to retrieve the number of elements in this array.
        * @return The number of elements in this array.
        */
-      unsigned size() const ;
+      inline unsigned size() const ;
       
       /** Method to retrieve the amount of bytes stored by this object.
        * @return The amount of bytes this object takes up.
        */
-      unsigned byteSize() const ;
+      inline unsigned byteSize() const ;
 
       /** Method to initialize this object & allocate data.
        * @param buffer The buffer to use for this object's internal buffer.
        */
-      void initialize( const typename Impl::Buffer& buffer ) ;
+      inline void initialize( const typename Impl::Buffer& buffer ) ;
       
       /** Method to check if this object is initialized or not.
        * @return Whether or not this object is initialized.
        */
-      bool initialized() const ;
+      inline bool initialized() const ;
 
       /** Method to initialize this object & allocate data.
        * @param size The number of elements allocated to this object.
        * @param device The implementation-specific device to use for this object.
        * @param host_alloc Whether or not to allocate this object on the host as well.
        */
-      void initialize( unsigned device, unsigned size, bool host_alloc = false ) ;
+      inline void initialize( unsigned device, unsigned size, bool host_alloc = false ) ;
       
       /** Method to initialize this object & allocate data.
        * @param size The number of elements allocated to this object.
@@ -226,7 +200,7 @@ namespace nyx
        * @param buffer_flags The implementation-specific buffer flags to use for buffer creation.
        */
       template<typename ... ARRAY_FLAGS>
-      void initialize( unsigned device, unsigned size, bool host_alloc, ARRAY_FLAGS... array_flags ) ;
+      inline void initialize( unsigned device, unsigned size, bool host_alloc, ARRAY_FLAGS... array_flags ) ;
       
       /** Method to initialize this object & allocate data.
        * @note See Array::initialized() for whether allocation was successful.
@@ -235,7 +209,7 @@ namespace nyx
        * @param size The number of elements allocated to this object.
        * @param host_alloc Whether or not to allocate this object on the host as well.
        */
-      bool initialize( nyx::Memory<Impl>& prealloc, unsigned size ) ;
+      inline bool initialize( nyx::Memory<Impl>& prealloc, unsigned size ) ;
       
       /** Method to initialize this object & allocate data.
        * @note See Array::initialized() for whether allocation was successful.
@@ -247,22 +221,22 @@ namespace nyx
        * @param buffer_flags The implementation-specific buffer flags to use for buffer creation.
        */
       template<typename ... ARRAY_FLAGS>
-      bool initialize( nyx::Memory<Impl>& prealloc, unsigned size, ARRAY_FLAGS... array_flags ) ;
+      inline bool initialize( nyx::Memory<Impl>& prealloc, unsigned size, ARRAY_FLAGS... array_flags ) ;
       
       /** Method to retrieve a const reference to this object's implementation-specific buffer.
        * @return Const-reference to this object's internal buffer.
        */
-      const typename Impl::Buffer& buffer() const ;
+      inline const typename Impl::Buffer& buffer() const ;
       
       /** Method to retrieve a const reference to this object's implementation-specific GPU device.
        * @return Const-reference to this object's internal device.
        */
-      unsigned device() const ;
+      inline unsigned device() const ;
       
       /** Method to retrieve a reference to this object's internal memory.
        * @return Reference to this object's internal memory.
        */
-      Memory<Impl>& memory() ;
+      inline Memory<Impl>& memory() ;
       
       /** Method to reset and release any allocated data.
        */
@@ -335,28 +309,6 @@ namespace nyx
     }
     
     return dummy ;
-  }
-  
-  template<typename Impl, class Type>
-  void Array<Impl, Type>::copy( const Array<Impl, Type>& src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
-  {
-    if( amount == 0 ) amount = sizeof( Type ) * this->count ;
-    else              amount *= sizeof( Type ) ;
-    this->arr_buffer.copy( src.arr_buffer, amount, srcoffset, dstoffset ) ;
-  }
-  
-  template<typename Impl, class Type>
-  void Array<Impl, Type>::copy( const Array<Impl, Type>& src, const typename Impl::CommandRecord& record, unsigned amount, unsigned srcoffset, unsigned dstoffset )
-  {
-    if( amount == 0 ) amount = sizeof( Type ) * this->count ;
-    else              amount *= sizeof( Type ) ;
-    this->arr_buffer.copy( src.arr_buffer, amount, record, srcoffset, dstoffset ) ;
-  }
-
-  template<typename Impl, class Type>
-  void Array<Impl, Type>::copyToDevice( const Type* src, unsigned amount, unsigned srcoffset, unsigned dstoffset )
-  {
-    this->arr_buffer.copyToDevice( static_cast<const void*>( src ), sizeof( Type ) * amount, srcoffset, dstoffset ) ;
   }
   
   template<typename Impl, class Type>
@@ -477,6 +429,3 @@ namespace nyx
     return this->arr_buffer.device() ;
   }
 }
-
-#endif 
-

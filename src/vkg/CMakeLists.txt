@@ -6,6 +6,7 @@ IF( ${Vulkan_FOUND} )
     SET( NYX_VULKAN_SOURCES 
          Vulkan.cpp
          Buffer.cpp
+         Chain.cpp
          Device.cpp
          Descriptor.cpp
          Instance.cpp
@@ -23,6 +24,7 @@ IF( ${Vulkan_FOUND} )
     SET( NYX_VULKAN_HEADERS
          Vulkan.h
          Buffer.h
+         Chain.h
          Device.h
          Descriptor.h
          Instance.h

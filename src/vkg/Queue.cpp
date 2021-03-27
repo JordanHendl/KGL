@@ -22,8 +22,12 @@
  * Created on December 30, 2020, 6:11 PM
  */
 
+#define VULKAN_HPP_ASSERT_ON_RESULT
+#define VULKAN_HPP_NOEXCEPT
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
+
 #include "Queue.h"
-#include "CommandBuffer.h"
 #include "Device.h"
 #include "Synchronization.h"
 #include "Vulkan.h"
@@ -128,7 +132,7 @@ namespace nyx
     void Queue::wait() const
     {
       data().mutex->lock() ;
-      data().queue.waitIdle() ; 
+      vkg::Vulkan::add( data().queue.waitIdle() ) ; 
       data().mutex->unlock() ;
     }
 
@@ -149,7 +153,6 @@ namespace nyx
 
     void Queue::submit( const nyx::vkg::CommandBuffer& cmd_buff, bool sync )
     {
-      unsigned fence_count ;
       data().submit = vk::SubmitInfo() ;
       
       data().submit.setCommandBufferCount  ( cmd_buff.size()    ) ;
@@ -157,17 +160,20 @@ namespace nyx
       data().submit.setWaitSemaphoreCount  ( 0                  ) ;
       data().submit.setSignalSemaphoreCount( 0                  ) ;
       
-      fence_count = 0 ;
+      vk::Fence fence ;
 
-      if( sync ) fence_count = 1 ;
       if( cmd_buff.level() == nyx::vkg::CommandBuffer::Level::Primary )
       {
+        if( sync ) fence = data().fence ;
         data().mutex->lock() ;
-        vkg::Vulkan::add( data().queue.submit( 1, &data().submit, data().fence ) ) ;
+        vkg::Vulkan::add( data().queue.submit( 1, &data().submit, fence ) ) ;
 
         // No synchronization given, must wait.
-        vkg::Vulkan::add( data().device.waitForFences( fence_count, &data().fence, true, UINT64_MAX ) ) ;
-        vkg::Vulkan::add( data().device.resetFences( 1, &data().fence ) ) ;
+        if( sync ) 
+        {
+          vkg::Vulkan::add( data().device.waitForFences( 1, &data().fence, true, UINT64_MAX ) ) ;
+          vkg::Vulkan::add( data().device.resetFences( 1, &data().fence ) ) ;
+        }
         data().mutex->unlock() ;
       }
     }
@@ -241,7 +247,7 @@ namespace nyx
       data().mutex->lock() ;
       vkg::Vulkan::add( data().queue.submit( 1, &data().submit, dummy ) ) ;
 
-      data().queue.waitIdle() ; 
+      vkg::Vulkan::add( data().queue.waitIdle() ) ;
       // No synchronization given, must wait.
       data().mutex->unlock() ;
     }
@@ -274,7 +280,11 @@ namespace nyx
       data().family = queue_family                                     ;
       data().mask   = static_cast<vk::QueueFlags>( mask )              ;
       data().mutex  = &mutex_map[ queue ]                              ;
-      data().fence  = data().device.createFence( fence_info, nullptr ) ;
+      
+      auto result =  data().device.createFence( fence_info, nullptr ) ;
+      vkg::Vulkan::add( result.result ) ;
+      data().fence = result.value ;
+      
       vkg::Vulkan::add( data().device.resetFences( 1, &data().fence ) ) ;
     }
 

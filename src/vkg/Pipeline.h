@@ -22,12 +22,10 @@
  * Created on December 30, 2020, 1:21 AM
  */
 
-#ifndef NYX_VKG_PIPELINE_H
-#define NYX_VKG_PIPELINE_H
+#pragma once
 
 #include "RenderPass.h"
 #include "Device.h"
-
 
 namespace vk
 {
@@ -37,6 +35,8 @@ namespace vk
 
 namespace nyx
 { 
+  class Viewport ;
+  
   namespace vkg
   {
     class Device        ;
@@ -114,6 +114,11 @@ namespace nyx
          */
         void initialize( const nyx::vkg::RenderPass& pass, const NyxShader& shader ) ;
         
+        /**
+         * @return 
+         */
+        bool initialized() const ;
+
         /** Method to set the push constant size in bytes for this pipeline.
          * @return The push constant size in bytes.
          */
@@ -132,7 +137,12 @@ namespace nyx
          * @return Whether or not this object is a graphics pipeline.
          */
         bool isGraphics() const ;
-
+        
+        /** Method to add a viewport to this pipeline.
+         * @param viewport The library viewport to add.
+         */
+        void addViewport( const nyx::Viewport& viewport ) ;
+        
         /** Method to retrieve a const-reference to this object's internal vulkan pipeline.
          * @return The internal vulkan pipeline of this object.
          */
@@ -160,6 +170,3 @@ namespace nyx
     };
   }
 }
-
-#endif
-

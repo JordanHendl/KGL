@@ -15,8 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NYX_CUDA_H
-#define NYX_CUDA_H
+#pragma once
 
 struct cudaChannelFormatDesc  ;
 
@@ -127,6 +126,4 @@ namespace nyx
   using FloatCudaImage = nyx::Image<nyx::cg::Cuda, float        > ;
   using CharCudaImage  = nyx::Image<nyx::cg::Cuda, unsigned char> ;
 }
-
-#endif
 

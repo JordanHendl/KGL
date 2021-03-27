@@ -58,6 +58,7 @@ namespace nyx
       vk::Pipeline               pipeline            ;
       vk::PipelineLayout         pipeline_layout     ;
       vk::CommandBufferBeginInfo begin_info          ;
+      vk::CommandPool            vk_pool             ;
       CommandBuffer::Level       level               ;
       CmdBuffers                 cmd_buffers         ;
       bool                       started_render_pass ;
@@ -171,9 +172,10 @@ namespace nyx
       data().device = Vulkan::device( queue.device() ).device() ;
       data().id     = queue.device()                            ;
 
-      device    = data().device                                                                                   ;
-      pool      = data().pool( data().queue.family() )                                                            ;
-      cmd_level = level == Level::Primary ? vk::CommandBufferLevel::ePrimary : vk::CommandBufferLevel::eSecondary ;
+      device         = data().device                                                                                   ;
+      pool           = data().pool( data().queue.family() )                                                            ;
+      data().vk_pool = data().pool( data().queue.family() )                                                            ;
+      cmd_level      = level == Level::Primary ? vk::CommandBufferLevel::ePrimary : vk::CommandBufferLevel::eSecondary ;
       
       info.setCommandBufferCount( count     ) ;
       info.setLevel             ( cmd_level ) ;
@@ -181,6 +183,11 @@ namespace nyx
       
       data().cmd_buffers.resize( count ) ;
       vkg::Vulkan::add( device.allocateCommandBuffers( &info, data().cmd_buffers.data() ) ) ;
+    }
+    
+    bool CommandBuffer::initialized()
+    {
+      return !data().cmd_buffers.empty() ;
     }
 
     void CommandBuffer::combine( const CommandBuffer& cmd )
@@ -274,11 +281,11 @@ namespace nyx
       const vk::SubpassContents flags = vk::SubpassContents::eInline ;
 
       vk::RenderPassBeginInfo info ;
-      info.setClearValueCount( 1                          ) ;
-      info.setPClearValues   ( &render_pass.clearColors() ) ;
-      info.setRenderArea     ( render_pass.area()         ) ;
-      info.setRenderPass     ( render_pass.pass()         ) ;
-      info.setFramebuffer    ( render_pass.framebuffers()[ index ]         ) ;
+      info.setClearValueCount( 1                                   ) ;
+      info.setPClearValues   ( render_pass.clearValues()           ) ;
+      info.setRenderArea     ( render_pass.area()                  ) ;
+      info.setRenderPass     ( render_pass.pass()                  ) ;
+      info.setFramebuffer    ( render_pass.framebuffers()[ index ] ) ;
       
       for( auto &cmd_buff : data().cmd_buffers )
       {
@@ -295,11 +302,11 @@ namespace nyx
       const vk::SubpassContents flags = vk::SubpassContents::eInline ;
 
       vk::RenderPassBeginInfo info ;
-      info.setClearValueCount( 1                          ) ;
-      info.setPClearValues   ( &render_pass.clearColors() ) ;
-      info.setRenderArea     ( render_pass.area()         ) ;
-      info.setRenderPass     ( render_pass.pass()         ) ;
-      info.setFramebuffer    ( render_pass.next()         ) ;
+      info.setClearValueCount( 1                         ) ;
+      info.setPClearValues   ( render_pass.clearValues() ) ;
+      info.setRenderArea     ( render_pass.area()        ) ;
+      info.setRenderPass     ( render_pass.pass()        ) ;
+      info.setFramebuffer    ( render_pass.current()     ) ;
       
       for( auto &cmd_buff : data().cmd_buffers )
       {
@@ -356,10 +363,9 @@ namespace nyx
 
     void CommandBuffer::reset()
     {
-      const vk::CommandPool pool   = data().pool( data().queue.family() ) ;
-      const vk::Device      device = data().device                        ;
+      const vk::Device device = data().device ;
       
-      device.freeCommandBuffers( pool, data().cmd_buffers.size(), data().cmd_buffers.data() ) ;
+      if( data().cmd_buffers.size() != 0 ) device.freeCommandBuffers( data().vk_pool, data().cmd_buffers.size(), data().cmd_buffers.data() ) ;
       data().cmd_buffers.clear() ;
     }
 

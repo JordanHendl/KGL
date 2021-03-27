@@ -76,7 +76,7 @@ namespace nyx
   {
     auto severity = error.severity() ;
 
-    std::cout << colorFromSeverity( severity ) << "-- " << severity.toString() << " | " << "Nyx::vkg Error: " << error.toString() << "." << nyx::END_COLOR << std::endl ;
+    std::cout << colorFromSeverity( severity ) << "-- " << severity.toString() << " | " << "Nyx Library Error: " << error.toString() << "." << nyx::END_COLOR << std::endl ;
     if( severity == nyx::Severity::Fatal ) exit( -1 ) ;
   }
 
@@ -152,7 +152,9 @@ namespace nyx
   {
     switch( this->err )
     {
-      case nyx::Error::InvalidImageConversion : return "A Framework image has been converted to a Nyx Image with a mismatched format." ;
+      case nyx::Error::InvalidNMP             : return "An invalid parameter has been found while parsing a .nmp file."                              ;
+      case nyx::Error::InvalidImageConversion : return "A Framework image has been converted to a Nyx Image with a mismatched format."               ;
+      case nyx::Error::LooseMemory            : return "An object has been deconstructed without freeing its memory. Possible memory leak detected." ;
       default : return "Unknown Error" ;
     }
   }
@@ -161,7 +163,9 @@ namespace nyx
   {
     switch( this->err )
     {
-      case nyx::Error::InvalidImageConversion : return nyx::Severity::Warning ;
+      case nyx::Error::InvalidNMP             : 
+      case nyx::Error::InvalidImageConversion : 
+      case nyx::Error::LooseMemory            : return nyx::Severity::Warning ;
       default : return nyx::Severity::Fatal ;
     }
   }

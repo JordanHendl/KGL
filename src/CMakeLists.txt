@@ -17,6 +17,7 @@
 
 
 ADD_SUBDIRECTORY( library  )
+ADD_SUBDIRECTORY( common   )
 ADD_SUBDIRECTORY( linux    )
 ADD_SUBDIRECTORY( event    )
 ADD_SUBDIRECTORY( cg       )

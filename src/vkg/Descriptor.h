@@ -51,7 +51,7 @@ namespace nyx
   
   /** Forward declared image.
    */
-  template<typename Impl, nyx::ImageFormat Format>
+  template<typename Framework>
   class Image ;
   
   /** Forward declared nyx file.
@@ -112,12 +112,11 @@ namespace nyx
         template<typename Type>
         void set( const char* name, const nyx::Array<vkg::Vulkan, Type>& array ) ;
         
-        /** Method to set an image into this object's descriptor.
-         * @param name The name of variable to set.
-         * @param image The image to bind to the data.
+        /** Base method to set a vulkan image to this object.
+         * @param name The name to associate with the variable.
+         * @param image The image to bind.
          */
-        template<nyx::ImageFormat Format>
-        void set( const char* name, const nyx::Image<vkg::Vulkan, Format>& image ) ;
+        void set( const char* name, const nyx::vkg::Image& image ) ;
         
       private:
         
@@ -127,11 +126,6 @@ namespace nyx
          */
         void set( const char* name, const nyx::vkg::Buffer& buffer ) ;
         
-        /** Base method to set a vulkan image to this object.
-         * @param name The name to associate with the variable.
-         * @param image The image to bind.
-         */
-        void set( const char* name, const nyx::vkg::Image& image ) ;
         
         /** Friend declaration.
          */
@@ -240,12 +234,6 @@ namespace nyx
     void Descriptor::set( const char* name, const nyx::Array<vkg::Vulkan, Type>& array )
     {
       this->set( name, array.buffer() ) ;
-    }
-    
-    template<nyx::ImageFormat Format>
-    void Descriptor::set( const char* name, const nyx::Image<vkg::Vulkan, Format>& image )
-    {
-      this->set( name, image.image() ) ;
     }
   }
 }

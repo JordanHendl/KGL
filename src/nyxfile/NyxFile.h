@@ -38,10 +38,10 @@ namespace nyx
   enum UniformType : unsigned
   {
     None,
-    UBO,
-    SAMPLER,
-    IMAGE,
-    SSBO
+    Ubo,
+    Sampler,
+    InputImage,
+    Ssbo
   };
 
   /** Iterator class to iterate over all shader data.

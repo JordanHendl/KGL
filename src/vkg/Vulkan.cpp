@@ -22,13 +22,16 @@
 #include "Vulkan.h"
 #include "Device.h"
 #include "library/Image.h"
+#include "library/Window.h"
+#include <library/Renderer.h>
+#include <library/Memory.h>
+#include <library/RenderPass.h>
 #include <algorithm>
 #include <iostream>
-#include <library/Renderer.h>
 #include <stdint.h>
-#include <library/Memory.h>
 #include <vector>
 #include <string>
+#include <map>
 
 #ifdef WIN32
 #define VK_USE_PLATFORM_WIN32_KHR
@@ -90,7 +93,10 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
     {
       typedef void ( *Callback )( Vulkan::Error ) ;
       
+      using WindowMap = std::map<unsigned, nyx::Window<Vulkan>*> ;
+      
       Callback                 error_cb          ;
+      WindowMap                windows           ;
       Vulkan::ErrorHandler*    handler           ;
       vkg::Instance            instance          ;
       std::vector<vkg::Device> devices           ;
@@ -144,6 +150,52 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
     {
       this->error_cb = &vkg::defaultHandler ;
       this->handler  = nullptr ;
+    }
+
+    Memory::Memory()
+    {
+      this->val = 0x0 ;
+    }
+
+    Memory::~Memory()
+    {
+      this->val = 0x0 ;
+    }
+
+    Memory::Memory( vk::DeviceMemory& val )
+    {
+      *this = val ;
+    }
+
+    Memory& Memory::operator=( vk::DeviceMemory& val )
+    {
+      static_assert( sizeof( vk::DeviceMemory ) == sizeof( void* ), "Vulkan Device Memory cannot be wrapped up." ) ;
+      this->val = reinterpret_cast<void*>( static_cast<VkDeviceMemory>( val ) ) ;
+      
+      return *this ;
+    }
+    
+    Memory& Memory::operator=( void* val )
+    {
+      static_assert( sizeof( vk::DeviceMemory ) == sizeof( void* ), "Vulkan Device Memory cannot be wrapped up." ) ;
+      this->val = val ;
+      
+      return *this ;
+    }
+
+    Memory::operator bool() const
+    {
+      return reinterpret_cast<VkDeviceMemory>( this->val ) ;
+    }
+
+    Memory::operator vk::DeviceMemory()
+    {
+      return static_cast<vk::DeviceMemory>( reinterpret_cast<VkDeviceMemory>( this->val ) ) ;
+    }
+
+    Memory::operator vk::DeviceMemory() const
+    {
+      return static_cast<vk::DeviceMemory>( reinterpret_cast<VkDeviceMemory>( this->val ) ) ;
     }
 
     vkg::Vulkan::Severity::Severity()
@@ -219,6 +271,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case Error::OutOfDataKHR         : return "OutOfDataKHR: The VKG swapchain is not capable of presenting to the specified surface." ;
         case Error::InitializationFailed : return "InitializationFailed: Vulkan initialization failed!"                                    ;
         case Error::OutOfDeviceMemory    : return "Out of device memory: Device memory available has been depleted."                       ;
+        case Error::MemoryMapFailed      : return "Memory Map Failure: A Host-GPU memory mapping has failed."                              ;
         default : return "Unknown Error" ;
       }
     }
@@ -318,6 +371,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case vk::Result::eErrorOutOfDateKHR         : return Vulkan::Error::RecreateSwapchain    ;
         case vk::Result::eSuboptimalKHR             : return Vulkan::Error::RecreateSwapchain    ;
         case vk::Result::eErrorOutOfDeviceMemory    : return Vulkan::Error::OutOfDeviceMemory    ;
+        case vk::Result::eErrorMemoryMapFailed      : return Vulkan::Error::MemoryMapFailed      ;
         default : return Vulkan::Error::Unknown ;
       }
     }
@@ -334,6 +388,30 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       }
     }
     
+    vk::AttachmentDescription Vulkan::convert( const nyx::Attachment& attachment )
+    {
+      using StoreOps = vk::AttachmentStoreOp ;
+      using LoadOps  = vk::AttachmentLoadOp  ;
+      
+      const auto format = Vulkan::convert( attachment.format() )                                                                                  ;
+      const auto layout = Vulkan::convert( attachment.layout() )                                                                                  ;
+      const auto stencil_store = attachment.storeStencil() ? StoreOps::eStore : StoreOps::eDontCare                                               ;
+      const auto stencil_load  = attachment.testStencil()  ? LoadOps::eLoad   : attachment.clearStencil() ? LoadOps::eClear : LoadOps::eDontCare  ;
+      const auto load_op       = LoadOps::eClear  ; /// JH TODO Change this.
+      const auto store_op      = StoreOps::eStore ;
+
+      vk::AttachmentDescription desc ;
+      
+      desc.setLoadOp        ( load_op                     ) ;
+      desc.setStoreOp       ( store_op                    ) ;
+      desc.setFormat        ( format                      ) ;
+      desc.setInitialLayout ( vk::ImageLayout::eUndefined ) ;
+      desc.setStencilLoadOp ( stencil_load                ) ;
+      desc.setStencilStoreOp( stencil_store               ) ;
+      desc.setFinalLayout   ( layout                      ) ;
+      
+      return desc ;
+    }
     vk::Format Vulkan::convert( nyx::ImageFormat format )
     {
       switch( format )
@@ -538,10 +616,19 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       return Vulkan::device( gpu ).computeQueue() ;
     }
     
-    vkg::Queue Vulkan::presentQueue( unsigned long long surface, unsigned gpu )
+    vkg::Queue Vulkan::presentQueue( unsigned window_id, unsigned gpu )
     {
+      static vkg::Queue dummy ;
+      
       Vulkan::initialize() ;
-      return Vulkan::device( gpu ).presentQueue( surface ) ;
+      auto iter = vkg::data.windows.find( window_id ) ;
+      
+      if( iter != vkg::data.windows.end() )
+      {
+        return Vulkan::device( gpu ).presentQueue( iter->second->context() ) ;
+      }
+      
+      return dummy ;
     }
 
     void Vulkan::copyToHost( const Vulkan::Memory& src, Vulkan::Data dst, unsigned gpu, unsigned amt, unsigned src_offset, unsigned dst_offset )
@@ -553,8 +640,8 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       ::vk::MemoryMapFlags flag   ;
       void*                mem    ;
       
-      offset = src_offset       ;
-      amount = amt              ;
+      offset = src_offset ;
+      amount = amt        ;
 
       dst    = static_cast<void*>( reinterpret_cast<unsigned char*>( dst ) + dst_offset ) ;
       
@@ -600,7 +687,81 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       return this->createMemory( gpu, size, flags, filter ) ;
     }
     
+    void Vulkan::addWindow( unsigned id, const char* title, unsigned width, unsigned height )
+    {
+      nyx::Window<Vulkan>* window ;
+      auto iter = vkg::data.windows.find( id ) ;
+      
+      if( iter == vkg::data.windows.end() )
+      {
+        window = new nyx::Window<Vulkan>() ;
+        window->initialize( title, width, height ) ;
+        vkg::data.windows.insert( iter, { id, window } ) ;
+      }
+    }
     
+    bool Vulkan::hasWindow( unsigned id )
+    {
+      auto iter = vkg::data.windows.find( id ) ;
+      if( iter == vkg::data.windows.end() )
+      {
+        return false ;
+      }
+      
+      return true ;
+    }
+    
+    void Vulkan::setWindowTitle( unsigned id, const char* title )
+    {
+      auto iter = vkg::data.windows.find( id ) ;
+      
+      if( iter != vkg::data.windows.end() )
+      {
+        iter->second->setTitle( title ) ;
+      }
+    }
+    
+    void Vulkan::setWindowWidth( unsigned id, unsigned width )
+    {
+      auto iter = vkg::data.windows.find( id ) ;
+      
+      if( iter != vkg::data.windows.end() )
+      {
+        iter->second->setWidth( width ) ;
+      }
+    }
+    
+    void Vulkan::setWindowHeight( unsigned id, unsigned height )
+    {
+      auto iter = vkg::data.windows.find( id ) ;
+      
+      if( iter != vkg::data.windows.end() )
+      {
+        iter->second->setHeight( height ) ;
+      }
+    }
+    
+    void Vulkan::setWindowBorderless( unsigned id, bool value )
+    {
+      auto iter = vkg::data.windows.find( id ) ;
+      
+      if( iter != vkg::data.windows.end() )
+      {
+        iter->second->setBorderless( value ) ;
+      }
+    }
+    
+    unsigned long long Vulkan::context( unsigned id )
+    {
+      auto iter = vkg::data.windows.find( id ) ;
+      
+      if( iter != vkg::data.windows.end() )
+      {
+        return iter->second->context() ;
+      }
+      
+      return 0ull ;
+    }
     const char* Vulkan::platformSurfaceInstanceExtensions()
     {
       #ifdef WIN32

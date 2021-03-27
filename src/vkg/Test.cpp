@@ -27,11 +27,13 @@
 #include <library/Memory.h>
 #include <library/Image.h>
 #include <library/Window.h>
-#include <template/List.h>
 #include <library/Renderer.h>
+#include "library/RenderPass.h"
+#include "library/Chain.h"
+#include "library/Pass.h"
+#include <template/List.h>
 #include <nyxfile/NyxFile.h>
 #include <shaders/headers/draw.h>
-#include <vulkan/vulkan.hpp>
 #include <vector>
 #include <algorithm>
 #include <assert.h>
@@ -44,11 +46,14 @@ constexpr unsigned device = 0 ;
 
 using Impl = nyx::vkg::Vulkan ;
 
-static Impl::Instance      instance       ;
-static Impl::Queue         graphics_queue ;
-static Impl::Swapchain     swapchain      ;
-static nyx::Window<Impl>   window         ;
-static athena::Manager     manager        ;
+constexpr unsigned WINDOW_ID = 8008135 ;
+
+static Impl::Instance        instance       ;
+static Impl::Queue           graphics_queue ;
+static Impl::Swapchain       swapchain      ;
+static nyx::RenderPass<Impl> render_pass    ;
+static nyx::Pass<Impl>       pass           ;
+static athena::Manager       manager        ;
 
 static std::vector<unsigned> test_array ;
 
@@ -70,16 +75,16 @@ athena::Result instance_initialization_test()
 
 athena::Result window_creation_test()
 {
-  window.initialize( "Test", 1280, 1024 ) ;
+  Impl::addWindow( WINDOW_ID, "Test", 1280, 1024 ) ;
   
-  if( !window.initialized() ) return athena::Result::Fail ;
-  
-  return true ;
+  if( Impl::hasWindow( WINDOW_ID ) ) return true ;
+  return false ;
 }
+
 
 athena::Result graphics_queue_get_test()
 {
-  graphics_queue = Impl::presentQueue( window.context(), device ) ;
+  graphics_queue = Impl::presentQueue( WINDOW_ID, device ) ;
   
   if( !Impl::initialized() ) return athena::Result::Skip ;
   if( !graphics_queue.valid() || !graphics_queue.graphics() ) return false ;
@@ -89,11 +94,30 @@ athena::Result graphics_queue_get_test()
 
 athena::Result swapchain_creation_test()
 {
-  swapchain.initialize( graphics_queue, window.context() ) ;
+  swapchain.initialize( graphics_queue, Impl::context( WINDOW_ID ) ) ;
   if( !Impl::initialized()  ) return athena::Result::Skip ;
   if( swapchain.count() == 0 ) return false ;
   
   swapchain.reset() ;
+  return true ;
+}
+
+athena::Result test_render_pass_creation()
+{
+  nyx::Attachment attachment ;
+  nyx::Subpass    subpass    ;
+  
+  attachment.setClearColor( 0.5, 0.5, 0.5, 1.0                ) ;
+  attachment.setFormat    ( nyx::ImageFormat::RGBA8           ) ;
+  attachment.setLayout    ( nyx::ImageLayout::ColorAttachment ) ;
+  
+  subpass.addAttachment( attachment ) ;
+  render_pass.addSubpass( subpass ) ;
+
+  if( !Impl::initialized()  ) return athena::Result::Skip ;
+  render_pass.initialize( device, WINDOW_ID ) ;
+  if( !render_pass.initialized() ) return false ;
+  
   return true ;
 }
 
@@ -157,7 +181,6 @@ athena::Result test_memory_device()
   if( !Impl::initialized() ) return athena::Result::Skip ;
   memory.initialize( device, sizeof( unsigned ) * 200, true ) ;
   
-//  if( !memory.device().initialized() ) return false ;
   memory.deallocate() ;
   return true ;
 }
@@ -203,61 +226,43 @@ athena::Result test_array_size()
 
 athena::Result test_array_host_copy()
 {
-  Impl::Array<unsigned> buffer_1 ;
-  Impl::Array<unsigned> buffer_2 ; 
+  std::vector<unsigned> test_array ;
+  std::vector<unsigned> test_array_result ;
   
-  test_array.resize( 500 ) ;
-  std::fill( test_array.begin(), test_array.end(), 76006 ) ;
-
+  Impl::Array<unsigned> buffer_1 ;
+  Impl::Array<unsigned> buffer_2 ;
+  
+  nyx::Chain<Impl> chain ;
+  test_array       .resize( 500 ) ;
+  test_array_result.resize( 500 ) ;
+  
+  std::fill( test_array       .begin(), test_array       .end(), 78106 ) ;
+  std::fill( test_array_result.begin(), test_array_result.end(), 0     ) ;
+  
   if( !Impl::initialized() ) return athena::Result::Skip ;
   
-  buffer_1.initialize( device, 500, true ) ;
-  buffer_2.initialize( device, 500, true ) ;
-  buffer_1.copyToDevice( test_array.data(), 500 ) ;
-  buffer_2.copy( buffer_1 ) ;
-  buffer_2.syncToHost() ;
+  buffer_1.initialize( device, 500       ) ;
+  buffer_2.initialize( device, 500       ) ;
+  chain   .initialize( device, WINDOW_ID ) ;
+  
+  chain.copy( test_array.data(), buffer_1                 ) ;
+  chain.copy( buffer_1         , buffer_2                 ) ;
+  chain.copy( buffer_2         , test_array_result.data() ) ;
+  
+  chain.submit     () ;
+  chain.synchronize() ;
   
   for( unsigned index = 0; index < 500; index++ )
   {
-    if( buffer_2[ index ] != 76006 )
+    if( test_array_result[ index ] != 78106 )
     {
-      std::cout << "index: " << index << " | " << buffer_2[ index ] << std::endl ;
-//      return false ;
+      return false ;
     }
   }
-
+  
   buffer_1.reset() ;
   buffer_2.reset() ;
-  return true ;
-}
-
-athena::Result test_array_copy_non_wait()
-{
-  Impl::CommandRecord   cmd      ;
-  Impl::Array<unsigned> buffer_1 ;
-  Impl::Array<unsigned> buffer_2 ; 
-  Impl::Synchronization sync     ;
-  
-  test_array.resize( 500 ) ;
-  std::fill( test_array.begin(), test_array.end(), 76006 ) ;
-  if( !Impl::initialized() ) return athena::Result::Skip ;
-  buffer_1.initialize( device, 500, true  ) ;
-  buffer_2.initialize( device, 500, false ) ;
-  cmd     .initialize( graphics_queue, 1  ) ;
-  sync    .initialize( device             ) ;
-  
-  sync.resetFence() ;
-
-  if( cmd.size() != 1 ) return false ;
-  
-  // Record copy command.
-  cmd.record() ;
-  buffer_1.copyToDevice( test_array.data(), 500 ) ;
-  buffer_2.copy( buffer_1, graphics_queue ) ;
-  cmd.stop() ;
-  
-  // Submit & Sync.
-  graphics_queue.submit( cmd, sync ) ;
+  chain   .reset() ;
   return true ;
 }
 
@@ -281,10 +286,10 @@ athena::Result test_array_prealloc_init()
 
 athena::Result test_image_initialization()
 {
-  Impl::Image<nyx::ImageFormat::RGBA8> image ;
+  Impl::Image image ;
   
   if( !Impl::initialized() ) return athena::Result::Skip ;
-  if( image.initialize( device, 1280, 1024 ) )
+  if( image.initialize( nyx::ImageFormat::RGBA8, device, 1280, 1024 ) )
   {
     image.reset() ;
     return true ;
@@ -298,9 +303,10 @@ athena::Result test_image_size()
   const unsigned width  = 1280 ;
   const unsigned height = 1024 ;
   
-  Impl::Image<nyx::ImageFormat::RGBA8> image ;
-  if( !Impl::initialized() ) return athena::Result::Skip ;
-  if( !image.initialize( device, width, height ) ) return false ;
+  Impl::Image      image ;
+
+  if( !Impl::initialized() ) return athena::Result::Skip ; 
+  if( !image.initialize( nyx::ImageFormat::RGBA8, device, width, height ) ) return false ;
   if( image.width()    != width                  ) return false ;
   if( image.height()   != height                 ) return false ;
   if( image.size()     != ( width * height )     ) return false ;
@@ -315,17 +321,22 @@ athena::Result test_image_resize()
   const unsigned width  = 1280 ;
   const unsigned height = 1024 ;
   
-  Impl::Image<nyx::ImageFormat::RGBA8> image ;
+  Impl::Image      image ;
+  nyx::Chain<Impl> chain ;
+  
   if( !Impl::initialized() ) return athena::Result::Skip ;
-  if( !image.initialize( device, width, height )      ) return false ;
-  if( image.width()    != width                       ) return false ;
-  if( image.height()   != height                      ) return false ;
-  if( image.size()     != ( width * height )          ) return false ;
-  if( image.byteSize() < ( width * height * 4 )       ) return false ;
-  if( image.layout()   != nyx::ImageLayout::Undefined ) return false ;
   
-  image.transition( nyx::ImageLayout::General, graphics_queue ) ;
+  chain.initialize( device, nyx::ChainType::Graphics ) ;
+  if( !image.initialize( nyx::ImageFormat::RGBA8, device, width, height ) ) return false ;
+  if( image.width()    != width                                           ) return false ;
+  if( image.height()   != height                                          ) return false ;
+  if( image.size()     != ( width * height )                              ) return false ;
+  if( image.byteSize() < ( width * height * 4 )                           ) return false ;
+  if( image.layout()   != nyx::ImageLayout::Undefined                     ) return false ;
   
+  chain.transition( image, nyx::ImageLayout::General ) ;
+  chain.submit() ;
+  chain.synchronize() ;
   if( !image.resize( 2048, 1720 )                 ) return false ;
   if( image.width()    != 2048                    ) return false ;
   if( image.height()   != 1720                    ) return false ;
@@ -336,65 +347,81 @@ athena::Result test_image_resize()
   return true ;
 }
 
-athena::Result test_renderer_init()
-{
-  nyx::Renderer<Impl, nyx::ImageFormat::RGBA8> renderer ;
-  nyx::RGBAImage<Impl>                         image    ;
-
-  renderer.setDimensions( 1920, 1080 ) ;
-  renderer.initialize( device, nyx::bytes::draw, sizeof( nyx::bytes::draw ) ) ;
-  image = renderer.framebuffer<0>() ;
-  
-  if( image.width() != 1920 || image.height() != 1080 ) return false ;
-  return true ;
-}
-
-athena::Result test_renderer_draw()
-{
-  nyx::Renderer<Impl, nyx::ImageFormat::RGBA8> renderer ;
-  nyx::Array<Impl, float>                      vertices ;
-  nyx::RGBAImage<Impl>                         image    ;
-  nyx::Viewport                                viewport ;
-  
-  viewport.setWidth ( 1280 ) ;
-  viewport.setHeight( 1024 ) ;
-  renderer.setDimensions( 1920, 1080 ) ;
-  renderer.addViewport  ( viewport   ) ;
-  vertices.initialize( device, 9, false, nyx::ArrayFlags::Vertex ) ;
-  renderer.initialize( device, nyx::bytes::draw, sizeof( nyx::bytes::draw ), window.context() ) ;
-  for( unsigned i = 0; i < 200 ; i++ )
-  {
-    renderer.draw( vertices ) ;
-    renderer.finalize() ;
-  }
-  return true ;
-}
-
 athena::Result test_image_copy()
 {
   Impl::Array<unsigned char> staging ; 
-  nyx::RGBAImage<Impl>       image   ;
+  nyx::Image<Impl>           image   ;
+  nyx::Chain<Impl>           chain   ;
   int width  ;
   int height ;
   int chan   ;
   
   if( !Impl::initialized() ) return athena::Result::Skip ;
   
+  chain.initialize( device, nyx::ChainType::Graphics ) ;
   auto bytes = stbi_load( "test_image.jpeg", &width, &height, &chan, STBI_rgb_alpha ) ;
   if( !bytes ) return false ;
   
   // Initialize objects.
-  image  .initialize( device, static_cast<unsigned>( width ), static_cast<unsigned>( height ), 1                                             ) ;
+  image  .initialize( nyx::ImageFormat::RGBA8, device, static_cast<unsigned>( width ), static_cast<unsigned>( height ), 1 ) ;
   staging.initialize( device, static_cast<unsigned>( width * height * 4 ), true, nyx::ArrayFlags::TransferSrc | nyx::ArrayFlags::TransferDst ) ;
   
-  // Copy to host-visible staging buffer first.
-  staging.copyToDevice( bytes, static_cast<unsigned>( width * height * 4 ) ) ;
-
-  // Now, record a GPU to GPU copy on the record.  
-  image.copy( staging.buffer(), graphics_queue ) ;
-  
+  chain.copy( bytes  , staging ) ;
+  chain.copy( staging, image   ) ;
+  chain.submit() ;
+  chain.synchronize() ;
   return true ;
 }
+
+athena::Result test_renderer_init()
+{
+  nyx::Renderer<Impl> renderer ;
+  nyx::Viewport       viewport ;
+  
+  viewport.setWidth ( 1280 ) ;
+  viewport.setHeight( 1024 ) ;
+  
+  renderer.addViewport( viewport ) ;
+  renderer.initialize( device, render_pass, nyx::bytes::draw, sizeof( nyx::bytes::draw ) ) ;
+  
+  if( !renderer.initialized() ) return false ;
+  return true ;
+}
+
+athena::Result test_renderer_draw()
+{
+  nyx::Renderer<Impl> renderer ;
+  Impl::Array<float>  vertices ;
+  Impl::Image         uniform  ;
+  nyx::Viewport       viewport ;
+  nyx::Chain<Impl>    chain    ;
+
+  viewport.setWidth ( 1280 ) ;
+  viewport.setHeight( 1024 ) ;
+  
+  chain   .initialize ( device, nyx::ChainType::Graphics            ) ;
+  uniform .initialize ( nyx::ImageFormat::RGBA8, device, 1280, 1024 ) ;
+  renderer.addViewport( viewport                                    ) ;
+  
+  chain.transition( uniform, nyx::ImageLayout::ShaderRead ) ;
+  chain.submit() ;
+  chain.synchronize() ;
+  
+  chain.initialize( render_pass, WINDOW_ID ) ;
+  vertices.initialize( device, 9, false, nyx::ArrayFlags::Vertex ) ;
+  renderer.initialize( device, render_pass, nyx::bytes::draw, sizeof( nyx::bytes::draw ) ) ;
+  renderer.bind( "framebuffer", uniform ) ;
+  
+  for( unsigned i = 0; i < 2000 ; i++ )
+  {
+    chain.draw( renderer, vertices ) ;
+  }
+  
+  chain.submit     () ;
+  chain.synchronize() ;
+  return true ;
+}
+
 
 int main()
 {
@@ -412,13 +439,13 @@ int main()
   manager.add( "11) Array::initialize Preallocated Test" , &test_array_prealloc_init      ) ;
   manager.add( "12) Array::size Test"                    , &test_array_size               ) ;
   manager.add( "13) Array::copy Test"                    , &test_array_host_copy          ) ;
-  manager.add( "14) Array::copy Test ( No waiting )"     , &test_array_copy_non_wait      ) ;
-  manager.add( "15) Image::initialize Test"              , &test_image_initialization     ) ;
-  manager.add( "16) Image::size Test"                    , &test_image_size               ) ;
+  manager.add( "14) Image::initialize Test"              , &test_image_initialization     ) ;
+  manager.add( "15) Image::size Test"                    , &test_image_size               ) ;
   manager.add( "17) Image::resize Test"                  , &test_image_resize             ) ;
   manager.add( "18) Image::copy Test"                    , &test_image_copy               ) ;
-  manager.add( "19) Renderer::initialize Test"           , &test_renderer_init            ) ;
-  manager.add( "20) Renderer::draw Test"                 , &test_renderer_draw            ) ;
+  manager.add( "19) RenderPass::initialize Test"         , &test_render_pass_creation     ) ;
+  manager.add( "20) Renderer::initialize Test"           , &test_renderer_init            ) ;
+  manager.add( "21) Renderer::draw Test"                 , &test_renderer_draw            ) ;
   
   return manager.test( athena::Output::Verbose ) ;
 }

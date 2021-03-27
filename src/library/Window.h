@@ -22,8 +22,7 @@
  * Created on December 30, 2020, 8:14 PM
  */
 
-#ifndef NYX_WINDOW_H
-#define NYX_WINDOW_H
+#pragma once
 
 #ifdef _WIN32
   #include "../win32/Win32.h"
@@ -271,5 +270,4 @@ namespace nyx
     using Window = nyx::BaseWindow<nyx::lx::Linux, Framework> ;
   #endif
 }
-#endif
 

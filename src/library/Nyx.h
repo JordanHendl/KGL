@@ -90,7 +90,9 @@ namespace nyx
       {
         None,                   ///< No Error.
         Success,                ///< Success. Nothing to do.
+        InvalidNMP,             ///< An invalid parameter was found while parsing an .nmp file.
         InvalidImageConversion, ///< A templated image imported an incompatible implementation image.
+        LooseMemory,            ///< An object was deconstructed without freeing it's memory.
       };
 
       /** Default constructor.

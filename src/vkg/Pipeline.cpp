@@ -32,6 +32,7 @@
 #include "NyxShader.h"
 #include "RenderPass.h"
 #include "Vulkan.h"
+#include "library/Renderer.h"
 #include <vulkan/vulkan.hpp>
 
 namespace nyx
@@ -42,8 +43,6 @@ namespace nyx
      */
     struct PipelineConfig
     {
-      vk::Viewport                             viewport               ; ///< TODO
-      vk::Rect2D                               scissor                ; ///< TODO
       vk::PipelineViewportStateCreateInfo      viewport_info          ; ///< TODO
       vk::PipelineColorBlendStateCreateInfo    color_blend_info       ; ///< TODO
       vk::PipelineRasterizationStateCreateInfo rasterization_info     ; ///< TODO
@@ -60,15 +59,20 @@ namespace nyx
      */
     struct PipelineData
     {
-      PipelineConfig       config              ; ///< TODO
-      nyx::vkg::Device     device              ; ///< TODO
-      nyx::vkg::RenderPass render_pass         ; ///< TODO
-      nyx::vkg::NyxShader   shader              ; ///< TODO
-      vk::Pipeline         pipeline            ; ///< TODO
-      vk::PipelineLayout   layout              ; ///< TODO
-      vk::PipelineCache    cache               ; ///< TODO
-      vk::ShaderStageFlags push_constant_flags ; ///< TODO
-      unsigned             push_constant_size  ; ///< TODO
+      using Viewports = std::vector<vk::Viewport> ;
+      using Scissors  = std::vector<vk::Rect2D>   ;
+      
+      const nyx::vkg::RenderPass* render_pass         ; ///< TODO
+      Scissors                    scissors            ;
+      Viewports                   viewports           ;
+      PipelineConfig              config              ; ///< TODO
+      nyx::vkg::Device            device              ; ///< TODO
+      nyx::vkg::NyxShader         shader              ; ///< TODO
+      vk::Pipeline                pipeline            ; ///< TODO
+      vk::PipelineLayout          layout              ; ///< TODO
+      vk::PipelineCache           cache               ; ///< TODO
+      vk::ShaderStageFlags        push_constant_flags ; ///< TODO
+      unsigned                    push_constant_size  ; ///< TODO
       
       /** Default constructor.
        */
@@ -104,9 +108,6 @@ namespace nyx
       this->multisample_info.setAlphaToCoverageEnable( false                         ) ;
       this->multisample_info.setPSampleMask          ( nullptr                       ) ;
       this->multisample_info.setRasterizationSamples ( ::vk::SampleCountFlagBits::e1 ) ;
-      
-      this->scissor.offset.setX( 0 ) ;
-      this->scissor.offset.setY( 0 ) ;
       
       this->color_blend_attachment.setColorWriteMask     ( color_blend_mask             ) ;
       this->color_blend_attachment.setBlendEnable        ( false                        ) ;
@@ -169,10 +170,10 @@ namespace nyx
       vertex_input.setPVertexBindingDescriptions     ( this->shader.bindings()            ) ;
       
 
-      if( this->render_pass.initialized() )
+      if( this->render_pass && this->render_pass->initialized() )
       {
-        this->config.viewport_info.setPViewports( this->render_pass.viewports() ) ;
-        this->config.viewport_info.setPScissors ( this->render_pass.scissors()  ) ;
+        this->config.viewport_info.setPViewports( this->viewports.data() ) ;
+        this->config.viewport_info.setPScissors ( this->scissors .data() ) ;
 
         graphics_info.setPStages            ( this->shader.infos()             ) ;
         graphics_info.setStageCount         ( this->shader.numStages()         ) ;
@@ -183,7 +184,7 @@ namespace nyx
         graphics_info.setPRasterizationState( &this->config.rasterization_info ) ;
         graphics_info.setPMultisampleState  ( &this->config.multisample_info   ) ;
         graphics_info.setPColorBlendState   ( &this->config.color_blend_info   ) ;
-        graphics_info.setRenderPass         ( this->render_pass.pass()         ) ;
+        graphics_info.setRenderPass         ( this->render_pass->pass()        ) ;
         
         auto result = this->device.device().createGraphicsPipeline( this->cache, graphics_info ) ;
         vkg::Vulkan::add( result.result ) ;
@@ -249,7 +250,7 @@ namespace nyx
     {
       if( !Vulkan::initialized() ) Vulkan::initialize() ;
 
-      data().render_pass = pass                            ;
+      data().render_pass = &pass                           ;
       data().device      = Vulkan::device( pass.device() ) ;
 
       data().shader.initialize( pass.device(), nyx_file ) ;
@@ -273,7 +274,7 @@ namespace nyx
     {
       if( !Vulkan::initialized() ) Vulkan::initialize() ;
 
-      data().render_pass = pass                            ;
+      data().render_pass = &pass                           ;
       data().device      = Vulkan::device( pass.device() ) ;
 
       data().shader.initialize( pass.device(), nyx_bytes, size ) ;
@@ -282,9 +283,14 @@ namespace nyx
       data().createPipeline() ;
     }
     
+    bool Pipeline::initialized() const
+    {
+      return data().pipeline ;
+    }
+    
     bool Pipeline::isGraphics() const
     {
-      return data().render_pass.initialized() ;
+      return data().render_pass && data().render_pass->initialized() ;
     }
 
     void Pipeline::initialize( const NyxShader& shader )
@@ -297,17 +303,34 @@ namespace nyx
       data().createLayout() ;
       data().createPipeline() ;
     }
+    
+    void Pipeline::addViewport( const nyx::Viewport& viewport )
+    {
+      vk::Viewport view    ;
+      vk::Rect2D   scissor ;
+      
+      view.setWidth   ( viewport.width()    ) ;
+      view.setHeight  ( viewport.height()   ) ;
+      view.setMinDepth( 0.f                 ) ;
+      view.setMaxDepth( viewport.maxDepth() ) ;
+      view.setX       ( 0                   ) ;
+      view.setY       ( 0                   ) ;
+      
+      scissor.setExtent( { viewport.width(), viewport.height() } ) ;
+      scissor.setOffset( { 0               , 0                 } ) ;
+      
+      data().viewports.push_back( view    ) ;
+      data().scissors .push_back( scissor ) ;
+    }
 
     void Pipeline::initialize( const nyx::vkg::RenderPass& pass, const NyxShader& shader )
     {
       Vulkan::initialize() ;
 
-      data().render_pass = pass                            ;
+      data().render_pass = &pass                           ;
       data().device      = Vulkan::device( pass.device() ) ;
       data().shader      = shader                          ;
       
-      data().config.viewport = pass.viewport() ;
-
       data().createLayout() ;
       data().createPipeline() ;
     }
@@ -324,8 +347,8 @@ namespace nyx
     
     void Pipeline::reset()
     {
-      data().device.device().destroy( data().pipeline, nullptr ) ;
-      data().device.device().destroy( data().layout  , nullptr ) ;
+      if( data().pipeline ) data().device.device().destroy( data().pipeline, nullptr ) ;
+      if( data().layout   ) data().device.device().destroy( data().layout  , nullptr ) ;
     }
 
     const vk::Pipeline& Pipeline::pipeline() const

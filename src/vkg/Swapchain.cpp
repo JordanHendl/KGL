@@ -328,7 +328,7 @@ namespace nyx
 
     bool Swapchain::initialized() const
     {
-      return data().swapchain && !data().acquired.empty() ;
+      return data().swapchain ; //&& !data().acquired.empty() ;
     }
 
     unsigned Swapchain::width() const
@@ -353,11 +353,8 @@ namespace nyx
     
     const nyx::vkg::Image& Swapchain::image( unsigned idx ) const
     {
-      static const nyx::vkg::Image dummy ;
-      
       if( idx < data().images.size() ) return data().images[ idx ] ;
-      
-      return dummy ;
+      return data().images[ 0 ] ;
     }
     
     const vk::SwapchainKHR& Swapchain::swapchain() const
@@ -369,7 +366,6 @@ namespace nyx
     {
       if( data().swapchain )
       {
-        
         for( auto& image : data().images )
         {
           image.reset() ;

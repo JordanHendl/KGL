@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NYX_VKG_IMAGE_H
-#define NYX_VKG_IMAGE_H
+#pragma once
 
 namespace vk
 {
-  class CommandBuffer ;
-  class Sampler       ;
-  class ImageView     ;
-  class Image         ;
+  class CommandBuffer          ;
+  class Sampler                ;
+  class ImageView              ;
+  class Image                  ;
+  class ImageSubresourceLayers ;
 }
 
 namespace nyx
@@ -49,7 +49,7 @@ namespace nyx
   
   /** Forward declared generic template object.
    */
-  template<typename IMPL, ImageFormat FORMAT>
+  template<typename Framework>
   class Image ;
 
   namespace vkg
@@ -61,7 +61,8 @@ namespace nyx
     class RenderPass    ;
     class Swapchain     ;
     class Queue         ;
-
+    class Chain         ;
+    
     /** Abstraction of a Vulkan Image.
      */
     class Image 
@@ -98,15 +99,15 @@ namespace nyx
         
         /** Friend decleration for templated image.
          */
-        template<typename IMPL, nyx::ImageFormat FORMAT>
-        friend class ::nyx::Image ;
+        template<typename Framework>
+        friend class nyx::Image ;
         
         friend class RenderPassData ; ///< Friend class for render pass data object.
         friend class SwapchainData  ; ///< Friend class for swapchain data object.
         friend class RenderPass     ; ///< Friend class for render pass.
         friend class Swapchain      ; ///< Friend class for swapchain.
         friend class Descriptor     ;
-        
+        friend class Chain          ;
         /** Method to perform a deep copy on the input image.
          * @param src The image to copy from.
          * @param buffer Reference to a valid vulkan command buffer to record the copy operation to.
@@ -220,6 +221,11 @@ namespace nyx
          */
         const vk::Sampler& sampler() const ;
         
+        /**
+         * @return 
+         */
+        const vk::Image& image() const ;
+
         /** Method to retrieve the size of this object.
          * @return The size in pixels of this object.
          */
@@ -250,7 +256,7 @@ namespace nyx
          */
         void reset() ;
         
-      private:
+        const vk::ImageSubresourceLayers& subresource() const ;
         
         /** Forward-declared structure containing this object's internal data.
          */
@@ -268,6 +274,4 @@ namespace nyx
     };
   }
 }
-
-#endif
 
