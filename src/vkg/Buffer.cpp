@@ -75,7 +75,7 @@ namespace nyx
       
       info.setBuffer( this->buffer ) ;
       
-      if( this->device.hasExtension( VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME ) )
+      if( this->device.hasExtension( "VK_KHR_buffer_device_address" ) )
       {
         this->address = this->device.device().getBufferAddress( &info ) ;
       }
@@ -100,12 +100,12 @@ namespace nyx
 
     BufferData::BufferData()
     {
-      this->size         = 0                                                                                 ;
-      this->preallocated = false                                                                             ;
-      this->usage_flags  = ::vk::BufferUsageFlagBits::eTransferSrc | ::vk::BufferUsageFlagBits::eTransferDst ;
-      this->device_size  = 0                                                                                 ;
-      this->host_local   = false                                                                             ;
-      this->initialized  = false                                                                             ;
+      this->size         = 0                                                                                                                                 ;
+      this->preallocated = false                                                                                                                             ;
+      this->usage_flags  = ::vk::BufferUsageFlagBits::eTransferSrc | ::vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eShaderDeviceAddressKHR ;
+      this->device_size  = 0                                                                                                                                 ;
+      this->host_local   = false                                                                                                                             ;
+      this->initialized  = false                                                                                                                             ;
     }
     
     Buffer::Buffer()

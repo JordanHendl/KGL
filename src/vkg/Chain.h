@@ -83,7 +83,7 @@ namespace nyx
         void drawIndexed( const vkg::Renderer& renderer, const Array<Vulkan, Type2>& indices, const Array<Vulkan, Type>& vertices ) ;
 
         template<typename Type>
-        void push( const Renderer& pipeline, const Type& data ) ;
+        void push( const Renderer& pipeline, const Type& data, unsigned offset ) ;
 
         void transition( vkg::Image& image, nyx::ImageLayout layout ) ;
         
@@ -114,7 +114,7 @@ namespace nyx
         
         void copy( const vkg::Buffer& src, vkg::Image& dst, unsigned copy_amt, unsigned element_size, unsigned src_offset, unsigned dst_offset ) ;
         
-        void pushBase( const Renderer& pipeline, const void* value, unsigned byte_size ) ;
+        void pushBase( const Renderer& pipeline, const void* value, unsigned byte_size, unsigned offset ) ;
         
         struct ChainData* chain_data ;
         
@@ -166,9 +166,9 @@ namespace nyx
     }
     
     template<typename Type>
-    void Chain::push( const Renderer& pipeline, const Type& data )
+    void Chain::push( const Renderer& pipeline, const Type& data, unsigned offset )
     {
-      this->pushBase( pipeline, static_cast<const void*>( &data ), sizeof( Type ) ) ;
+      this->pushBase( pipeline, static_cast<const void*>( &data ), sizeof( Type ), offset ) ;
     }
   }
 }

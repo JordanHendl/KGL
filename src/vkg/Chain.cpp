@@ -410,11 +410,11 @@ namespace nyx
       data().cmd.drawBase( vertices, count, offset ) ;
     }
 
-    void Chain::pushBase( const Renderer& pipeline, const void* value, unsigned byte_size )
+    void Chain::pushBase( const Renderer& pipeline, const void* value, unsigned byte_size, unsigned offset )
     {
       data().record( true ) ;
-      data().cmd.bind( pipeline.pipeline()          ) ;
-      data().cmd.pushConstantBase( value, byte_size ) ;
+      data().cmd.bind( pipeline.pipeline()                  ) ;
+      data().cmd.pushConstantBase( value, byte_size, offset ) ;
     }
 
     const ChainData& Chain::data() const

@@ -223,7 +223,7 @@ namespace nyx
          * @param byte_size The size in bytes of the object being pushed.
          * @param stage_flags The stage that the push constant is used on.
          */
-        void pushConstantBase( const void* value, unsigned byte_size ) ;
+        void pushConstantBase( const void* value, unsigned byte_size, unsigned offset ) ;
         
         /**
          * @return 
@@ -262,7 +262,7 @@ namespace nyx
     template<typename Type>
     void CommandBuffer::push( const Type& value, nyx::PipelineStage stage )
     {
-      this->pushConstantBase( static_cast<const void*>( &value ), sizeof( Type ) ) ;
+      this->pushConstantBase( static_cast<const void*>( &value ), sizeof( Type ), 0 ) ;
     }
   }
 }

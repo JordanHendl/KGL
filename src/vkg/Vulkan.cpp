@@ -670,13 +670,17 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       const auto                      device   = Vulkan::device( gpu ).device()                                                              ;
       const auto                      p_device = Vulkan::device( gpu ).physicalDevice()                                                      ;
       const ::vk::MemoryPropertyFlags flag     = static_cast<vk::MemoryPropertyFlags>( static_cast<VkMemoryPropertyFlags>( flags.value() ) ) ;
-      Vulkan::Memory           mem  ;
-      ::vk::MemoryAllocateInfo info ;
+      Vulkan::Memory              mem       ;
+      vk::MemoryAllocateInfo      info      ;
+      vk::MemoryAllocateFlagsInfo flag_info ;
 
       Vulkan::initialize() ;
-
+      
+      flag_info.setFlags( vk::MemoryAllocateFlagBits::eDeviceAddress ) ;
+      
       info.setAllocationSize ( size                              ) ;
       info.setMemoryTypeIndex( memType( filter, flag, p_device ) ) ;
+      info.setPNext( &flag_info ) ;
       
       auto result = device.allocateMemory( info, nullptr ) ;
       

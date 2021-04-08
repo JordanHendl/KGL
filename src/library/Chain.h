@@ -90,7 +90,7 @@ namespace nyx
       void initialize( const nyx::RenderPass<Framework>& render_pass, unsigned window_id ) ;
       
       template<typename Type>
-      void push( const nyx::Renderer<Framework>& pipeline, const Type& data ) ;
+      void push( const nyx::Renderer<Framework>& pipeline, const Type& data, unsigned offset = 0 ) ;
       
       void synchronize() ;
       
@@ -206,9 +206,9 @@ namespace nyx
   
   template<typename Framework>
   template<typename Type>
-  void Chain<Framework>::push( const nyx::Renderer<Framework>& pipeline, const Type& data )
+  void Chain<Framework>::push( const nyx::Renderer<Framework>& pipeline, const Type& data, unsigned offset )
   {
-    this->impl.push( pipeline, data ) ;
+    this->impl.push( pipeline, data, offset ) ;
   }
 
   template<typename Framework>

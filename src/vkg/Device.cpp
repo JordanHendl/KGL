@@ -180,7 +180,7 @@ namespace nyx
     DeviceData::DeviceData()
     {
       this->id = UINT32_MAX ;
-//      this->extension_list = { "VK_KHR_buffer_device_address" } ;
+      this->extension_list = { "VK_KHR_buffer_device_address" } ;
     }
 
     DeviceData& DeviceData::operator=( const DeviceData& data )
@@ -275,13 +275,11 @@ namespace nyx
       info.setEnabledLayerCount      ( layer_list_char.size() ) ;
       info.setPEnabledLayerNames     ( layer_list_char        ) ;
       feat.setFeatures( this->features ) ;
-      nyx::vkg::ext_buffer_address.setBufferDeviceAddress( false ) ;
       
-//      feat.setPNext( static_cast<void*>( &nyx::vkg::ext_buffer_address ) ) ;
+      nyx::vkg::ext_buffer_address.setBufferDeviceAddress( true ) ;
+      feat.setPNext( static_cast<void*>( &nyx::vkg::ext_buffer_address ) ) ;
       info.setPNext( static_cast<void*>( &feat                         ) ) ;
       
-//      info.setPNext( static_cast<void*>( &nyx::vkg::ext_buffer_address ) ) ;
-
       vkg::Vulkan::add( this->physical_device.createDevice( &info, nullptr, &this->gpu ) ) ;
     }
     

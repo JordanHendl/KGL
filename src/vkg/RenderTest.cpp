@@ -39,10 +39,18 @@ struct Vertex
   float x, y, z, w ;
 };
 
+struct Matrices
+{
+  float model[16] ;
+  float view [16] ;
+  float proj [16] ;
+};
+
 static nyx::RenderPass <Framework> render_pass   ;
 static nyx::Renderer   <Framework> pipeline      ;
 static nyx::Chain      <Framework> chain         ;
 static Framework::Array<Vertex   > vertices      ;
+static Framework::Array<Matrices > matrices      ;
 static bool                        running       ;
 std::vector<Vertex>                host_vertices = {
                                      {-0.5f, -0.5f, -0.5f, 1.0f}, 
@@ -127,6 +135,17 @@ void setupVertices()
   chain.synchronize() ;
 }
 
+void setupMatrices()
+{
+  Matrices mat ;
+  
+  mat.model[ 0 ] = 1.0f ;
+  matrices.initialize( DEVICE, 1 ) ;
+  chain.copy( &mat, matrices ) ;
+  chain.submit() ;
+  chain.synchronize() ;
+}
+
 void setupPipeline()
 {
   nyx::Viewport viewport ;
@@ -147,6 +166,7 @@ int main()
   Framework::addValidationLayer  ( "VK_LAYER_KHRONOS_validation"                  ) ;
   Framework::addValidationLayer  ( "VK_LAYER_LUNARG_standard_validation"          ) ;
   Framework::addDeviceExtension  ( "VK_KHR_swapchain"                             ) ;
+  Framework::addDeviceExtension  ( "VK_KHR_shader_non_semantic_info"              ) ;
 
   Framework::addWindow( WINDOW_ID, "Nyx Render Test", WIDTH, HEIGHT ) ;
   running = true ;
@@ -154,10 +174,20 @@ int main()
   setupRenderPass() ;
   setupChain     () ;
   setupVertices  () ;
+  setupMatrices  () ;
   setupPipeline  () ;
   
-  while( running )
+//  for( unsigned i = 0; i < 5; i++ )
+//  while( running )
   {
+    auto iter = matrices.iterator() ;
+    printf("\n\n Address::: %llu\n\n", iter.device_address ) ;
+    chain.push( pipeline, iter ) ;
+//    chain.push( pipeline, iter.device_address, 0         ) ;
+//    chain.push( pipeline, iter.count         , 8         ) ;
+//    chain.push( pipeline, iter.element_size  , 8 + 4     ) ;
+//    chain.push( pipeline, iter.position      , 8 + 4 + 4 ) ;
+//    chain.push( pipeline, iter.device_address     ) ;
     chain.draw( pipeline, vertices ) ;
     chain.submit() ;
     render_pass.present() ;

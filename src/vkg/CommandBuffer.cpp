@@ -34,6 +34,7 @@
 #include "Device.h"
 #include "RenderPass.h"
 #include "Descriptor.h"
+#include <algorithm>
 #include <vulkan/vulkan.hpp>
 #include <map>
 #include <vector>
@@ -152,10 +153,17 @@ namespace nyx
       data().cmd_buffers[ data().current ].bindPipeline( data().bind_point, data().pipeline ) ;
     }
     
-    void CommandBuffer::pushConstantBase( const void* value, unsigned byte_size )
+    void CommandBuffer::pushConstantBase( const void* value, unsigned byte_size, unsigned offset )
     {
       const auto flags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment | vk::ShaderStageFlagBits::eCompute ;
-      data().cmd_buffers[ data().current ].pushConstants( data().pipeline_layout, flags, 0, byte_size, value ) ;
+      char buff[ 256 ] ;
+//     
+      if( byte_size < 256 )
+      {
+        std::memcpy( buff, reinterpret_cast<const char*>( ( value ) ), byte_size ) ;
+        data().cmd_buffers[ data().current ].pushConstants( data().pipeline_layout, flags, offset, 256, buff ) ;
+      }
+//      data().cmd_buffers[ data().current ].pushConstants( data().pipeline_layout, flags, offset, 256, value ) ;
     }
 
     void CommandBuffer::initialize( const nyx::vkg::Queue& queue, unsigned count, CommandBuffer::Level level ) 

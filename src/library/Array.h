@@ -91,16 +91,16 @@ namespace nyx
       void seek( unsigned idx ) ;
       unsigned size() const ;
       bool initialized() const ;
+      unsigned long long device_address ;
+      unsigned long long count          ;
+      unsigned long long element_size   ;
+      unsigned long long position       ;
     private:
       Iterator( typename Impl::DeviceAddress dev_address, unsigned size, unsigned element_size ) ;
       
       template<typename Impl2, typename Type2>
       friend class nyx::Array ;
 
-      typename Impl::DeviceAddress device_address ;
-      unsigned                     count          ;
-      unsigned                     element_size   ;
-      unsigned                     position       ;
   };
 
   template<typename Impl, class Type>
