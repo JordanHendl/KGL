@@ -177,17 +177,9 @@ int main()
   setupMatrices  () ;
   setupPipeline  () ;
   
-//  for( unsigned i = 0; i < 5; i++ )
-//  while( running )
+  while( running )
   {
-    auto iter = matrices.iterator() ;
-    printf("\n\n Address::: %llu\n\n", iter.device_address ) ;
-    chain.push( pipeline, iter ) ;
-//    chain.push( pipeline, iter.device_address, 0         ) ;
-//    chain.push( pipeline, iter.count         , 8         ) ;
-//    chain.push( pipeline, iter.element_size  , 8 + 4     ) ;
-//    chain.push( pipeline, iter.position      , 8 + 4 + 4 ) ;
-//    chain.push( pipeline, iter.device_address     ) ;
+    chain.push( pipeline, matrices.iterator() ) ;
     chain.draw( pipeline, vertices ) ;
     chain.submit() ;
     render_pass.present() ;
