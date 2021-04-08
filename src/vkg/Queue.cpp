@@ -151,31 +151,25 @@ namespace nyx
       return data().queue ;
     }
 
-    void Queue::submit( const nyx::vkg::CommandBuffer& cmd_buff, bool sync )
+    void Queue::submit( const nyx::vkg::CommandBuffer& cmd_buff )
     {
+      const auto cmd = cmd_buff.buffer() ;
       data().submit = vk::SubmitInfo() ;
-      
-      data().submit.setCommandBufferCount  ( cmd_buff.size()    ) ;
-      data().submit.setPCommandBuffers     ( cmd_buff.pointer() ) ;
+      data().submit.setCommandBufferCount  ( 1                  ) ;
+      data().submit.setPCommandBuffers     ( &cmd               ) ;
       data().submit.setWaitSemaphoreCount  ( 0                  ) ;
       data().submit.setSignalSemaphoreCount( 0                  ) ;
       
-      vk::Fence fence ;
+      vk::Fence fence = cmd_buff.fence() ;
 
       if( cmd_buff.level() == nyx::vkg::CommandBuffer::Level::Primary )
       {
-        if( sync ) fence = data().fence ;
         data().mutex->lock() ;
         vkg::Vulkan::add( data().queue.submit( 1, &data().submit, fence ) ) ;
-
-        // No synchronization given, must wait.
-        if( sync ) 
-        {
-          vkg::Vulkan::add( data().device.waitForFences( 1, &data().fence, true, UINT64_MAX ) ) ;
-          vkg::Vulkan::add( data().device.resetFences( 1, &data().fence ) ) ;
-        }
         data().mutex->unlock() ;
       }
+      
+      cmd_buff.advance() ;
     }
     
     void Queue::submit( const nyx::vkg::CommandBuffer& cmd_buff, const nyx::vkg::Synchronization& sync )

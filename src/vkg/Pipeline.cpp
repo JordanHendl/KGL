@@ -33,7 +33,9 @@
 #include "RenderPass.h"
 #include "Vulkan.h"
 #include "library/Renderer.h"
+#include "nyxfile/NyxFile.h"
 #include <vulkan/vulkan.hpp>
+#include <stdio.h>
 
 namespace nyx
 {
@@ -48,7 +50,8 @@ namespace nyx
       vk::PipelineRasterizationStateCreateInfo rasterization_info     ; ///< TODO
       vk::PipelineInputAssemblyStateCreateInfo assembly_info          ; ///< TODO
       vk::PipelineMultisampleStateCreateInfo   multisample_info       ; ///< TODO
-      vk::PipelineColorBlendAttachmentState    color_blend_attachment ; ///< TODO
+      
+      std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachments ; ///< TODO
       
       /** Default constructor.
        */
@@ -90,6 +93,7 @@ namespace nyx
     PipelineConfig::PipelineConfig()
     {
       const ::vk::ColorComponentFlags color_blend_mask = ::vk::ColorComponentFlagBits::eR | ::vk::ColorComponentFlagBits::eG | ::vk::ColorComponentFlagBits::eB | ::vk::ColorComponentFlagBits::eA ;
+      this->color_blend_attachments.resize( 1 ) ;
       
       this->rasterization_info.setDepthClampEnable       ( false                         ) ;
       this->rasterization_info.setRasterizerDiscardEnable( false                         ) ;
@@ -109,19 +113,17 @@ namespace nyx
       this->multisample_info.setPSampleMask          ( nullptr                       ) ;
       this->multisample_info.setRasterizationSamples ( ::vk::SampleCountFlagBits::e1 ) ;
       
-      this->color_blend_attachment.setColorWriteMask     ( color_blend_mask             ) ;
-      this->color_blend_attachment.setBlendEnable        ( false                        ) ;
-      this->color_blend_attachment.setSrcColorBlendFactor( ::vk::BlendFactor::eSrcAlpha ) ;
-      this->color_blend_attachment.setDstColorBlendFactor( ::vk::BlendFactor::eOne      ) ;
-      this->color_blend_attachment.setColorBlendOp       ( ::vk::BlendOp::eAdd          ) ;
-      this->color_blend_attachment.setSrcAlphaBlendFactor( ::vk::BlendFactor::eOne      ) ;
-      this->color_blend_attachment.setDstAlphaBlendFactor( ::vk::BlendFactor::eZero     ) ;
-      this->color_blend_attachment.setAlphaBlendOp       ( ::vk::BlendOp::eAdd          ) ;
-      
+      this->color_blend_attachments[ 0 ].setColorWriteMask     ( color_blend_mask             ) ;
+      this->color_blend_attachments[ 0 ].setBlendEnable        ( false                        ) ;
+      this->color_blend_attachments[ 0 ].setSrcColorBlendFactor( ::vk::BlendFactor::eSrcAlpha ) ;
+      this->color_blend_attachments[ 0 ].setDstColorBlendFactor( ::vk::BlendFactor::eOne      ) ;
+      this->color_blend_attachments[ 0 ].setColorBlendOp       ( ::vk::BlendOp::eAdd          ) ;
+      this->color_blend_attachments[ 0 ].setSrcAlphaBlendFactor( ::vk::BlendFactor::eOne      ) ;
+      this->color_blend_attachments[ 0 ].setDstAlphaBlendFactor( ::vk::BlendFactor::eZero     ) ;
+      this->color_blend_attachments[ 0 ].setAlphaBlendOp       ( ::vk::BlendOp::eAdd          ) ;
+
       this->color_blend_info.setLogicOpEnable    ( false                         ) ;
       this->color_blend_info.setLogicOp          ( ::vk::LogicOp::eCopy          ) ;
-      this->color_blend_info.setAttachmentCount  ( 1                             ) ;
-      this->color_blend_info.setPAttachments     ( &this->color_blend_attachment ) ;
       
       this->viewport_info.setViewportCount( 1 ) ;
       this->viewport_info.setScissorCount ( 1 ) ;
@@ -132,8 +134,8 @@ namespace nyx
 
     PipelineData::PipelineData()
     {
-      this->push_constant_size  = 256                              ;
-      this->push_constant_flags = vk::ShaderStageFlagBits::eVertex ;
+      this->push_constant_size  = 256                                                                                                       ;
+      this->push_constant_flags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment | vk::ShaderStageFlagBits::eCompute ;
     }
 
     void PipelineData::createLayout()
@@ -143,6 +145,9 @@ namespace nyx
       vk::DescriptorSetLayout      desc_layout ;
       
       desc_layout = this->shader.layout() ;
+
+      this->config.color_blend_attachments.resize( this->shader.file().numOutputs() ) ;
+      this->config.color_blend_info.setAttachments( this->config.color_blend_attachments ) ;
       
       range.setOffset    ( 0                         ) ;
       range.setSize      ( this->push_constant_size  ) ;
@@ -165,10 +170,9 @@ namespace nyx
       vk::PipelineVertexInputStateCreateInfo vertex_input  ;
       
       vertex_input.setVertexAttributeDescriptionCount( this->shader.numVertexAttributes() ) ;
-      vertex_input.setPVertexAttributeDescriptions   ( this->shader.attributes()          ) ;
       vertex_input.setVertexBindingDescriptionCount  ( this->shader.numVertexBindings()   ) ;
+      vertex_input.setPVertexAttributeDescriptions   ( this->shader.attributes()          ) ;
       vertex_input.setPVertexBindingDescriptions     ( this->shader.bindings()            ) ;
-      
 
       if( this->render_pass && this->render_pass->initialized() )
       {
@@ -242,6 +246,7 @@ namespace nyx
       data().device = Vulkan::device( device ) ;
       data().shader.initialize( device, nyx_file ) ;
       
+      data().config.color_blend_info.setAttachments( data().config.color_blend_attachments ) ;
       data().createLayout() ;
       data().createPipeline() ;
     }
@@ -252,7 +257,8 @@ namespace nyx
 
       data().render_pass = &pass                           ;
       data().device      = Vulkan::device( pass.device() ) ;
-
+      
+      data().config.color_blend_info.setAttachments( data().config.color_blend_attachments ) ;
       data().shader.initialize( pass.device(), nyx_file ) ;
       
       data().createLayout() ;
@@ -265,7 +271,7 @@ namespace nyx
 
       data().device = Vulkan::device( device ) ;
       data().shader.initialize( device, nyx_bytes, size ) ;
-      
+      data().config.color_blend_info.setAttachments( data().config.color_blend_attachments ) ;
       data().createLayout() ;
       data().createPipeline() ;
     }
@@ -279,6 +285,7 @@ namespace nyx
 
       data().shader.initialize( pass.device(), nyx_bytes, size ) ;
       
+      data().config.color_blend_info.setAttachments( data().config.color_blend_attachments ) ;
       data().createLayout() ;
       data().createPipeline() ;
     }
@@ -347,6 +354,7 @@ namespace nyx
     
     void Pipeline::reset()
     {
+      data().shader.reset() ;
       if( data().pipeline ) data().device.device().destroy( data().pipeline, nullptr ) ;
       if( data().layout   ) data().device.device().destroy( data().layout  , nullptr ) ;
     }

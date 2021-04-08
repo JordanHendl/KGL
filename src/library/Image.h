@@ -44,6 +44,7 @@ namespace nyx
     BGRA8,  ///< Three channel Char.
     RGBA32I,///< Four channel Integer.
     RGBA32F,///< Four channel Float.
+    D32F,   ///< Since channel depth float .
   };
   
   enum class ImageLayout : unsigned
@@ -56,6 +57,7 @@ namespace nyx
     TransferDst,     ///< Only valid for copies to.
     PresentSrc,      ///< Only valid for presenting.
     DepthRead,       ///< Only valid for being read from as depth.
+    DepthStencil,    ///< Only valid for using as render pass attachmnent.
   };
     
 

@@ -39,18 +39,20 @@
 #include <vector>
 #include <mutex>
 #include <thread>
+
 namespace nyx
 {
   namespace vkg
   {
     typedef unsigned Family ;
-    using PoolMap   = std::unordered_map<Family, vk::CommandPool> ;
-    using ThreadMap = std::unordered_map<std::thread::id, PoolMap>       ;
+    using PoolMap   = std::unordered_map<Family, vk::CommandPool>  ;
+    using ThreadMap = std::unordered_map<std::thread::id, PoolMap> ;
     static ThreadMap thread_map ;
     struct CommandBufferData
     {
-      typedef std::vector<vk::CommandBuffer> CmdBuffers ;
-      
+      using CmdBuffers = std::vector<vk::CommandBuffer> ;
+      using Fences     = std::vector<vk::Fence>         ;
+
       vk::PipelineBindPoint      bind_point          ;
       vk::Device                 device              ;
       unsigned                   id                  ;
@@ -59,11 +61,13 @@ namespace nyx
       vk::PipelineLayout         pipeline_layout     ;
       vk::CommandBufferBeginInfo begin_info          ;
       vk::CommandPool            vk_pool             ;
+      Fences                     fences              ;
       CommandBuffer::Level       level               ;
       CmdBuffers                 cmd_buffers         ;
       bool                       started_render_pass ;
       bool                       recording           ;
-
+      mutable unsigned           current             ;
+      
       /** Default constructor.
        */
       CommandBufferData() ;
@@ -84,6 +88,7 @@ namespace nyx
       this->level               = CommandBuffer::Level::Primary ;
       this->recording           = false                         ;
       this->started_render_pass = false                         ;
+      this->current             = 0                             ;
     }
     
     vk::CommandPool& CommandBufferData::pool( Family queue_family )
@@ -132,9 +137,9 @@ namespace nyx
     
     void CommandBuffer::bind( const nyx::vkg::Descriptor& descriptor )
     {
-      for( auto& buff : data().cmd_buffers )
-      { 
-        buff.bindDescriptorSets( data().bind_point, data().pipeline_layout, 0, 1, &descriptor.set(), 0, nullptr ) ;
+      if( descriptor.set() ) 
+      {
+        data().cmd_buffers[ data().current ].bindDescriptorSets( data().bind_point, data().pipeline_layout, 0, 1, &descriptor.set(), 0, nullptr ) ;
       }
     }
 
@@ -143,27 +148,25 @@ namespace nyx
       data().bind_point      = pipeline.isGraphics() ? vk::PipelineBindPoint::eGraphics : vk::PipelineBindPoint::eCompute ;
       data().pipeline        = pipeline.pipeline()                                                                        ;
       data().pipeline_layout = pipeline.layout()                                                                          ;
-
-      for( auto& buff : data().cmd_buffers )
-      {
-        buff.bindPipeline( data().bind_point, data().pipeline ) ;
-      }
+      
+      data().cmd_buffers[ data().current ].bindPipeline( data().bind_point, data().pipeline ) ;
     }
     
-    void CommandBuffer::pushConstantBase( const void* value, unsigned byte_size, nyx::PipelineStage stage_flags )
+    void CommandBuffer::pushConstantBase( const void* value, unsigned byte_size )
     {
-      for( auto& buff : data().cmd_buffers )
-      {
-        buff.pushConstants( data().pipeline_layout, nyx::vkg::Vulkan::convert( stage_flags ), 0, byte_size, value ) ;
-      }
+      const auto flags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment | vk::ShaderStageFlagBits::eCompute ;
+      data().cmd_buffers[ data().current ].pushConstants( data().pipeline_layout, flags, 0, byte_size, value ) ;
     }
 
     void CommandBuffer::initialize( const nyx::vkg::Queue& queue, unsigned count, CommandBuffer::Level level ) 
     {
-      vk::CommandBufferAllocateInfo info      ;
-      vk::CommandBufferLevel        cmd_level ;
-      vk::CommandPool               pool      ;
-      vk::Device                    device    ;
+      vk::CommandBufferAllocateInfo info       ;
+      vk::CommandBufferLevel        cmd_level  ;
+      vk::CommandPool               pool       ;
+      vk::Device                    device     ;
+      vk::FenceCreateInfo           fence_info ;
+      
+      fence_info.setFlags( vk::FenceCreateFlagBits::eSignaled ) ;
       
       data().queue = queue ;
       data().level = level ;
@@ -182,7 +185,16 @@ namespace nyx
       info.setCommandPool       ( pool      ) ;
       
       data().cmd_buffers.resize( count ) ;
+      data().fences     .resize( count ) ;
+      
       vkg::Vulkan::add( device.allocateCommandBuffers( &info, data().cmd_buffers.data() ) ) ;
+      
+      for( auto& fence : data().fences )
+      {
+        auto result = device.createFence( fence_info ) ;
+        vkg::Vulkan::add( result.result ) ;
+        fence = result.value ;
+      }
     }
     
     bool CommandBuffer::initialized()
@@ -192,16 +204,26 @@ namespace nyx
 
     void CommandBuffer::combine( const CommandBuffer& cmd )
     {
-      unsigned amt ;
       if( data().level == Level::Primary && cmd.data().level == Level::Secondary )
       {
-        amt = std::min( cmd.size(), this->size() ) ;
-        
-        for( unsigned index = 0; index < amt; index++ )
-        {
-          data().cmd_buffers[ index ].executeCommands( 1, &cmd.buffer( index ) ) ;
-        }
+        data().cmd_buffers[ data().current ].executeCommands( 1, &cmd.buffer() ) ;
       }
+    }
+    
+    vk::Fence CommandBuffer::fence() const
+    {
+      return data().fences[ data().current ] ;
+    }
+    
+    void CommandBuffer::advance() const
+    {
+      data().current++ ;
+      if( data().current >= data().cmd_buffers.size() ) data().current = 0 ;
+    }
+    
+    unsigned CommandBuffer::current() const
+    {
+      return data().current ;
     }
 
     unsigned CommandBuffer::size() const
@@ -224,12 +246,9 @@ namespace nyx
       return data().level ;
     }
 
-    const vk::CommandBuffer& CommandBuffer::buffer( unsigned idx ) const
+    const vk::CommandBuffer& CommandBuffer::buffer() const
     {
-      static vk::CommandBuffer dummy ;
-      if( idx < data().cmd_buffers.size() ) return data().cmd_buffers[ idx ] ;
-      
-      return dummy ;
+      return data().cmd_buffers[ data().current ] ;
     }
     
     const vk::CommandBuffer* CommandBuffer::pointer() const
@@ -240,11 +259,9 @@ namespace nyx
     void CommandBuffer::drawBase( const nyx::vkg::Buffer& buffer, unsigned count, unsigned offset )
     {
       const vk::DeviceSize device_size = offset ;
-      for( auto& buff : data().cmd_buffers )
-      {
-        buff.bindVertexBuffers( 0, 1, &buffer.buffer(), &device_size ) ;
-        buff.draw( count, 1, 0, 0 ) ;
-      }
+      
+      data().cmd_buffers[ data().current ].bindVertexBuffers( 0, 1, &buffer.buffer(), &device_size ) ;
+      data().cmd_buffers[ data().current ].draw( count, 1, 0, 0 ) ;
     }
     
     void CommandBuffer::drawIndexedBase( const nyx::vkg::Buffer& index, const nyx::vkg::Buffer& vert, unsigned index_count, unsigned vert_count, unsigned offset ) 
@@ -253,20 +270,12 @@ namespace nyx
       const vk::IndexType  type        = vk::IndexType::eUint32 ;
 
       vert_count = vert_count ;
-      for( auto& buff : data().cmd_buffers )
-      {
-        buff.bindVertexBuffers( 0, 1, &vert.buffer(), &device_size ) ;
-        buff.bindIndexBuffer  ( index.buffer(), 0, type            ) ;
-        buff.drawIndexed      ( index_count, 1, 0, 0, 0            ) ;
-      }
+      data().cmd_buffers[ data().current ].bindVertexBuffers( 0, 1, &vert.buffer(), &device_size ) ;
+      data().cmd_buffers[ data().current ].bindIndexBuffer  ( index.buffer(), 0, type            ) ;
+      data().cmd_buffers[ data().current ].drawIndexed      ( index_count, 1, 0, 0, 0            ) ;
     }
 
 //    void CommandBuffer::drawInstanced( const nyx::vkg::Buffer& buffer, unsigned instance_count, unsigned offset, unsigned first )
-//    {
-//    
-//    }
-//
-//    void CommandBuffer::drawIndexed( const nyx::vkg::Buffer& indices, const nyx::vkg::Buffer& vertices )
 //    {
 //    
 //    }
@@ -279,19 +288,23 @@ namespace nyx
     void CommandBuffer::record( const nyx::vkg::RenderPass& render_pass, unsigned index )
     {
       const vk::SubpassContents flags = vk::SubpassContents::eInline ;
-
-      vk::RenderPassBeginInfo info ;
-      info.setClearValueCount( 1                                   ) ;
+      
+      vk::RenderPassBeginInfo info  ;
+      vk::Fence               fence ;
+      
+      info.setClearValueCount( render_pass.count()                 ) ;
       info.setPClearValues   ( render_pass.clearValues()           ) ;
       info.setRenderArea     ( render_pass.area()                  ) ;
       info.setRenderPass     ( render_pass.pass()                  ) ;
       info.setFramebuffer    ( render_pass.framebuffers()[ index ] ) ;
       
-      for( auto &cmd_buff : data().cmd_buffers )
-      {
-        vkg::Vulkan::add( cmd_buff.begin          ( &data().begin_info ) ) ;
-                          cmd_buff.beginRenderPass( &info, flags         ) ;
-      }
+      fence = data().fences[ data().current ] ;
+      
+      vkg::Vulkan::add( data().device.waitForFences( 1, &fence, true, UINT64_MAX ) ) ;
+      vkg::Vulkan::add( data().device.resetFences( 1, &fence )                     ) ;
+
+      vkg::Vulkan::add( data().cmd_buffers[ data().current ].begin          ( &data().begin_info ) ) ;
+                        data().cmd_buffers[ data().current ].beginRenderPass( &info, flags         ) ;
       
       data().recording           = true ;
       data().started_render_pass = true ;
@@ -300,64 +313,49 @@ namespace nyx
     void CommandBuffer::record( const nyx::vkg::RenderPass& render_pass )
     {
       const vk::SubpassContents flags = vk::SubpassContents::eInline ;
-
-      vk::RenderPassBeginInfo info ;
-      info.setClearValueCount( 1                         ) ;
+      vk::Fence               fence ;
+      vk::RenderPassBeginInfo info  ;
+      
+      info.setClearValueCount( render_pass.count()       ) ;
       info.setPClearValues   ( render_pass.clearValues() ) ;
       info.setRenderArea     ( render_pass.area()        ) ;
       info.setRenderPass     ( render_pass.pass()        ) ;
       info.setFramebuffer    ( render_pass.current()     ) ;
       
-      for( auto &cmd_buff : data().cmd_buffers )
-      {
-        vkg::Vulkan::add( cmd_buff.begin          ( &data().begin_info ) ) ;
-                          cmd_buff.beginRenderPass( &info, flags         ) ;
-      }
+      fence = data().fences[ data().current ] ;
+      
+      vkg::Vulkan::add( data().device.waitForFences( 1, &fence, true, UINT64_MAX ) ) ;
+      vkg::Vulkan::add( data().device.resetFences( 1, &fence )                     ) ;
+      
+      vkg::Vulkan::add( data().cmd_buffers[ data().current ].begin          ( &data().begin_info ) ) ;
+                        data().cmd_buffers[ data().current ].beginRenderPass( &info, flags         ) ;
+
       data().recording           = true ;
       data().started_render_pass = true ;
     }
 
-    void CommandBuffer::record( unsigned index )
-    {
-      data().recording = true ;
-      if( index < data().cmd_buffers.size() ) vkg::Vulkan::add( data().cmd_buffers[ index ].begin( &data().begin_info ) ) ;
-    }
-
     void CommandBuffer::record()
     {
+      vk::Fence fence = data().fences[ data().current ] ;
+      
+      vkg::Vulkan::add( data().device.waitForFences( 1, &fence, true, UINT64_MAX ) ) ;
+      vkg::Vulkan::add( data().device.resetFences( 1, &fence )                     ) ;
+
+      vkg::Vulkan::add( data().cmd_buffers[ data().current ].begin( &data().begin_info ) ) ;
       data().recording = true ;
-      for( auto &cmd_buff : data().cmd_buffers )
-      {
-        vkg::Vulkan::add( cmd_buff.begin( &data().begin_info ) ) ;
-      }
     }
 
     void CommandBuffer::stop()
     {
       data().recording = false ;
-      for( auto &cmd_buff : data().cmd_buffers )
+      vk::CommandBuffer cmd_buff = data().cmd_buffers[ data().current ] ;
+      
+      if( data().started_render_pass )
       {
-        if( data().started_render_pass )
-        {
-          cmd_buff.endRenderPass() ;
-        }
-        vkg::Vulkan::add( cmd_buff.end() ) ;
+        cmd_buff.endRenderPass() ;
       }
-      data().started_render_pass = false ;
-    }
-    
-    void CommandBuffer::stop( unsigned index )
-    {
-      data().recording = false ;
-      if( index < data().cmd_buffers.size() )
-      {
-        if( data().started_render_pass )
-        {
-          data().cmd_buffers[ index ].endRenderPass() ;
-        }
-
-        vkg::Vulkan::add( data().cmd_buffers[ index ].end() ) ;
-      }
+      
+      vkg::Vulkan::add( cmd_buff.end() ) ;
       data().started_render_pass = false ;
     }
 

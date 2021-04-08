@@ -264,20 +264,16 @@ namespace nyx
       
       if( result.result == vk::Result::eErrorOutOfDateKHR || result.result == vk::Result::eSuboptimalKHR )
       {
-        vkg::Vulkan::add( device.waitIdle() ) ;
+        Vulkan::deviceSynchronize( data().queue.device() ) ;
         this->initialize( data().queue, data().raw_surface ) ;
 
         data().skip_frame = true ;
         return Vulkan::Error::RecreateSwapchain ;
       }
-      else
-      {
-        data().fences[ index ] = data().syncs[ index ].signalFence() ;
-        data().acquired.push( static_cast<unsigned>( result.value ) ) ;
-        
-        data().current_frame = ( index + 1 ) % data().syncs.size() ;
-      }
-      
+
+      data().fences[ index ] = data().syncs[ index ].signalFence() ;
+      data().acquired.push( static_cast<unsigned>( result.value ) ) ;
+      data().current_frame = ( index + 1 ) % data().syncs.size() ;
       data().syncs[ index ].waitOn( data().syncs[ index ] ) ;
       return Vulkan::Error::Success ;
     }

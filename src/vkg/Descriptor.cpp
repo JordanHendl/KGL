@@ -156,13 +156,15 @@ namespace nyx
       info.setDescriptorPool    ( pool.data().pool    ) ;
       info.setPSetLayouts       ( &pool.data().layout ) ;
       info.setDescriptorSetCount( 1                   ) ;
-
-      auto result = pool.data().device.device().allocateDescriptorSets( info ) ;
-      vkg::Vulkan::add( result.result ) ;
       
-      data().device     = pool.data().device.device()                                         ;
-      data().parent_map = std::make_shared<DescriptorPoolData::UniformMap>( pool.data().map ) ; 
-      data().set        = result.value[ 0 ]                                                   ;
+      if( pool.data().pool )
+      {
+        auto result = pool.data().device.device().allocateDescriptorSets( info ) ;
+        vkg::Vulkan::add( result.result ) ;
+        data().device     = pool.data().device.device()                                         ;
+        data().parent_map = std::make_shared<DescriptorPoolData::UniformMap>( pool.data().map ) ; 
+        data().set        = result.value[ 0 ]                                                   ;
+      }
     }
 
     const vk::DescriptorSet& Descriptor::set() const
@@ -256,13 +258,13 @@ namespace nyx
             data().map[ shader.uniformName( index ) ] = { shader.uniformType( index ), shader.uniformBinding( index ) } ;
           }
         }
-      }
       
       data().device_id = shader.device()                   ;
       data().device    = Vulkan::device( shader.device() ) ;
       data().layout    = shader.layout()                   ;
 
       this->initialize() ;
+      }
     }
 
     void DescriptorPool::initialize()
@@ -286,10 +288,13 @@ namespace nyx
       info.setPPoolSizes   ( sizes.data()  ) ;
       info.setMaxSets      ( data().amount ) ;
       info.setFlags        ( flag          ) ;
-      
-      auto result = data().device.device().createDescriptorPool( info, nullptr ) ;
-      vkg::Vulkan::add( result.result ) ;
-      data().pool = result.value ;
+     
+      if( info.poolSizeCount != 0 )
+      {
+        auto result = data().device.device().createDescriptorPool( info, nullptr ) ;
+        vkg::Vulkan::add( result.result ) ;
+        data().pool = result.value ;
+      }
     }
     
     void DescriptorPool::addArrayInput( const char* name, unsigned binding, const nyx::ArrayFlags& type )

@@ -15,6 +15,7 @@
 #include "Array.h"
 #include "Image.h"
 #include "RenderPass.h"
+#include "Renderer.h"
 
 namespace nyx
 {
@@ -24,6 +25,8 @@ namespace nyx
     Compute,
     Transfer
   };
+  
+  enum class PipelineStage : unsigned ;
   
   template<typename Framework, typename Type>
   class Array ;
@@ -85,7 +88,10 @@ namespace nyx
       
       void initialize( const nyx::RenderPass<Framework>& render_pass, ChainType type ) ;
       void initialize( const nyx::RenderPass<Framework>& render_pass, unsigned window_id ) ;
-
+      
+      template<typename Type>
+      void push( const nyx::Renderer<Framework>& pipeline, const Type& data ) ;
+      
       void synchronize() ;
       
       void submit() ;
@@ -198,6 +204,13 @@ namespace nyx
     this->impl.initialize( render_pass, window_id ) ;
   }
   
+  template<typename Framework>
+  template<typename Type>
+  void Chain<Framework>::push( const nyx::Renderer<Framework>& pipeline, const Type& data )
+  {
+    this->impl.push( pipeline, data ) ;
+  }
+
   template<typename Framework>
   void Chain<Framework>::reset()
   {

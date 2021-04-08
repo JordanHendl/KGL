@@ -262,6 +262,7 @@ namespace nyx
          */
         unsigned device() const ;
         
+        void reset() ;
         const vkg::Descriptor& descriptor() const ;
         const vkg::Pipeline& pipeline() const ;
         

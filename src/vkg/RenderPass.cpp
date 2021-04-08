@@ -64,7 +64,8 @@ namespace nyx
       vk::RenderPass   pass                ;
       vk::Rect2D       area                ;
       mutable unsigned current_framebuffer ;
-
+      unsigned         window_id           ;
+      
       RenderPassData() ;
       ~RenderPassData() ;
       void makeRenderPass    () ;
@@ -121,6 +122,12 @@ namespace nyx
           {
             info.setWidth          ( this->area.extent.width  ) ;
             info.setHeight         ( this->area.extent.height ) ;
+
+            if( attachments[ index ].format == vk::Format::eD32Sfloat )
+            {
+              this->images[ idx ].setUsage( nyx::ImageUsage::DepthStencil ) ;
+            }
+
             this->images[ idx ].initialize( this->device, Vulkan::convert( format ), this->area.extent.width, this->area.extent.height, 1 ) ;
             views.push_back( this->images[ idx ].view() ) ;
           }
@@ -132,6 +139,7 @@ namespace nyx
         info.setRenderPass     ( this->pass               ) ;
         
         Vulkan::add( this->device.device().createFramebuffer( &info, nullptr, &this->framebuffers[ attach - 1 ] ) ) ;
+        views.clear() ;
       }
     }
 
@@ -173,14 +181,17 @@ namespace nyx
       data().device = Vulkan::device( device ) ;
       
       data().swapchain.initialize( queue, Vulkan::context( window_id ) ) ;
-      data().swapchain.acquire() ;
       
+      data().window_id          = window_id                 ;
       data().area.extent.width  = data().swapchain.width () ;
       data().area.extent.height = data().swapchain.height() ;
 
-      data().attachments[ data().attachments.size() - 1 ].format = data().swapchain.format() ;
+      data().attachments[ data().attachments.size() - 1 ].setFormat     ( data().swapchain.format()       ) ;
+      data().attachments[ data().attachments.size() - 1 ].setFinalLayout( vk::ImageLayout::ePresentSrcKHR ) ;
+//      data().references [ data().references.size () - 1 ].setLayout     ( vk::ImageLayout::ePresentSrcKHR ) ;
       data().makeRenderPass  () ;
       data().makeFramebuffers() ;
+      data().swapchain.acquire() ;
     }
 
     bool RenderPass::initialized() const
@@ -201,15 +212,53 @@ namespace nyx
     
     vk::Framebuffer RenderPass::current() const
     {
-      return data().framebuffers[ data().current_framebuffer++ ] ;
+//      if( data().swapchain.initialized() ) return data().framebuffers[ data().swapchain.current() ] ;
+      
+      auto ret = data().framebuffers[ data().current_framebuffer++ ] ;
       if( data().current_framebuffer > data().framebuffers.size() - 1 ) data().current_framebuffer = 0 ;
+      return ret ;
     }
     
+    bool RenderPass::present()
+    {
+      bool recreate = false ;
+      
+      if( data().swapchain.initialized() )
+      {
+        if( data().swapchain.submit () == Vulkan::Error::RecreateSwapchain )
+        {
+          unsigned device = data().device    ;
+          unsigned id     = data().window_id ;
+          this->reset() ;
+          this->initialize( device, id ) ;
+          recreate = true ;
+        }
+        if( data().swapchain.acquire() == Vulkan::Error::RecreateSwapchain )
+        {
+          unsigned device = data().device    ;
+          unsigned id     = data().window_id ;
+          this->reset() ;
+          this->initialize( device, id ) ;
+          recreate = true ;
+        }
+      }
+      
+      return recreate ;
+    }
+
     unsigned RenderPass::device() const
     {
       return data().device ;
     }
-
+    
+    unsigned RenderPass::currentIndex() const
+    {
+//      if( data().swapchain.initialized() ) 
+//      return data().swapchain.current() ;
+      
+      return data().current_framebuffer ;
+    }
+    
     void RenderPass::reset()
     {
       for( auto& framebuffer : data().framebuffers ) data().device.device().destroy( framebuffer ) ;
@@ -218,10 +267,10 @@ namespace nyx
       
       data().images      .clear() ;
       data().framebuffers.clear() ;
-      data().attachments .clear() ;
-      data().subpasses   .clear() ;
-      data().references  .clear() ;
-      data().dependencies.clear() ;
+//      data().attachments .clear() ;
+//      data().subpasses   .clear() ;
+//      data().references  .clear() ;
+//      data().dependencies.clear() ;
     }
 
     const vkg::Image& RenderPass::framebuffer( unsigned index ) const
@@ -256,22 +305,22 @@ namespace nyx
         attach_ref.setAttachment( data().attachments.size() ) ;
         attach_ref.setLayout    ( attach_desc.finalLayout ) ;
         data().clear_colors.push_back( clear       ) ;
-        data().attachments.push_back ( attach_desc ) ;
-        data().references .push_back ( attach_ref  ) ;
-        
-        if( subpass_desc.pColorAttachments == nullptr )
+        if( attach_desc.finalLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal )
         {
-          subpass_desc.setPColorAttachments( data().references.data() + data().references.size() - 1 ) ;
+          attach_desc.setFormat( vk::Format::eD32Sfloat ) ;
+          data().attachments.push_back ( attach_desc ) ;
         }
-        subpass_desc.colorAttachmentCount++ ;
+        else
+        {
+          data().attachments.push_back ( attach_desc ) ;
+          data().references .push_back ( attach_ref  ) ;
+          subpass_desc.colorAttachmentCount++ ;
+        }
       }
       
-      if( num_subpass_deps == 0 )
+      if( subpass_desc.pColorAttachments == nullptr )
       {
-        subpass_dep.setSrcSubpass   ( VK_SUBPASS_EXTERNAL ) ;
-        subpass_dep.setSrcStageMask ( vk::PipelineStageFlagBits::eColorAttachmentOutput ) ;
-        subpass_dep.setDstStageMask ( vk::PipelineStageFlagBits::eColorAttachmentOutput ) ;
-        subpass_dep.setDstAccessMask( vk::AccessFlagBits::eColorAttachmentWrite         ) ;
+        subpass_desc.setPColorAttachments( data().references.data() + data().references.size() - subpass_desc.colorAttachmentCount ) ;
       }
       
       // TODO Add attachment references here for referencing other attachments.
@@ -282,12 +331,12 @@ namespace nyx
         {
           subpass_dep.setDstSubpass( subpass_deps[ index ] ) ;
         }  
-        subpass_dep.setSrcStageMask( vk::PipelineStageFlagBits::eColorAttachmentOutput ) ;
-        subpass_dep.setDstStageMask( vk::PipelineStageFlagBits::eColorAttachmentOutput ) ;
+        subpass_dep.setSrcStageMask( vk::PipelineStageFlagBits::eBottomOfPipe ) ;
+        subpass_dep.setDstStageMask( vk::PipelineStageFlagBits::eTopOfPipe    ) ;
       }
-      
-      data().subpasses.push_back   ( subpass_desc ) ;
-      data().dependencies.push_back( subpass_dep  ) ;
+
+      if( attachment_count != 0 ) data().subpasses   .push_back( subpass_desc ) ;
+      if( num_subpass_deps != 0 ) data().dependencies.push_back( subpass_dep  ) ;
     }
     
     const vk::Framebuffer* RenderPass::framebuffers() const

@@ -71,7 +71,6 @@ namespace nyx
    */
   struct Attribute
   {
-    bool        input    ; ///< TOOD
     std::string name     ; ///< TOOD
     std::string type     ; ///< TOOD
     unsigned    size     ; ///< TOOD
@@ -84,10 +83,8 @@ namespace nyx
   {
     typedef std::vector<unsigned>   SpirVData     ;
     typedef std::vector<Uniform>    UniformList   ;
-    typedef std::vector<Attribute>  AttributeList ;
-
+    
     UniformList   uniforms   ;
-    AttributeList attributes ;
     SpirVData     spirv      ;
     ShaderStage   stage      ;
     std::string   name       ;
@@ -102,8 +99,13 @@ namespace nyx
    */
   struct NyxFileData
   {
-      std::string include_directory ;
-      ShaderMap   map               ;
+    using AttributeList = std::vector<Attribute> ;
+
+    AttributeList inputs            ;
+    AttributeList outputs           ;
+    std::string   include_directory ;
+    ShaderMap     map               ;
+    unsigned      version           ;
 
     /** Method to read a string from a file stream
      * @param stream The stream to read from
@@ -225,32 +227,7 @@ namespace nyx
 
   unsigned ShaderIterator::numAttributes() const
   {
-    return data().it->second.attributes.size() ;
-  }
-
-  const char* ShaderIterator::attributeType( unsigned index )
-  {
-    return index < data().it->second.attributes.size() ? data().it->second.attributes[ index ].type.c_str() : "" ;
-  }
-
-  const char* ShaderIterator::attributeName( unsigned index )
-  {
-    return index < data().it->second.attributes.size() ? data().it->second.attributes[ index ].name.c_str() : "" ;
-  }
-
-  unsigned ShaderIterator::attributeByteSize( unsigned index )
-  {
-    return index < data().it->second.attributes.size() ? data().it->second.attributes[ index ].size : 0 ;
-  }
-
-  unsigned ShaderIterator::attributeLocation( unsigned index )
-  {
-    return index < data().it->second.attributes.size() ? data().it->second.attributes[ index ].location : 0 ;
-  }
-
-  bool ShaderIterator::attributeIsInput( unsigned index )
-  {
-    return index < data().it->second.attributes.size() ? data().it->second.attributes[ index ].input : 0 ;
+    return 0 ;
   }
 
   UniformType ShaderIterator::uniformType( unsigned id ) const
@@ -319,13 +296,15 @@ namespace nyx
 
   void NyxFile::load( const char* path )
   {
-    std::ifstream              stream  ;
-    std::string                str     ;
-    unsigned                   sz      ;
-    unsigned long long         magic   ;
-    ::nyx::Shader      shader  ;
-    ::nyx::Uniform     uniform ;
-    ::nyx::Attribute   attr    ;
+    std::ifstream              stream      ;
+    std::string                str         ;
+    unsigned                   num_shaders ;
+    unsigned                   num_inputs  ;
+    unsigned                   num_outputs ;
+    unsigned long long         magic       ;
+    nyx::Shader                shader      ;
+    nyx::Uniform               uniform     ;
+    nyx::Attribute             attr        ;
 
     data().map.clear() ;
     stream.open( path, std::ios::binary ) ;
@@ -335,21 +314,54 @@ namespace nyx
       magic = data().readMagic( stream ) ;        
       if( magic != ::nyx::MAGIC ) /*TODO: LOG ERROR HERE */ return ;
 
-      sz = data().readUnsigned( stream ) ;
-      for( unsigned it = 0; it < sz; it++ )
+      data().version = data().readUnsigned( stream ) ;
+      num_shaders    = data().readUnsigned( stream ) ;
+      num_inputs     = data().readUnsigned( stream ) ;
+      num_outputs    = data().readUnsigned( stream ) ;
+      
+      for( unsigned index = 0; index < num_inputs; index++ )
+      {
+        const std::string name     = data().readString  ( stream ) ;
+        const std::string type     = data().readString  ( stream ) ;
+        const unsigned    size     = data().readUnsigned( stream ) ;
+        const unsigned    location = data().readUnsigned( stream ) ;
+        
+        attr.name     = name     ;
+        attr.type     = type     ;
+        attr.size     = size     ;
+        attr.location = location ;
+        
+        data().inputs.push_back( attr ) ;
+      }
+      
+      for( unsigned index = 0; index < num_outputs; index++ )
+      {
+        const std::string name     = data().readString  ( stream ) ;
+        const std::string type     = data().readString  ( stream ) ;
+        const unsigned    size     = data().readUnsigned( stream ) ;
+        const unsigned    location = data().readUnsigned( stream ) ;
+        
+        attr.name     = name     ;
+        attr.type     = type     ;
+        attr.size     = size     ;
+        attr.location = location ;
+        
+        data().outputs.push_back( attr ) ;
+      }
+      
+      for( unsigned it = 0; it < num_shaders; it++ )
       {
         const unsigned  spirv_size     = data().readUnsigned( stream             ) ;
         const unsigned* spirv          = data().readSpirv   ( stream, spirv_size ) ;
         const unsigned  stage          = data().readUnsigned( stream             ) ;
         const unsigned  num_uniforms   = data().readUnsigned( stream             ) ;
-        const unsigned  num_attributes = data().readUnsigned( stream             ) ;
 
         shader.spirv   .clear() ;
         shader.uniforms.clear() ;
 
         shader.spirv     .assign( spirv, spirv + spirv_size ) ;
         shader.uniforms  .resize( num_uniforms              ) ;
-        shader.attributes.resize( num_attributes            ) ;
+
         shader.stage = static_cast<::nyx::ShaderStage>( stage ) ;
         for( unsigned index = 0; index < num_uniforms; index++ )
         {
@@ -365,23 +377,6 @@ namespace nyx
 
            shader.uniforms[ index ] = uniform ;
         }
-        for( unsigned index = 0; index < num_attributes; index++ )
-        {
-          const std::string name  = data().readString  ( stream ) ;
-          const std::string type  = data().readString  ( stream ) ;
-          const unsigned    size  = data().readUnsigned( stream ) ;
-          const unsigned location = data().readUnsigned( stream ) ;
-          const bool     input    = data().readBoolean ( stream ) ;
-
-          attr.name     = name     ;
-          attr.location = location ;
-          attr.size     = size     ;
-          attr.type     = type     ;
-          attr.input    = input    ;
-
-          shader.attributes[ index ] = attr ;
-        }
-
         data().map.insert( { shader.stage, shader } ) ;
       }
     }
@@ -389,35 +384,69 @@ namespace nyx
   
   void NyxFile::load( const unsigned char* bytes, unsigned size )
   {
-    std::stringstream          stream  ;
-    std::string                str     ;
-    unsigned                   sz      ;
-    unsigned long long         magic   ;
-    ::nyx::Shader      shader  ;
-    ::nyx::Uniform     uniform ;
-    ::nyx::Attribute   attr    ;
+    std::stringstream          stream      ;
+    unsigned                   num_shaders ;
+    unsigned                   num_inputs  ;
+    unsigned                   num_outputs ;
+    unsigned long long         magic       ;
+    nyx::Shader                shader      ;
+    nyx::Uniform               uniform     ;
+    nyx::Attribute             attr        ;
+
     data().map.clear() ;
-    
     stream.write( reinterpret_cast<const char*>( bytes ), sizeof( unsigned char ) * size ) ;
 
     magic = data().readMagic( stream ) ;        
     if( magic != ::nyx::MAGIC ) /*TODO: LOG ERROR HERE */ return ;
 
-    sz = data().readUnsigned( stream ) ;
-    for( unsigned it = 0; it < sz; it++ )
+    data().version = data().readUnsigned( stream ) ;
+    num_shaders    = data().readUnsigned( stream ) ;
+    num_inputs     = data().readUnsigned( stream ) ;
+    num_outputs    = data().readUnsigned( stream ) ;
+    
+    for( unsigned index = 0; index < num_inputs; index++ )
+    {
+      const std::string name     = data().readString  ( stream ) ;
+      const std::string type     = data().readString  ( stream ) ;
+      const unsigned    size     = data().readUnsigned( stream ) ;
+      const unsigned    location = data().readUnsigned( stream ) ;
+      
+      attr.name     = name     ;
+      attr.type     = type     ;
+      attr.size     = size     ;
+      attr.location = location ;
+      
+      data().inputs.push_back( attr ) ;
+    }
+    
+    for( unsigned index = 0; index < num_outputs; index++ )
+    {
+      const std::string name     = data().readString  ( stream ) ;
+      const std::string type     = data().readString  ( stream ) ;
+      const unsigned    size     = data().readUnsigned( stream ) ;
+      const unsigned    location = data().readUnsigned( stream ) ;
+      
+      attr.name     = name     ;
+      attr.type     = type     ;
+      attr.size     = size     ;
+      attr.location = location ;
+      
+      data().outputs.push_back( attr ) ;
+    }
+    
+    for( unsigned it = 0; it < num_shaders; it++ )
     {
       const unsigned  spirv_size     = data().readUnsigned( stream             ) ;
       const unsigned* spirv          = data().readSpirv   ( stream, spirv_size ) ;
       const unsigned  stage          = data().readUnsigned( stream             ) ;
       const unsigned  num_uniforms   = data().readUnsigned( stream             ) ;
-      const unsigned  num_attributes = data().readUnsigned( stream             ) ;
 
       shader.spirv   .clear() ;
       shader.uniforms.clear() ;
 
       shader.spirv     .assign( spirv, spirv + spirv_size ) ;
       shader.uniforms  .resize( num_uniforms              ) ;
-      shader.attributes.resize( num_attributes            ) ;
+
       shader.stage = static_cast<::nyx::ShaderStage>( stage ) ;
       for( unsigned index = 0; index < num_uniforms; index++ )
       {
@@ -433,23 +462,6 @@ namespace nyx
 
          shader.uniforms[ index ] = uniform ;
       }
-      for( unsigned index = 0; index < num_attributes; index++ )
-      {
-        const std::string name  = data().readString  ( stream ) ;
-        const std::string type  = data().readString  ( stream ) ;
-        const unsigned    size  = data().readUnsigned( stream ) ;
-        const unsigned location = data().readUnsigned( stream ) ;
-        const bool     input    = data().readBoolean ( stream ) ;
-
-        attr.name     = name     ;
-        attr.location = location ;
-        attr.size     = size     ;
-        attr.type     = type     ;
-        attr.input    = input    ;
-
-        shader.attributes[ index ] = attr ;
-      }
-
       data().map.insert( { shader.stage, shader } ) ;
     }
   }
@@ -468,6 +480,64 @@ namespace nyx
     it.data().it = data().map.end() ;
 
     return it ;
+  }
+
+  const char* NyxFile::inputName( unsigned index )
+  {
+    if( index < data().inputs.size() ) return data().inputs[ index ].name.c_str() ;
+    return "" ;
+  }
+
+  unsigned NyxFile::inputLocation( unsigned index )
+  {
+    if( index < data().inputs.size() ) return data().inputs[ index ].location ;
+    return 0 ;
+  }
+
+  unsigned NyxFile::inputByteSize( unsigned index )
+  {
+    if( index < data().inputs.size() ) return data().inputs[ index ].size ;
+    return 0 ;
+  }
+
+  const char* NyxFile::inputType( unsigned index )
+  {
+    if( index < data().inputs.size() ) return data().inputs[ index ].type.c_str() ;
+    return "" ;
+  }
+
+  const char* NyxFile::outputName( unsigned index )
+  {
+    if( index < data().outputs.size() ) return data().outputs[ index ].name.c_str() ;
+    return "" ;
+  }
+
+  unsigned NyxFile::outputLocation( unsigned index )
+  {
+    if( index < data().outputs.size() ) return data().outputs[ index ].location ;
+    return 0 ;
+  }
+
+  unsigned NyxFile::outputByteSize( unsigned index )
+  {
+    if( index < data().outputs.size() ) return data().outputs[ index ].size ;
+    return 0 ;
+  }
+
+  const char* NyxFile::outputType( unsigned index )
+  {
+    if( index < data().outputs.size() ) return data().outputs[ index ].type.c_str() ;
+    return "" ;
+  }
+
+  unsigned NyxFile::numInputs() const
+  {
+    return data().inputs.size() ;
+  }
+
+  unsigned NyxFile::numOutputs() const
+  {
+    return data().outputs.size() ;
   }
 
   unsigned NyxFile::size() const

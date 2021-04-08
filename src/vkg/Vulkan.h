@@ -480,6 +480,7 @@ namespace nyx
         friend class nyx::vkg::Synchronization   ;
         friend class nyx::vkg::RendererImpl      ;
         friend class nyx::vkg::Chain             ;
+        
         /** Default constructor.
          */
         Vulkan() = default ;

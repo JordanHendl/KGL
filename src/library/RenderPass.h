@@ -167,6 +167,8 @@ namespace nyx
       
       void reset() ;
       
+      bool present() ;
+      
       void addSubpass( const nyx::Subpass& attachment ) ;
       
     private:
@@ -215,7 +217,13 @@ namespace nyx
   {
     return this->impl.device() ;
   }
- 
+  
+  template<typename Framework>
+  bool RenderPass<Framework>::present()
+  {
+    return this->impl.present() ;
+  }
+
   template<typename Framework>
   template<unsigned index>
   const auto RenderPass<Framework>::framebuffer() const

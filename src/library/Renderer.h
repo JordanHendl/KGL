@@ -186,12 +186,6 @@ namespace nyx
        */
       const typename Framework::Device& device() const ;
 
-      /**  Method to push a value straight onto the pipeline of this object, if it's available.
-       * @param value The value to copy up to the GPU for this pipeline's operation.
-       */
-      template<typename Type>
-      void push( const Type& value ) ;
-      
       /** Method to retrieve a framebuffer from this object.
        * @param index The index of framebuffer to retrieve. See @count for the amount.
        * @return Const reference to this object's internal framebuffer.
@@ -199,6 +193,7 @@ namespace nyx
       template<unsigned index = 0>
       const auto framebuffer() const ;
       
+      void reset() ;
       
     private:
       typename Framework::Renderer impl ;
@@ -274,12 +269,11 @@ namespace nyx
 //  }
 
   template<typename Framework>
-  template<typename Type>
-  void Renderer<Framework>::push( const Type& value )
+  void Renderer<Framework>::reset()
   {
-    this->impl.push( value ) ;
+    this->impl.reset() ;
   }
-  
+
   template<typename Framework>
   template<unsigned index>
   const auto Renderer<Framework>::framebuffer() const

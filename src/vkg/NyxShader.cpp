@@ -94,7 +94,7 @@ namespace nyx
       ShaderModules                          modules     ; ///< TODO
       Descriptors                            descriptors ; ///< TODO
       SPIRVMap                               spirv_map   ; ///< TODO
-      Attributes                             attributes  ; ///< TODO
+      Attributes                             inputs      ; ///< TODO
       Bindings                               bindings    ; ///< TODO
       Infos                                  infos       ; ///< TODO
       nyx::NyxFile                           nyxfile     ; ///< TODO
@@ -136,15 +136,15 @@ namespace nyx
       else                   return 1 ;
     }
           
-    unsigned byteSizeFromFormat( nyx::ShaderIterator& it, unsigned index )
+    unsigned byteSizeFromFormat( nyx::NyxFile& file, unsigned index )
     {
-      const std::string s = std::string( it.attributeType( index ) ) ;
+      const std::string s = file.inputType( index ) ;
       
            if( s == "mat4" ) return 4 * sizeof( float ) ;
       else if( s == "mat3" ) return 3 * sizeof( float ) ;
       else if( s == "mat2" ) return 3 * sizeof( float ) ;
       
-      else return it.attributeByteSize( index ) ;
+      else return file.inputByteSize( index ) ;
     }
 
     ::vk::Format formatFromAttributeType( const char* type )
@@ -273,6 +273,23 @@ namespace nyx
       unsigned offset ;
       
       offset = 0 ;
+      
+              
+      for( unsigned index = 0; index < this->nyxfile.numInputs(); index++ )
+      {
+        /** This is done in the case that a matrix ( or value greater than a vec4 ) is an input.
+         */
+        for( unsigned num_iter = 0 ; num_iter < numIterationsFromType( this->nyxfile.inputType( index ) ); num_iter++ )
+        {
+          attr.setLocation( this->nyxfile.inputLocation( index )                        ) ;
+          attr.setBinding ( 0                                                           ) ; /// Problem? What is this?
+          attr.setFormat  ( formatFromAttributeType( this->nyxfile.inputType( index ) ) ) ;
+          attr.setOffset  ( offset                                                      ) ;
+          
+          this->inputs.push_back      ( attr                 ) ;
+          offset += byteSizeFromFormat( this->nyxfile, index ) ;
+        }
+      }
       for( auto iter = this->nyxfile.begin(); iter != this->nyxfile.end(); ++iter )
       {
         for( index = 0; index < iter.numUniforms(); index++ )
@@ -293,28 +310,6 @@ namespace nyx
             binding_map[ iter.uniformName( index ) ] = binding ;
           }
         }
-        
-        if( iter.stage() == nyx::ShaderStage::Vertex )
-        {
-          for( unsigned index = 0; index < iter.numAttributes(); index++ )
-          {
-            if( iter.attributeIsInput( index ) )
-            {
-              /** This is done in the case that a matrix ( or value greater than a vec4 ) is an input.
-               */
-              for( unsigned num_iter = 0 ; num_iter < numIterationsFromType( iter.attributeType( index ) ); num_iter++ )
-              {
-                attr.setLocation( iter.attributeLocation( index ) + num_iter              ) ;
-                attr.setBinding ( 0                                                       ) ; /// Problem? What is this?
-                attr.setFormat  ( formatFromAttributeType( iter.attributeType( index )  ) ) ;
-                attr.setOffset  ( offset                                                  ) ;
-                
-                this->attributes.push_back  ( attr        ) ;
-                offset += byteSizeFromFormat( iter, index ) ;
-              }
-            }
-          }
-        }
         module_info.setCodeSize( iter.spirvSize() * sizeof( unsigned ) ) ;
         module_info.setPCode   ( iter.spirv()                          ) ;
         this->spirv_map[ convert( iter.stage() ) ] = module_info ;
@@ -325,7 +320,7 @@ namespace nyx
       bind.setBinding  ( 0          ) ;
       bind.setInputRate( this->rate ) ;
       bind.setStride   ( offset     ) ;
-      
+
       this->bindings.push_back( bind ) ;
       this->descriptors.resize( binding_map.size() ) ;
       for( auto bind : binding_map )
@@ -456,7 +451,7 @@ namespace nyx
 
     unsigned NyxShader::numVertexAttributes() const
     {
-      return data().attributes.size() ;
+      return data().inputs.size() ;
     }
 
     unsigned NyxShader::numVertexBindings() const
@@ -473,7 +468,7 @@ namespace nyx
       attr.setFormat  ( formatFromShaderFormat( format ) ) ;
       attr.setOffset  ( offset                           ) ;
       
-      data().attributes.push_back( attr ) ;
+      data().inputs.push_back( attr ) ;
     }
     
     void NyxShader::addDescriptor( unsigned binding, const nyx::ArrayFlags& type, unsigned count, nyx::ShaderStage stage )
@@ -533,7 +528,7 @@ namespace nyx
 
     const vk::VertexInputAttributeDescription* NyxShader::attributes() const
     {
-      return data().attributes.data() ;
+      return data().inputs.data() ;
     }
 
     const vk::VertexInputBindingDescription* NyxShader::bindings() const
@@ -552,12 +547,13 @@ namespace nyx
       {
         data().device.device().destroy( module.second, nullptr ) ;
       }
+      if( data().layout.operator VkDescriptorSetLayout() != nullptr ) data().device.device().destroy( data().layout, nullptr ) ;
       
-      data().device.device().destroy( data().layout, nullptr ) ;
-
+      data().nyxfile    = nyx::NyxFile() ;
       data().modules    .clear() ;
-      data().attributes .clear() ;
+      data().inputs     .clear() ;
       data().descriptors.clear() ;
+      data().bindings   .clear() ;
       data().spirv_map  .clear() ;
       data().infos      .clear() ;
     }

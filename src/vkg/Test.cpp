@@ -34,6 +34,8 @@
 #include <template/List.h>
 #include <nyxfile/NyxFile.h>
 #include <shaders/headers/draw.h>
+#include <shaders/headers/buffer_reference.h>
+#include <shaders/headers/color_depth.h>
 #include <vector>
 #include <algorithm>
 #include <assert.h>
@@ -380,7 +382,7 @@ athena::Result test_renderer_init()
   
   viewport.setWidth ( 1280 ) ;
   viewport.setHeight( 1024 ) ;
-  
+  if( !Impl::initialized() ) return athena::Result::Skip ;
   renderer.addViewport( viewport ) ;
   renderer.initialize( device, render_pass, nyx::bytes::draw, sizeof( nyx::bytes::draw ) ) ;
   
@@ -395,10 +397,10 @@ athena::Result test_renderer_draw()
   Impl::Image         uniform  ;
   nyx::Viewport       viewport ;
   nyx::Chain<Impl>    chain    ;
-
+  
   viewport.setWidth ( 1280 ) ;
   viewport.setHeight( 1024 ) ;
-  
+  if( !Impl::initialized() ) return athena::Result::Skip ;
   chain   .initialize ( device, nyx::ChainType::Graphics            ) ;
   uniform .initialize ( nyx::ImageFormat::RGBA8, device, 1280, 1024 ) ;
   renderer.addViewport( viewport                                    ) ;
@@ -412,40 +414,127 @@ athena::Result test_renderer_draw()
   renderer.initialize( device, render_pass, nyx::bytes::draw, sizeof( nyx::bytes::draw ) ) ;
   renderer.bind( "framebuffer", uniform ) ;
   
-  for( unsigned i = 0; i < 2000 ; i++ )
+  for( unsigned i = 0; i < 1 ; i++ )
   {
     chain.draw( renderer, vertices ) ;
   }
   
   chain.submit     () ;
   chain.synchronize() ;
+  renderer.reset() ;
   return true ;
 }
 
+athena::Result test_buffer_reference_iterator()
+{
+  struct vec4
+  {
+    float x, y, z, w;
+  };
+  
+  nyx::Renderer<Impl> pipeline ;
+  Impl::Array<vec4>   vertices ;
+  Impl::Array<vec4>   array    ;
+  Impl::Array<bool>   uniform  ;
+  nyx::Chain<Impl>    chain    ;
+  nyx::Viewport       viewport ;
+  
+  viewport.setWidth ( 1280 ) ;
+  viewport.setHeight( 1024 ) ;
+  
+  if( !Impl::initialized() ) return athena::Result::Skip ;
+  
+  pipeline.addViewport( viewport ) ;
+  
+  // Initialize all the gpu objects needed.
+  chain   .initialize( render_pass, WINDOW_ID                                                                    ) ;
+  array   .initialize( device, 1                                                                                 ) ;
+  uniform .initialize( device, 1, false, nyx::ArrayFlags::UniformBuffer                                          ) ;
+  vertices.initialize( device, 9, false, nyx::ArrayFlags::Vertex                                                 ) ;
+  pipeline.initialize( device, render_pass, nyx::bytes::buffer_reference, sizeof( nyx::bytes::buffer_reference ) ) ;
+  
+  // Bind an array to a uniform location. This array is now what is being used for the uniform.
+  pipeline.bind( "ColorInfo", uniform ) ;
+  
+  chain.push( pipeline, array.iterator() ) ;
+  chain.draw( pipeline, vertices ) ;
+  
+  for( unsigned i = 0; i < 1 ; i++ )
+  {
+    chain.draw( pipeline, vertices ) ;
+  }
+  
+  chain.submit() ;
+  return true ;
+}
+
+athena::Result test_rendering_with_subpasses()
+{
+  struct vec4
+  {
+    float x, y, z, w ;
+  };
+
+  nyx::RenderPass<Impl> pass       ;
+  nyx::Renderer  <Impl> pipeline   ;
+  Impl::Array    <vec4> vertices   ;
+  nyx::Subpass          subpass    ;
+  nyx::Chain<Impl>      chain      ;
+  nyx::Attachment       attachment ;
+  nyx::Viewport         viewport   ;
+  
+  viewport.setWidth ( 1280 ) ;
+  viewport.setHeight( 1024 ) ;
+  
+  pipeline.addViewport  ( viewport   ) ;
+  
+  attachment.setClearColor( 0.0f, 0.f, 0.f, 1.0f      ) ;
+  attachment.setLayout    ( nyx::ImageLayout::ColorAttachment ) ;
+  attachment.setFormat    ( nyx::ImageFormat::RGBA8           ) ;
+  subpass.addAttachment( attachment ) ;
+  
+  attachment.setLayout    ( nyx::ImageLayout::DepthStencil ) ;
+  attachment.setFormat    ( nyx::ImageFormat::D32F         ) ;
+  subpass.addAttachment( attachment ) ;
+  
+  pass.addSubpass( subpass ) ;
+  pass    .initialize( device                                                                   ) ;
+  pipeline.initialize( device, pass, nyx::bytes::color_depth, sizeof( nyx::bytes::color_depth ) ) ;
+  chain   .initialize( pass, nyx::ChainType::Graphics                                           ) ;
+  vertices.initialize( device, 9, false, nyx::ArrayFlags::Vertex                                ) ;
+  
+  chain.draw( pipeline, vertices ) ;
+  
+  chain.submit() ;
+  return true ;
+}
 
 int main()
 {
   manager.initialize( "Nyx VULKAN Library" ) ;
-  manager.add( "01) Instance Creation Test"              , &instance_initialization_test  ) ;
-  manager.add( "02) Window Creation Test"                , &window_creation_test          ) ;
-  manager.add( "03) Graphics Queue Grab Test"            , &graphics_queue_get_test       ) ;
-  manager.add( "04) Swapchain Creation Test"             , &swapchain_creation_test       ) ;
-  manager.add( "05) Memory::initialize Test"             , &test_memory_initialize        ) ;
-  manager.add( "06) Memory::size Test"                   , &test_memory_size              ) ;
-  manager.add( "07) Memory::offset Test"                 , &test_memory_offset            ) ;
-  manager.add( "08) Memory::device Test"                 , &test_memory_device            ) ;
-  manager.add( "09) Memory::syncToHost Test"             , &test_memory_sync_to_host_copy ) ;
-  manager.add( "10) Array::initialize Test"              , &test_array_initialize         ) ;
-  manager.add( "11) Array::initialize Preallocated Test" , &test_array_prealloc_init      ) ;
-  manager.add( "12) Array::size Test"                    , &test_array_size               ) ;
-  manager.add( "13) Array::copy Test"                    , &test_array_host_copy          ) ;
-  manager.add( "14) Image::initialize Test"              , &test_image_initialization     ) ;
-  manager.add( "15) Image::size Test"                    , &test_image_size               ) ;
-  manager.add( "17) Image::resize Test"                  , &test_image_resize             ) ;
-  manager.add( "18) Image::copy Test"                    , &test_image_copy               ) ;
-  manager.add( "19) RenderPass::initialize Test"         , &test_render_pass_creation     ) ;
-  manager.add( "20) Renderer::initialize Test"           , &test_renderer_init            ) ;
-  manager.add( "21) Renderer::draw Test"                 , &test_renderer_draw            ) ;
+
+  manager.add( "01) Instance Creation"                 , &instance_initialization_test   ) ;
+  manager.add( "02) Window Creation"                   , &window_creation_test           ) ;
+  manager.add( "03) Graphics Queue Grab"               , &graphics_queue_get_test        ) ;
+  manager.add( "04) Swapchain Creation"                , &swapchain_creation_test        ) ;
+  manager.add( "05) Memory::initialize"                , &test_memory_initialize         ) ;
+  manager.add( "06) Memory::size"                      , &test_memory_size               ) ;
+  manager.add( "07) Memory::offset"                    , &test_memory_offset             ) ;
+  manager.add( "08) Memory::device"                    , &test_memory_device             ) ;
+  manager.add( "09) Memory::syncToHost"                , &test_memory_sync_to_host_copy  ) ;
+  manager.add( "10) Array::initialize"                 , &test_array_initialize          ) ;
+  manager.add( "11) Array::initialize Preallocated"    , &test_array_prealloc_init       ) ;
+  manager.add( "12) Array::size"                       , &test_array_size                ) ;
+  manager.add( "13) Array::copy"                       , &test_array_host_copy           ) ;
+  manager.add( "14) Image::initialize"                 , &test_image_initialization      ) ;
+  manager.add( "15) Image::size"                       , &test_image_size                ) ;
+  manager.add( "17) Image::resize"                     , &test_image_resize              ) ;
+  manager.add( "18) Image::copy"                       , &test_image_copy                ) ;
+  manager.add( "19) RenderPass::initialize"            , &test_render_pass_creation      ) ;
+  manager.add( "20) Renderer::initialize"              , &test_renderer_init             ) ;
+  manager.add( "21) Renderer::draw"                    , &test_renderer_draw             ) ;
+  manager.add( "22) Renderer::draw with array iterator", &test_buffer_reference_iterator ) ;
+  manager.add( "23) Renderer::draw with subpasses"     , &test_rendering_with_subpasses  ) ;
   
   return manager.test( athena::Output::Verbose ) ;
 }

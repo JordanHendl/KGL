@@ -66,6 +66,10 @@ IF( ${Vulkan_FOUND} )
     FILE( COPY test_image.jpeg DESTINATION ${BUILD_DIR}/ )
 
     BUILD_TEST( TARGET nyx_vkg )
+    
+    ADD_EXECUTABLE            ( nyx_vkg_window_test RenderTest.cpp                          )
+    TARGET_LINK_LIBRARIES     ( nyx_vkg_window_test PUBLIC  ${NYX_VULKAN_LIBRARIES} nyx_vkg )
+    TARGET_INCLUDE_DIRECTORIES( nyx_vkg_window_test PRIVATE ${NYX_VULKAN_INCLUDE_DIRS}      )
 
     INSTALL( FILES  ${NYX_VULKAN_HEADERS} DESTINATION ${HEADER_INSTALL_DIR}/vkg )
     INSTALL( TARGETS nyx_vkg EXPORT Nyx   

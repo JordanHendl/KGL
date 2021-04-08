@@ -177,7 +177,7 @@ namespace nyx
     
     bool Buffer::initialize( unsigned gpu, unsigned size, bool host_local, nyx::ArrayFlags flags )
     {
-      data().usage_flags = static_cast<vk::BufferUsageFlags>( static_cast<VkBufferUsageFlags>( flags.value() ) ) ;
+      data().usage_flags |= static_cast<vk::BufferUsageFlags>( static_cast<VkBufferUsageFlags>( flags.value() ) ) ;
       return this->initialize( gpu, size, host_local ) ;
     }
 

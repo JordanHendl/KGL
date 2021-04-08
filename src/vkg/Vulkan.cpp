@@ -272,6 +272,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case Error::InitializationFailed : return "InitializationFailed: Vulkan initialization failed!"                                    ;
         case Error::OutOfDeviceMemory    : return "Out of device memory: Device memory available has been depleted."                       ;
         case Error::MemoryMapFailed      : return "Memory Map Failure: A Host-GPU memory mapping has failed."                              ;
+        case Error::ValidationFailed     : return "Validation Layer Failed."                                                               ;
         default : return "Unknown Error" ;
       }
     }
@@ -280,10 +281,11 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
     {
       switch( this->err )
       {
-        case Error::DeviceLost           : return Severity::Fatal   ;
         case Error::DeviceNotFound       : return Severity::Warning ;
         case Error::FeatureNotPresent    : return Severity::Warning ;
         case Error::SuboptimalKHR        : return Severity::Warning ;
+        case Error::ValidationFailed     : return Severity::Fatal   ;
+        case Error::DeviceLost           : return Severity::Fatal   ;
         case Error::OutOfDataKHR         : return Severity::Fatal   ;
         case Error::InitializationFailed : return Severity::Fatal   ;
         case Error::OutOfDeviceMemory    : return Severity::Fatal   ;
@@ -372,6 +374,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case vk::Result::eSuboptimalKHR             : return Vulkan::Error::RecreateSwapchain    ;
         case vk::Result::eErrorOutOfDeviceMemory    : return Vulkan::Error::OutOfDeviceMemory    ;
         case vk::Result::eErrorMemoryMapFailed      : return Vulkan::Error::MemoryMapFailed      ;
+        case vk::Result::eErrorValidationFailedEXT  : return Vulkan::Error::ValidationFailed     ;
         default : return Vulkan::Error::Unknown ;
       }
     }
@@ -427,6 +430,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case nyx::ImageFormat::R32F    : return vk::Format::eR32Sfloat          ;
         case nyx::ImageFormat::RGB32F  : return vk::Format::eR32G32B32Sfloat    ;
         case nyx::ImageFormat::RGBA32F : return vk::Format::eR32G32B32A32Sfloat ;
+        case nyx::ImageFormat::D32F    : return vk::Format::eD32Sfloat          ;
         default : return vk::Format::eUndefined ;
       }
     }
@@ -446,6 +450,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case vk::Format::eR32Sfloat          : return nyx::ImageFormat::R32F    ;
         case vk::Format::eR32G32B32Sfloat    : return nyx::ImageFormat::RGB32F  ;
         case vk::Format::eR32G32B32A32Sfloat : return nyx::ImageFormat::RGBA32F ;
+        case vk::Format::eD32Sfloat          : return nyx::ImageFormat::D32F    ;
         default : return nyx::ImageFormat::RGB8 ;
       }
     }
@@ -471,15 +476,15 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
     {
       switch( layout )
       {
-        case nyx::ImageLayout::Undefined       : return vk::ImageLayout::eUndefined               ;
-        case nyx::ImageLayout::General         : return vk::ImageLayout::eGeneral                 ;
-        case nyx::ImageLayout::ColorAttachment : return vk::ImageLayout::eColorAttachmentOptimal  ;
-        case nyx::ImageLayout::ShaderRead      : return vk::ImageLayout::eShaderReadOnlyOptimal   ;
-        case nyx::ImageLayout::TransferSrc     : return vk::ImageLayout::eTransferSrcOptimal      ;
-        case nyx::ImageLayout::TransferDst     : return vk::ImageLayout::eTransferDstOptimal      ;
-        case nyx::ImageLayout::PresentSrc      : return vk::ImageLayout::ePresentSrcKHR           ;
-        case nyx::ImageLayout::DepthRead       : return vk::ImageLayout::eDepthReadOnlyOptimalKHR ;
-        
+        case nyx::ImageLayout::Undefined       : return vk::ImageLayout::eUndefined                     ;
+        case nyx::ImageLayout::General         : return vk::ImageLayout::eGeneral                       ;
+        case nyx::ImageLayout::ColorAttachment : return vk::ImageLayout::eColorAttachmentOptimal        ;
+        case nyx::ImageLayout::ShaderRead      : return vk::ImageLayout::eShaderReadOnlyOptimal         ;
+        case nyx::ImageLayout::TransferSrc     : return vk::ImageLayout::eTransferSrcOptimal            ;
+        case nyx::ImageLayout::TransferDst     : return vk::ImageLayout::eTransferDstOptimal            ;
+        case nyx::ImageLayout::PresentSrc      : return vk::ImageLayout::ePresentSrcKHR                 ;
+        case nyx::ImageLayout::DepthRead       : return vk::ImageLayout::eDepthReadOnlyOptimalKHR       ;
+        case nyx::ImageLayout::DepthStencil    : return vk::ImageLayout::eDepthStencilAttachmentOptimal ;
         default : return vk::ImageLayout::eUndefined ;
       };
     }

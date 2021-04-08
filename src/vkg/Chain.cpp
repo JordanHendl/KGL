@@ -56,7 +56,7 @@ namespace nyx
       unsigned               current ;
       
       ChainData() ;
-      void record() ;
+      void record( bool use_render_pass = false ) ;
       
       StagingBuffer* findStaging() const ;
     };
@@ -75,11 +75,11 @@ namespace nyx
       this->mutex.unlock() ;
     }
 
-    void ChainData::record()
+    void ChainData::record( bool use_render_pass )
     {
       if( !this->cmd.recording() )
       {
-        if( this->pass != nullptr && this->pass->initialized() )
+        if( this->pass != nullptr && this->pass->initialized() && use_render_pass )
         {
           this->cmd.record( *this->pass ) ;
         }
@@ -164,15 +164,25 @@ namespace nyx
     
     void Chain::initialize( const RenderPass& pass, ChainType type )
     {
+      const unsigned gpu = pass.device() ;
       this->reset() ;
       data().pass = &pass ;
-      this->initialize( pass.device(), type ) ;
+      switch( type )
+      {
+        case nyx::ChainType::Graphics : data().queue = Vulkan::graphicsQueue( gpu ) ; break ;
+        case nyx::ChainType::Compute  : data().queue = Vulkan::computeQueue ( gpu ) ; break ;
+//        case nyx::ChainType::Transfer : data().queue = Vulkan::tranferQueue ( gpu ) ; break
+        default : data().queue = Vulkan::computeQueue( gpu ) ;
+      }
+
+      data().cmd.initialize( data().queue, COMMAND_BUFFER_COUNT ) ;
     }
     
     void Chain::initialize( const RenderPass& pass, unsigned window_id )
     {
       this->reset() ;
-      data().pass = &pass ;
+      data().pass  = &pass ;
+      data().queue = Vulkan::presentQueue( window_id, pass.device() ) ;
       this->initialize( pass.device(), window_id ) ;
     }
 
@@ -213,7 +223,7 @@ namespace nyx
       data().record() ;
       if( new_layout != vk::ImageLayout::eUndefined )
       {
-        data().cmd.buffer( 0 ).pipelineBarrier( src, dst, dep_flags, 0, nullptr, 0, nullptr, 1, &barrier ) ;
+        data().cmd.buffer().pipelineBarrier( src, dst, dep_flags, 0, nullptr, 0, nullptr, 1, &barrier ) ;
       }
     }
 
@@ -224,11 +234,15 @@ namespace nyx
 
     void Chain::submit()
     {
-      if( data().cmd.recording() ) data().cmd.stop() ;
+      if( data().cmd.recording() )
+      {
+        data().cmd.stop() ;
+      }
 
       if( !data().parent.initialized() )
       {
         data().queue.submit( data().cmd ) ;
+        data().cmd.advance() ;
       }
     }
     
@@ -258,7 +272,7 @@ namespace nyx
       region.setDstSubresource( dst.subresource() ) ;
       
       data().record() ;
-      data().cmd.buffer( 0 ).copyImage( src.image(), src_layout, dst.image(), dst_layout, 1, &region ) ;
+      data().cmd.buffer().copyImage( src.image(), src_layout, dst.image(), dst_layout, 1, &region ) ;
     }
     
     void Chain::copy( const vkg::Buffer& src, vkg::Buffer& dst, unsigned copy_amt, unsigned element_size, unsigned src_offset, unsigned dst_offset )
@@ -274,7 +288,7 @@ namespace nyx
       region.setDstOffset( dst_offset              ) ;
       
       data().record() ;
-      data().cmd.buffer( 0 ).copyBuffer( src.buffer(), dst.buffer(), 1, &region ) ;
+      data().cmd.buffer().copyBuffer( src.buffer(), dst.buffer(), 1, &region ) ;
     }
     
     void Chain::copy( const void* src, vkg::Buffer& dst, unsigned copy_amt, unsigned element_size, unsigned src_offset, unsigned dst_offset )
@@ -357,7 +371,7 @@ namespace nyx
       copy_amt     = copy_amt     ;
 
       data().record() ;
-      data().cmd.buffer( 0 ).copyImageToBuffer( src.image(), vk::ImageLayout::eTransferSrcOptimal, dst.buffer(), 1, &info ) ;
+      data().cmd.buffer().copyImageToBuffer( src.image(), vk::ImageLayout::eTransferSrcOptimal, dst.buffer(), 1, &info ) ;
     }
     
     void Chain::copy( const vkg::Buffer& src, vkg::Image& dst, unsigned copy_amt, unsigned element_size, unsigned src_offset, unsigned dst_offset )
@@ -384,16 +398,23 @@ namespace nyx
       element_size = element_size ;
 
       this->transition ( dst, nyx::ImageLayout::TransferDst ) ;
-      data().cmd.buffer( 0 ).copyBufferToImage( src.buffer(), dst.image(), vk::ImageLayout::eTransferDstOptimal, 1, &info ) ;
+      data().cmd.buffer().copyBufferToImage( src.buffer(), dst.image(), vk::ImageLayout::eTransferDstOptimal, 1, &info ) ;
       this->transition ( dst, old_layout ) ;
     }
     
     void Chain::drawBase( const vkg::Renderer& renderer, const vkg::Buffer& vertices, unsigned count, unsigned offset )
     {
-      data().record() ;
+      data().record( true ) ;
       data().cmd.bind    ( renderer.pipeline()     ) ;
       data().cmd.bind    ( renderer.descriptor()   ) ;
       data().cmd.drawBase( vertices, count, offset ) ;
+    }
+
+    void Chain::pushBase( const Renderer& pipeline, const void* value, unsigned byte_size )
+    {
+      data().record( true ) ;
+      data().cmd.bind( pipeline.pipeline()          ) ;
+      data().cmd.pushConstantBase( value, byte_size ) ;
     }
 
     const ChainData& Chain::data() const

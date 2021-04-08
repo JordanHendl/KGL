@@ -202,6 +202,11 @@ namespace nyx
     {
       this->impl.bind( name, image ) ;
     }
+    
+    void Renderer::reset()
+    {
+      this->impl.reset() ;
+    }
 
     unsigned Renderer::device() const
     {

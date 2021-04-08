@@ -99,6 +99,8 @@ namespace nyx
          */
         unsigned device() const ;
         
+        unsigned currentIndex() const ;
+        bool present() ;
         /** Method to retrieve a framebuffer from this object.
          * @param index The index of framebuffer to retrieve. See @count for the amount.
          * @return Const reference to this object's internal framebuffer.
