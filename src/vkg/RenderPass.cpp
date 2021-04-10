@@ -180,7 +180,7 @@ namespace nyx
       const vkg::Queue queue = Vulkan::presentQueue( window_id, device ) ;
       data().device = Vulkan::device( device ) ;
       
-      data().swapchain.initialize( queue, Vulkan::context( window_id ) ) ;
+      data().swapchain.initialize( queue, window_id ) ;
       
       data().window_id          = window_id                 ;
       data().area.extent.width  = data().swapchain.width () ;
@@ -233,7 +233,7 @@ namespace nyx
           this->initialize( device, id ) ;
           recreate = true ;
         }
-        if( data().swapchain.acquire() == Vulkan::Error::RecreateSwapchain )
+        else if( data().swapchain.acquire() == Vulkan::Error::RecreateSwapchain )
         {
           unsigned device = data().device    ;
           unsigned id     = data().window_id ;
@@ -263,7 +263,7 @@ namespace nyx
     {
       for( auto& framebuffer : data().framebuffers ) data().device.device().destroy( framebuffer ) ;
       if( data().pass ) data().device.device().destroy( data().pass ) ;
-      data().swapchain.reset() ;
+//      data().swapchain.reset() ;
       
       data().images      .clear() ;
       data().framebuffers.clear() ;

@@ -228,6 +228,11 @@ namespace nyx
     {
       return data().swapchain ;
     }
+    
+    void Swapchain::initialize( const nyx::vkg::Queue& present_queue, unsigned window_id )
+    {
+      this->initialize( present_queue, Vulkan::context( window_id ) ) ;
+    }
 
     void Swapchain::initialize( const nyx::vkg::Queue& present_queue, unsigned long long surface )
     {
@@ -246,6 +251,7 @@ namespace nyx
       
       data().syncs .resize( this->count() ) ;
       data().fences.resize( this->count() ) ;
+
       for( auto& sync : data().syncs ) sync.initialize( data().device, 1 ) ;
     }
 

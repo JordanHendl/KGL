@@ -443,15 +443,58 @@ namespace nyx
          */
         static const char* platformSurfaceInstanceExtensions() ;
         
+        /** Method to add a window to the implementation.
+         * @param id The ID to associate with the window. If a conflict occurs, nothing happens.
+         * @param title The title to associate with the window.
+         * @param width The width of the window in pixels.
+         * @param height The height of the window in pixels.
+         */
         static void addWindow( unsigned id, const char* title, unsigned width, unsigned height ) ;
+        
+        /** Method to handle a window's events.
+         *  For seeing how to recieve window events, use @EventManager.
+         * @param id The id of window to publish events of.
+         */
+        static void handleWindowEvents( unsigned id ) ;
+        
+        /** Method to retrieve whether a window of the input ID exists.
+         * @param id The id associated with the window.
+         * @return Whether or not a window with the specified ID exists.
+         */
         static bool hasWindow( unsigned id ) ;
+        
+        /** Method to set the title of a window.
+         * @param id The id associated with the window.
+         * @param title The C-String containing the title to set the window to.
+         */
         static void setWindowTitle( unsigned id, const char* title ) ;
+        
+        /** Method to set the width of a window.
+         * @param id The id associated with the window.
+         * @param width The width of the window in pixels.
+         */
         static void setWindowWidth( unsigned id, unsigned width ) ;
+        
+        /** Method to set the height of a window.
+         * @param id The id associated with the window.
+         * @param height The height of the window in pixels.
+         */
         static void setWindowHeight( unsigned id, unsigned height ) ;
+        
+        /** Method to set whether a window is borderless or now.
+         * @param id The id associated with the window.
+         * @param value Whether or not the window should be borderless.
+         */
         static void setWindowBorderless( unsigned id, bool value ) ;
-        static unsigned long long context( unsigned id ) ;
+        
       private:
         
+        /** Method to retrieve an implementation context from a window id.
+         * @param id The id of window to retrieve the context of.
+         * @return The vulkan surface handle for the given window.
+         */
+        static unsigned long long context( unsigned id ) ;
+
         /** Typedef to avoid using void* directly.
          */
         typedef void* Data ;

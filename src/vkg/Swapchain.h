@@ -81,6 +81,12 @@ namespace nyx
         
         /** Method to initialize this object and create the Vullkan Swapchain.
          * @param present_queue The present queue to use for this object's initialization.
+         * @param window_id The id of window to use for this swapchain.
+         */
+        void initialize( const nyx::vkg::Queue& present_queue, unsigned window_id ) ;
+        
+        /** Method to initialize this object and create the Vullkan Swapchain.
+         * @param present_queue The present queue to use for this object's initialization.
          * @param surface The Vulkan Surface for the window to create a swapchain of.
          */
         void initialize( const nyx::vkg::Queue& present_queue, unsigned long long surface ) ;

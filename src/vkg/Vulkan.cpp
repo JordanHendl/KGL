@@ -696,6 +696,16 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       return this->createMemory( gpu, size, flags, filter ) ;
     }
     
+    void Vulkan::handleWindowEvents( unsigned id )
+    {
+      auto iter = vkg::data.windows.find( id ) ;
+      
+      if( iter != vkg::data.windows.end() )
+      {
+        iter->second->handleEvents() ;
+      }
+    }
+
     void Vulkan::addWindow( unsigned id, const char* title, unsigned width, unsigned height )
     {
       nyx::Window<Vulkan>* window ;

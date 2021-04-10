@@ -56,7 +56,7 @@ namespace nyx
         case 6   : 
         case 7   : 
         case 8   : 
-        case 9   : return nyx::Key::None       ;
+        case 9   : return nyx::Key::ESC        ;
         case 10  : return nyx::Key::One        ;
         case 11  : return nyx::Key::Two        ;
         case 12  : return nyx::Key::Three      ;

@@ -27,32 +27,31 @@
 #include "library/RenderPass.h"
 #include "library/Renderer.h"
 #include "library/Chain.h"
+#include "event/Event.h"
 #include <library/Nyx.h>
 #include <shaders/headers/draw_3d.h>
 #include <vector>
 #include <iostream>
-
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 using Framework = nyx::vkg::Vulkan ;
-
-struct Vertex
-{
-  float x, y, z, w ;
-};
 
 struct Matrices
 {
-  float model[16] ;
-  float view [16] ;
-  float proj [16] ;
+  glm::mat4 model ;
+  glm::mat4 view  ;
+  glm::mat4 proj  ;
 };
 
+static nyx::EventManager           manager       ;
 static nyx::RenderPass <Framework> render_pass   ;
 static nyx::Renderer   <Framework> pipeline      ;
 static nyx::Chain      <Framework> chain         ;
-static Framework::Array<Vertex   > vertices      ;
+static nyx::Chain      <Framework> transfer      ;
+static Framework::Array<glm::vec4> vertices      ;
 static Framework::Array<Matrices > matrices      ;
 static bool                        running       ;
-std::vector<Vertex>                host_vertices = {
+std::vector<glm::vec4>                host_vertices = {
                                      {-0.5f, -0.5f, -0.5f, 1.0f}, 
                                      { 0.5f, -0.5f, -0.5f, 1.0f},  
                                      { 0.5f,  0.5f, -0.5f, 1.0f},  
@@ -121,8 +120,9 @@ void setupRenderPass()
 
 void setupChain()
 {
-  std::cout << "Initializing Chain" << std::endl ;
-  chain.initialize( render_pass, WINDOW_ID ) ;
+  std::cout << "Initializing Chains" << std::endl ;
+  chain   .initialize( render_pass, WINDOW_ID               ) ;
+  transfer.initialize( DEVICE     , nyx::ChainType::Compute ) ;
 }
 
 void setupVertices()
@@ -139,7 +139,10 @@ void setupMatrices()
 {
   Matrices mat ;
   
-  mat.model[ 0 ] = 1.0f ;
+  mat.model = glm::mat4( 1 ) ;
+  mat.view  = glm::lookAtRH( glm::vec3( 0 ), glm::vec3( 0 ), glm::vec3( 0, 1.f, 0.f ) ) ;
+  mat.proj  = glm::perspective( glm::radians( 90.0f ), static_cast<float>( WIDTH ) / static_cast<float>( HEIGHT ), 0.0f, 100.0f ) ;
+  
   matrices.initialize( DEVICE, 1 ) ;
   chain.copy( &mat, matrices ) ;
   chain.submit() ;
@@ -158,6 +161,38 @@ void setupPipeline()
   pipeline.initialize( DEVICE, render_pass, nyx::bytes::draw_3d, sizeof( nyx::bytes::draw_3d ) ) ;
 }
 
+void respond( const nyx::Event& event )
+{
+  static bool toggle = false ;
+  
+  if( event.type() == nyx::Event::Type::KeyDown )
+  {  
+    if( event.key() == nyx::Key::Return )
+    {
+      Matrices mat ;
+      
+      if( toggle )
+      {
+        toggle = false ;
+        mat.model[ 0 ][ 0 ] = 1.0f ;
+      }
+      else
+      {
+        mat.model[ 0 ][ 0 ] = 0.0f ;
+        toggle = true ;
+      }
+      
+      transfer.copy( &mat, matrices ) ;
+      transfer.submit() ;
+    }
+    
+    if( event.key() == nyx::Key::ESC )
+    {
+      running = false ;
+    }
+  }
+}
+
 int main()
 {
   Framework::setApplicationName  ( "NYX-VKG Window Test App"                      ) ;
@@ -169,6 +204,7 @@ int main()
   Framework::addDeviceExtension  ( "VK_KHR_shader_non_semantic_info"              ) ;
 
   Framework::addWindow( WINDOW_ID, "Nyx Render Test", WIDTH, HEIGHT ) ;
+  
   running = true ;
   
   setupRenderPass() ;
@@ -177,12 +213,14 @@ int main()
   setupMatrices  () ;
   setupPipeline  () ;
   
+  manager.enroll( &respond, "Keyboard Response" ) ;
   while( running )
   {
     chain.push( pipeline, matrices.iterator() ) ;
     chain.draw( pipeline, vertices ) ;
     chain.submit() ;
     render_pass.present() ;
+    Framework::handleWindowEvents( WINDOW_ID ) ;
   }
   
   return 0 ;

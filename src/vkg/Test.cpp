@@ -96,7 +96,7 @@ athena::Result graphics_queue_get_test()
 
 athena::Result swapchain_creation_test()
 {
-  swapchain.initialize( graphics_queue, Impl::context( WINDOW_ID ) ) ;
+  swapchain.initialize( graphics_queue, WINDOW_ID ) ;
   if( !Impl::initialized()  ) return athena::Result::Skip ;
   if( swapchain.count() == 0 ) return false ;
   
