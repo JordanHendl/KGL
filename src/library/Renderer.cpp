@@ -34,52 +34,52 @@ namespace nyx
     this->t_height    = 1024 ;
     this->t_max_depth = 1.0f ;
   }
-
+ 
   void Viewport::setXPos( unsigned value )
   {
     this->t_xpos = value ;
   }
-
+ 
   void Viewport::setYPos( unsigned value )
   {
     this->t_ypos = value ;
   }
-
+ 
   void Viewport::setWidth( unsigned value )
   {
     this->t_width = value ;
   }
-
+ 
   void Viewport::setHeight( unsigned value )
   {
     this->t_height = value ;
   }
-
+ 
   void Viewport::setMaxDepth( float depth )
   {
     this->t_max_depth = depth ;
   }
-
+ 
   unsigned Viewport::xpos() const
   {
     return this->t_xpos ;
   }
-
+ 
   unsigned Viewport::ypos() const
   {
     return this->t_ypos ;
   }
-
+ 
   unsigned Viewport::width() const
   {
     return this->t_width ;
   }
-
+ 
   unsigned Viewport::height() const
   {
     return this->t_height ;
   }
-
+ 
   float Viewport::maxDepth() const
   {
     return this->t_max_depth ;

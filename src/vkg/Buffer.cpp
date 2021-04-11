@@ -75,7 +75,7 @@ namespace nyx
       
       info.setBuffer( this->buffer ) ;
       
-      if( this->device.hasExtension( VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME ) )
+      if( this->device.hasExtension( "VK_KHR_buffer_device_address" ) )
       {
         this->address = this->device.device().getBufferAddress( &info ) ;
       }
@@ -100,12 +100,12 @@ namespace nyx
 
     BufferData::BufferData()
     {
-      this->size         = 0                                                                                 ;
-      this->preallocated = false                                                                             ;
-      this->usage_flags  = ::vk::BufferUsageFlagBits::eTransferSrc | ::vk::BufferUsageFlagBits::eTransferDst ;
-      this->device_size  = 0                                                                                 ;
-      this->host_local   = false                                                                             ;
-      this->initialized  = false                                                                             ;
+      this->size         = 0                                                                                                                                 ;
+      this->preallocated = false                                                                                                                             ;
+      this->usage_flags  = ::vk::BufferUsageFlagBits::eTransferSrc | ::vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eShaderDeviceAddressKHR ;
+      this->device_size  = 0                                                                                                                                 ;
+      this->host_local   = false                                                                                                                             ;
+      this->initialized  = false                                                                                                                             ;
     }
     
     Buffer::Buffer()
@@ -177,8 +177,7 @@ namespace nyx
     
     bool Buffer::initialize( unsigned gpu, unsigned size, bool host_local, nyx::ArrayFlags flags )
     {
-      data().usage_flags = static_cast<vk::BufferUsageFlags>( static_cast<VkBufferUsageFlags>( flags.value() ) ) ;
-      
+      data().usage_flags |= static_cast<vk::BufferUsageFlags>( static_cast<VkBufferUsageFlags>( flags.value() ) ) ;
       return this->initialize( gpu, size, host_local ) ;
     }
 
@@ -203,7 +202,9 @@ namespace nyx
 
       if( !data().preallocated )
       {
-        data().internal_memory.initialize( gpu, data().requirements.size, data().requirements.memoryTypeBits, host_local ) ;
+        if( host_local ) data().internal_memory.initialize( gpu, data().requirements.size, data().requirements.memoryTypeBits, true, nyx::MemoryFlags::HostVisible ) ;
+        else             data().internal_memory.initialize( gpu, data().requirements.size, data().requirements.memoryTypeBits, false                               ) ;
+        
       }
 
       needed_size = data().internal_memory.size() - data().internal_memory.offset() ;
@@ -226,74 +227,6 @@ namespace nyx
     const ::vk::Buffer& Buffer::buffer() const
     {
       return data().buffer ;
-    }
-
-    void Buffer::copy( const Buffer& buffer, unsigned size, nyx::vkg::Queue& queue, unsigned srcoffset, unsigned dstoffset )
-    { 
-      ::vk::BufferCopy region ;
-      
-      region.setSize     ( size      ) ;
-      region.setSrcOffset( srcoffset ) ;
-      region.setDstOffset( dstoffset ) ;
-      
-      if( data().cmd.size() == 0 ) data().cmd.initialize( queue, 1 ) ;
-      data().cmd.record() ;
-      data().cmd.buffer( 0 ).copyBuffer( buffer.buffer(), this->buffer(), 1, &region ) ;
-      data().cmd.stop() ;
-      
-      queue.submit( data().cmd ) ;
-    }
-    
-    void Buffer::copy( const Buffer& buffer, unsigned size, unsigned srcoffset, unsigned dstoffset )
-    { 
-      auto queue = Vulkan::graphicsQueue( data().device ) ;
-      this->copy( buffer, size, queue, srcoffset, dstoffset ) ;
-    }
-    
-    void Buffer::copyToDevice( const void* buffer, unsigned byte_size, unsigned srcoffset, unsigned dstoffset )
-    { 
-      vkg::Buffer staging_buffer ;
-      
-      if( data().host_local )
-      {
-        if( !data().staging_memory.initialized() )
-        {
-          data().staging_memory.initialize( data().device, data().requirements.size, true, nyx::MemoryFlags::HostCoherent | nyx::MemoryFlags::HostVisible ) ;
-        }
-        data().staging_memory.copyToDevice( buffer, byte_size ) ;
-        staging_buffer.initialize( data().staging_memory, static_cast<unsigned>( data().requirements.size ), nyx::ArrayFlags::TransferSrc | nyx::ArrayFlags::TransferDst ) ;
-        
-        if( byte_size > this->size() ) byte_size = this->size() ;
-        this->copy( staging_buffer, byte_size, srcoffset, dstoffset ) ;
-        
-        staging_buffer.reset() ;
-      }
-    }
-    
-    void Buffer::syncToDevice()
-    {
-      this->copyToDevice( data().host_copy.data(), data().host_copy.size() ) ;
-    }
-    
-    void Buffer::syncToHost()
-    {
-      vkg::Buffer          staging_buffer ;
-      const unsigned char* host_ptr       ;
-      if( data().host_local )
-      {
-        if( !data().staging_memory.initialized() ) 
-        {
-          data().staging_memory.initialize( data().device, data().requirements.size, true, nyx::MemoryFlags::HostCoherent | nyx::MemoryFlags::HostVisible ) ;
-        }
-        
-        staging_buffer.initialize( data().staging_memory, data().requirements.size, nyx::ArrayFlags::TransferDst ) ;
-        
-        staging_buffer.copy( *this, data().size ) ;
-        data().staging_memory.syncToHost() ;
-        host_ptr = static_cast<const unsigned char*>( data().staging_memory.hostData() ) ;
-        data().host_copy.assign( host_ptr, host_ptr + data().requirements.size         ) ;
-        staging_buffer.reset() ;
-      }
     }
 
     unsigned Buffer::device() const

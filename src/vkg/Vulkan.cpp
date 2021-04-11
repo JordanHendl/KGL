@@ -22,13 +22,16 @@
 #include "Vulkan.h"
 #include "Device.h"
 #include "library/Image.h"
+#include "library/Window.h"
+#include <library/Renderer.h>
+#include <library/Memory.h>
+#include <library/RenderPass.h>
 #include <algorithm>
 #include <iostream>
-#include <library/Renderer.h>
 #include <stdint.h>
-#include <library/Memory.h>
 #include <vector>
 #include <string>
+#include <map>
 
 #ifdef WIN32
 #define VK_USE_PLATFORM_WIN32_KHR
@@ -90,7 +93,10 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
     {
       typedef void ( *Callback )( Vulkan::Error ) ;
       
+      using WindowMap = std::map<unsigned, nyx::Window<Vulkan>*> ;
+      
       Callback                 error_cb          ;
+      WindowMap                windows           ;
       Vulkan::ErrorHandler*    handler           ;
       vkg::Instance            instance          ;
       std::vector<vkg::Device> devices           ;
@@ -144,6 +150,52 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
     {
       this->error_cb = &vkg::defaultHandler ;
       this->handler  = nullptr ;
+    }
+
+    Memory::Memory()
+    {
+      this->val = 0x0 ;
+    }
+
+    Memory::~Memory()
+    {
+      this->val = 0x0 ;
+    }
+
+    Memory::Memory( vk::DeviceMemory& val )
+    {
+      *this = val ;
+    }
+
+    Memory& Memory::operator=( vk::DeviceMemory& val )
+    {
+      static_assert( sizeof( vk::DeviceMemory ) == sizeof( void* ), "Vulkan Device Memory cannot be wrapped up." ) ;
+      this->val = reinterpret_cast<void*>( static_cast<VkDeviceMemory>( val ) ) ;
+      
+      return *this ;
+    }
+    
+    Memory& Memory::operator=( void* val )
+    {
+      static_assert( sizeof( vk::DeviceMemory ) == sizeof( void* ), "Vulkan Device Memory cannot be wrapped up." ) ;
+      this->val = val ;
+      
+      return *this ;
+    }
+
+    Memory::operator bool() const
+    {
+      return reinterpret_cast<VkDeviceMemory>( this->val ) ;
+    }
+
+    Memory::operator vk::DeviceMemory()
+    {
+      return static_cast<vk::DeviceMemory>( reinterpret_cast<VkDeviceMemory>( this->val ) ) ;
+    }
+
+    Memory::operator vk::DeviceMemory() const
+    {
+      return static_cast<vk::DeviceMemory>( reinterpret_cast<VkDeviceMemory>( this->val ) ) ;
     }
 
     vkg::Vulkan::Severity::Severity()
@@ -219,6 +271,8 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case Error::OutOfDataKHR         : return "OutOfDataKHR: The VKG swapchain is not capable of presenting to the specified surface." ;
         case Error::InitializationFailed : return "InitializationFailed: Vulkan initialization failed!"                                    ;
         case Error::OutOfDeviceMemory    : return "Out of device memory: Device memory available has been depleted."                       ;
+        case Error::MemoryMapFailed      : return "Memory Map Failure: A Host-GPU memory mapping has failed."                              ;
+        case Error::ValidationFailed     : return "Validation Layer Failed."                                                               ;
         default : return "Unknown Error" ;
       }
     }
@@ -227,10 +281,11 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
     {
       switch( this->err )
       {
-        case Error::DeviceLost           : return Severity::Fatal   ;
         case Error::DeviceNotFound       : return Severity::Warning ;
         case Error::FeatureNotPresent    : return Severity::Warning ;
         case Error::SuboptimalKHR        : return Severity::Warning ;
+        case Error::ValidationFailed     : return Severity::Fatal   ;
+        case Error::DeviceLost           : return Severity::Fatal   ;
         case Error::OutOfDataKHR         : return Severity::Fatal   ;
         case Error::InitializationFailed : return Severity::Fatal   ;
         case Error::OutOfDeviceMemory    : return Severity::Fatal   ;
@@ -318,6 +373,8 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case vk::Result::eErrorOutOfDateKHR         : return Vulkan::Error::RecreateSwapchain    ;
         case vk::Result::eSuboptimalKHR             : return Vulkan::Error::RecreateSwapchain    ;
         case vk::Result::eErrorOutOfDeviceMemory    : return Vulkan::Error::OutOfDeviceMemory    ;
+        case vk::Result::eErrorMemoryMapFailed      : return Vulkan::Error::MemoryMapFailed      ;
+        case vk::Result::eErrorValidationFailedEXT  : return Vulkan::Error::ValidationFailed     ;
         default : return Vulkan::Error::Unknown ;
       }
     }
@@ -334,6 +391,31 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       }
     }
     
+    vk::AttachmentDescription Vulkan::convert( const nyx::Attachment& attachment )
+    {
+      using StoreOps = vk::AttachmentStoreOp ;
+      using LoadOps  = vk::AttachmentLoadOp  ;
+      
+      const auto format = Vulkan::convert( attachment.format() )                                                                                  ;
+      const auto layout = Vulkan::convert( attachment.layout() )                                                                                  ;
+      const auto stencil_store = attachment.storeStencil() ? StoreOps::eStore : StoreOps::eDontCare                                               ;
+      const auto stencil_load  = attachment.testStencil()  ? LoadOps::eLoad   : attachment.clearStencil() ? LoadOps::eClear : LoadOps::eDontCare  ;
+      const auto load_op       = LoadOps::eClear  ; /// JH TODO Change this.
+      const auto store_op      = StoreOps::eStore ;
+
+      vk::AttachmentDescription desc ;
+      
+      desc.setSamples       ( vk::SampleCountFlagBits::e1 ) ;
+      desc.setLoadOp        ( load_op                     ) ;
+      desc.setStoreOp       ( store_op                    ) ;
+      desc.setFormat        ( format                      ) ;
+      desc.setInitialLayout ( vk::ImageLayout::eUndefined ) ;
+      desc.setStencilLoadOp ( stencil_load                ) ;
+      desc.setStencilStoreOp( stencil_store               ) ;
+      desc.setFinalLayout   ( layout                      ) ;
+      
+      return desc ;
+    }
     vk::Format Vulkan::convert( nyx::ImageFormat format )
     {
       switch( format )
@@ -349,6 +431,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case nyx::ImageFormat::R32F    : return vk::Format::eR32Sfloat          ;
         case nyx::ImageFormat::RGB32F  : return vk::Format::eR32G32B32Sfloat    ;
         case nyx::ImageFormat::RGBA32F : return vk::Format::eR32G32B32A32Sfloat ;
+        case nyx::ImageFormat::D32F    : return vk::Format::eD24UnormS8Uint     ;
         default : return vk::Format::eUndefined ;
       }
     }
@@ -368,6 +451,8 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case vk::Format::eR32Sfloat          : return nyx::ImageFormat::R32F    ;
         case vk::Format::eR32G32B32Sfloat    : return nyx::ImageFormat::RGB32F  ;
         case vk::Format::eR32G32B32A32Sfloat : return nyx::ImageFormat::RGBA32F ;
+        case vk::Format::eD32Sfloat          : return nyx::ImageFormat::D32F    ;
+        case vk::Format::eD24UnormS8Uint     : return nyx::ImageFormat::D32F    ;
         default : return nyx::ImageFormat::RGB8 ;
       }
     }
@@ -393,15 +478,15 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
     {
       switch( layout )
       {
-        case nyx::ImageLayout::Undefined       : return vk::ImageLayout::eUndefined               ;
-        case nyx::ImageLayout::General         : return vk::ImageLayout::eGeneral                 ;
-        case nyx::ImageLayout::ColorAttachment : return vk::ImageLayout::eColorAttachmentOptimal  ;
-        case nyx::ImageLayout::ShaderRead      : return vk::ImageLayout::eShaderReadOnlyOptimal   ;
-        case nyx::ImageLayout::TransferSrc     : return vk::ImageLayout::eTransferSrcOptimal      ;
-        case nyx::ImageLayout::TransferDst     : return vk::ImageLayout::eTransferDstOptimal      ;
-        case nyx::ImageLayout::PresentSrc      : return vk::ImageLayout::ePresentSrcKHR           ;
-        case nyx::ImageLayout::DepthRead       : return vk::ImageLayout::eDepthReadOnlyOptimalKHR ;
-        
+        case nyx::ImageLayout::Undefined       : return vk::ImageLayout::eUndefined                     ;
+        case nyx::ImageLayout::General         : return vk::ImageLayout::eGeneral                       ;
+        case nyx::ImageLayout::ColorAttachment : return vk::ImageLayout::eColorAttachmentOptimal        ;
+        case nyx::ImageLayout::ShaderRead      : return vk::ImageLayout::eShaderReadOnlyOptimal         ;
+        case nyx::ImageLayout::TransferSrc     : return vk::ImageLayout::eTransferSrcOptimal            ;
+        case nyx::ImageLayout::TransferDst     : return vk::ImageLayout::eTransferDstOptimal            ;
+        case nyx::ImageLayout::PresentSrc      : return vk::ImageLayout::ePresentSrcKHR                 ;
+        case nyx::ImageLayout::DepthRead       : return vk::ImageLayout::eDepthReadOnlyOptimalKHR       ;
+        case nyx::ImageLayout::DepthStencil    : return vk::ImageLayout::eDepthStencilAttachmentOptimal ;
         default : return vk::ImageLayout::eUndefined ;
       };
     }
@@ -538,10 +623,19 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       return Vulkan::device( gpu ).computeQueue() ;
     }
     
-    vkg::Queue Vulkan::presentQueue( unsigned long long surface, unsigned gpu )
+    vkg::Queue Vulkan::presentQueue( unsigned window_id, unsigned gpu )
     {
+      static vkg::Queue dummy ;
+      
       Vulkan::initialize() ;
-      return Vulkan::device( gpu ).presentQueue( surface ) ;
+      auto iter = vkg::data.windows.find( window_id ) ;
+      
+      if( iter != vkg::data.windows.end() )
+      {
+        return Vulkan::device( gpu ).presentQueue( iter->second->context() ) ;
+      }
+      
+      return dummy ;
     }
 
     void Vulkan::copyToHost( const Vulkan::Memory& src, Vulkan::Data dst, unsigned gpu, unsigned amt, unsigned src_offset, unsigned dst_offset )
@@ -553,8 +647,8 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       ::vk::MemoryMapFlags flag   ;
       void*                mem    ;
       
-      offset = src_offset       ;
-      amount = amt              ;
+      offset = src_offset ;
+      amount = amt        ;
 
       dst    = static_cast<void*>( reinterpret_cast<unsigned char*>( dst ) + dst_offset ) ;
       
@@ -578,13 +672,17 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       const auto                      device   = Vulkan::device( gpu ).device()                                                              ;
       const auto                      p_device = Vulkan::device( gpu ).physicalDevice()                                                      ;
       const ::vk::MemoryPropertyFlags flag     = static_cast<vk::MemoryPropertyFlags>( static_cast<VkMemoryPropertyFlags>( flags.value() ) ) ;
-      Vulkan::Memory           mem  ;
-      ::vk::MemoryAllocateInfo info ;
+      Vulkan::Memory              mem       ;
+      vk::MemoryAllocateInfo      info      ;
+      vk::MemoryAllocateFlagsInfo flag_info ;
 
       Vulkan::initialize() ;
-
+      
+      flag_info.setFlags( vk::MemoryAllocateFlagBits::eDeviceAddress ) ;
+      
       info.setAllocationSize ( size                              ) ;
       info.setMemoryTypeIndex( memType( filter, flag, p_device ) ) ;
+      info.setPNext( &flag_info ) ;
       
       auto result = device.allocateMemory( info, nullptr ) ;
       
@@ -600,7 +698,91 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       return this->createMemory( gpu, size, flags, filter ) ;
     }
     
+    void Vulkan::handleWindowEvents( unsigned id )
+    {
+      auto iter = vkg::data.windows.find( id ) ;
+      
+      if( iter != vkg::data.windows.end() )
+      {
+        iter->second->handleEvents() ;
+      }
+    }
+
+    void Vulkan::addWindow( unsigned id, const char* title, unsigned width, unsigned height )
+    {
+      nyx::Window<Vulkan>* window ;
+      auto iter = vkg::data.windows.find( id ) ;
+      
+      if( iter == vkg::data.windows.end() )
+      {
+        window = new nyx::Window<Vulkan>() ;
+        window->initialize( title, width, height ) ;
+        vkg::data.windows.insert( iter, { id, window } ) ;
+      }
+    }
     
+    bool Vulkan::hasWindow( unsigned id )
+    {
+      auto iter = vkg::data.windows.find( id ) ;
+      if( iter == vkg::data.windows.end() )
+      {
+        return false ;
+      }
+      
+      return true ;
+    }
+    
+    void Vulkan::setWindowTitle( unsigned id, const char* title )
+    {
+      auto iter = vkg::data.windows.find( id ) ;
+      
+      if( iter != vkg::data.windows.end() )
+      {
+        iter->second->setTitle( title ) ;
+      }
+    }
+    
+    void Vulkan::setWindowWidth( unsigned id, unsigned width )
+    {
+      auto iter = vkg::data.windows.find( id ) ;
+      
+      if( iter != vkg::data.windows.end() )
+      {
+        iter->second->setWidth( width ) ;
+      }
+    }
+    
+    void Vulkan::setWindowHeight( unsigned id, unsigned height )
+    {
+      auto iter = vkg::data.windows.find( id ) ;
+      
+      if( iter != vkg::data.windows.end() )
+      {
+        iter->second->setHeight( height ) ;
+      }
+    }
+    
+    void Vulkan::setWindowBorderless( unsigned id, bool value )
+    {
+      auto iter = vkg::data.windows.find( id ) ;
+      
+      if( iter != vkg::data.windows.end() )
+      {
+        iter->second->setBorderless( value ) ;
+      }
+    }
+    
+    unsigned long long Vulkan::context( unsigned id )
+    {
+      auto iter = vkg::data.windows.find( id ) ;
+      
+      if( iter != vkg::data.windows.end() )
+      {
+        return iter->second->context() ;
+      }
+      
+      return 0ull ;
+    }
     const char* Vulkan::platformSurfaceInstanceExtensions()
     {
       #ifdef WIN32

@@ -120,12 +120,24 @@ namespace nyx
     {
       vk::ImageViewCreateInfo   info  ;
       vk::ImageSubresourceRange range ;
+      
+      if( this->format == vk::Format::eD32Sfloat )
+      {
+        range.setAspectMask( vk::ImageAspectFlagBits::eDepth  ) ; // @TODO: Make configurable.
+      }
+      if( this->format == vk::Format::eD24UnormS8Uint )
+      {
+        range.setAspectMask( vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil ) ; // @TODO: Make configurable.
+      }
+      else
+      {
+        range.setAspectMask( vk::ImageAspectFlagBits::eColor ) ; // @TODO: Make configurable.
+      }
 
-      range.setAspectMask    ( vk::ImageAspectFlagBits::eColor ) ; // @TODO: Make configurable.
-      range.setBaseArrayLayer( 0                               ) ;
-      range.setBaseMipLevel  ( 0                               ) ;
-      range.setLayerCount    ( 1                               ) ;
-      range.setLevelCount    ( 1                               ) ;
+      range.setBaseArrayLayer( 0            ) ;
+      range.setBaseMipLevel  ( 0            ) ;
+      range.setLayerCount    ( this->layers ) ;
+      range.setLevelCount    ( 1            ) ;
 
       info.setImage           ( this->image            ) ;
       info.setViewType        ( vk::ImageViewType::e2D ) ; // @TODO Make configurable.
@@ -230,7 +242,7 @@ namespace nyx
       src .transition ( nyx::vkg::Vulkan::convert( vk::ImageLayout::eTransferSrcOptimal ), queue ) ; 
       
       data().buffer.record() ;
-      data().buffer.buffer( 0 ).copyImage( src.data().image, src.data().layout, data().image, data().layout, 1, &info ) ;
+      data().buffer.buffer().copyImage( src.data().image, src.data().layout, data().image, data().layout, 1, &info ) ;
       data().buffer.stop() ;
       
       queue.submit( data().buffer ) ;
@@ -266,7 +278,7 @@ namespace nyx
       this->transition( nyx::ImageLayout::TransferDst, queue ) ; 
       
       data().buffer.record() ;
-      data().buffer.buffer( 0 ).copyBufferToImage( src.buffer(), data().image, vk::ImageLayout::eTransferDstOptimal, 1, &info ) ;
+      data().buffer.buffer().copyBufferToImage( src.buffer(), data().image, vk::ImageLayout::eTransferDstOptimal, 1, &info ) ;
       data().buffer.stop() ;
       
       queue.submit( data().buffer ) ;
@@ -397,6 +409,11 @@ namespace nyx
       return vkg::Vulkan::convert( data().layout ) ;
     }
     
+    const vk::Image& Image::image() const
+    {
+      return data().image ;
+    }
+    
     nyx::ImageFormat Image::format() const
     {
       return vkg::Vulkan::convert( data().format ) ;
@@ -435,7 +452,7 @@ namespace nyx
       dst       = vk::PipelineStageFlagBits::eAllCommands ;
       
       data().buffer.record() ;
-      data().buffer.buffer( 0 ).pipelineBarrier( src, dst, dep_flags, 0, nullptr, 0, nullptr, 1, &barrier ) ;
+      data().buffer.buffer().pipelineBarrier( src, dst, dep_flags, 0, nullptr, 0, nullptr, 1, &barrier ) ;
       data().buffer.stop() ;
       
       data().old_layout = data().layout ;
@@ -486,7 +503,12 @@ namespace nyx
     {
       return data().layers ;
     }
-
+    
+    const vk::ImageSubresourceLayers& Image::subresource() const
+    {
+      return data().subresource ;
+    }
+    
     void Image::reset()
     {
       if( data().image )

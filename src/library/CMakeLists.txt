@@ -1,18 +1,22 @@
 SET( NYX_LIBRARY_SOURCES 
      Memory.cpp
+     Chain.cpp
      Array.cpp
      Image.cpp
      Window.cpp
      Renderer.cpp
+     RenderPass.cpp
      Nyx.cpp
    )
       
 SET( NYX_LIBRARY_HEADERS
      Memory.h
+     Chain.h
      Array.h
      Image.h
      Window.h
      Renderer.h
+     RenderPass.h
      Nyx.h
    )
 

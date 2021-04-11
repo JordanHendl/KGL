@@ -228,6 +228,11 @@ namespace nyx
     {
       return data().swapchain ;
     }
+    
+    void Swapchain::initialize( const nyx::vkg::Queue& present_queue, unsigned window_id )
+    {
+      this->initialize( present_queue, Vulkan::context( window_id ) ) ;
+    }
 
     void Swapchain::initialize( const nyx::vkg::Queue& present_queue, unsigned long long surface )
     {
@@ -246,6 +251,7 @@ namespace nyx
       
       data().syncs .resize( this->count() ) ;
       data().fences.resize( this->count() ) ;
+
       for( auto& sync : data().syncs ) sync.initialize( data().device, 1 ) ;
     }
 
@@ -264,20 +270,16 @@ namespace nyx
       
       if( result.result == vk::Result::eErrorOutOfDateKHR || result.result == vk::Result::eSuboptimalKHR )
       {
-        vkg::Vulkan::add( device.waitIdle() ) ;
+        Vulkan::deviceSynchronize( data().queue.device() ) ;
         this->initialize( data().queue, data().raw_surface ) ;
 
         data().skip_frame = true ;
         return Vulkan::Error::RecreateSwapchain ;
       }
-      else
-      {
-        data().fences[ index ] = data().syncs[ index ].signalFence() ;
-        data().acquired.push( static_cast<unsigned>( result.value ) ) ;
-        
-        data().current_frame = ( index + 1 ) % data().syncs.size() ;
-      }
-      
+
+      data().fences[ index ] = data().syncs[ index ].signalFence() ;
+      data().acquired.push( static_cast<unsigned>( result.value ) ) ;
+      data().current_frame = ( index + 1 ) % data().syncs.size() ;
       data().syncs[ index ].waitOn( data().syncs[ index ] ) ;
       return Vulkan::Error::Success ;
     }
@@ -328,7 +330,7 @@ namespace nyx
 
     bool Swapchain::initialized() const
     {
-      return data().swapchain && !data().acquired.empty() ;
+      return data().swapchain ; //&& !data().acquired.empty() ;
     }
 
     unsigned Swapchain::width() const
@@ -353,11 +355,8 @@ namespace nyx
     
     const nyx::vkg::Image& Swapchain::image( unsigned idx ) const
     {
-      static const nyx::vkg::Image dummy ;
-      
       if( idx < data().images.size() ) return data().images[ idx ] ;
-      
-      return dummy ;
+      return data().images[ 0 ] ;
     }
     
     const vk::SwapchainKHR& Swapchain::swapchain() const
@@ -369,7 +368,6 @@ namespace nyx
     {
       if( data().swapchain )
       {
-        
         for( auto& image : data().images )
         {
           image.reset() ;

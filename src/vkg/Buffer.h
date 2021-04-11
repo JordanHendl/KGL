@@ -45,6 +45,8 @@ namespace nyx
     class Descriptor    ;
     class Queue         ;
     class RendererImpl  ;
+    class Chain         ;
+    
     /** Class for managing a Vulkan buffer.
      */
     class Buffer
@@ -72,7 +74,9 @@ namespace nyx
         friend class nyx::Array ;
         
         friend struct BufferData ;
-        
+
+        friend class Chain ;
+
         /** Friend decleration so the vkg::Image object can access this object's data for copy.
          */
         friend class vkg::Image ;
@@ -89,32 +93,6 @@ namespace nyx
          * @return A reference to this object after the surface copy.
          */
         Buffer& operator=( const Buffer& src ) ;
-        
-        /** Method to copy an input buffer into this object's data.
-         * @param buffer The buffer to copy from.
-         * @param byte_size The size in bytes to copy.
-         * @param cmd_buff The command buffer to record the copy operation to.
-         * @param srcoffset The offset of the input buffer to start at.
-         * @param dstoffset The offset of this buffer to start at.
-         */
-        void copy( const Buffer& buffer, unsigned byte_size, nyx::vkg::Queue& cmd_buff, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
-        
-        /** Method to copy an input buffer into this object's data.
-         * @param buffer The buffer to copy from.
-         * @param byte_size The size in bytes to copy.
-         * @param cmd_buff The command buffer to record the copy operation to.
-         * @param srcoffset The offset of the input buffer to start at.
-         * @param dstoffset The offset of this buffer to start at.
-         */
-        void copy( const Buffer& buffer, unsigned byte_size, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
-        
-        /** Method to copy an input buffer into this object's data.
-         * @param src Host pointer to copy data from.
-         * @param byte_size The size in bytes to copy.
-         * @param srcoffset The offset of the input buffer to start at.
-         * @param dstoffset The offset of this buffer to start at.
-         */
-        void copyToDevice( const void* src, unsigned byte_size, unsigned srcoffset = 0, unsigned dstoffset = 0 ) ;
         
         /** Method to retrieve the pointer to this object's host allocated data.
          * @return The host pointer to this object's internal data.

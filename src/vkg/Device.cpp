@@ -44,7 +44,7 @@ namespace nyx
 {
   namespace vkg
   {
-//    static vk::PhysicalDeviceBufferDeviceAddressFeaturesEXT ext_buffer_address = { false, false, false } ;
+    static vk::PhysicalDeviceBufferDeviceAddressFeatures ext_buffer_address  ;
     
     /** Structure to manage vulkan queue families.
      */
@@ -180,7 +180,7 @@ namespace nyx
     DeviceData::DeviceData()
     {
       this->id = UINT32_MAX ;
-//      this->extension_list = { "VK_KHR_buffer_device_address" } ;
+      this->extension_list = { "VK_KHR_buffer_device_address" } ;
     }
 
     DeviceData& DeviceData::operator=( const DeviceData& data )
@@ -243,11 +243,12 @@ namespace nyx
     {
       typedef std::vector<::vk::DeviceQueueCreateInfo> CreateInfos ;
       
-      ::vk::DeviceCreateInfo info            ;
-      DeviceData::CharVector ext_list_char   ;
-      DeviceData::CharVector layer_list_char ;
-      CreateInfos            queue_infos     ;
-      std::vector<float>     priorities      ;
+      ::vk::DeviceCreateInfo      info            ;
+      vk::PhysicalDeviceFeatures2 feat            ;
+      DeviceData::CharVector      ext_list_char   ;
+      DeviceData::CharVector      layer_list_char ;
+      CreateInfos                 queue_infos     ;
+      std::vector<float>          priorities      ;
 
       this->extension_list = this->filterExtensions()                     ;
       this->layer_list     = this->filterLayers()                         ;
@@ -266,16 +267,22 @@ namespace nyx
         queue_infos[ i ].setPQueuePriorities( priorities.data() ) ;
       }
       
+      this->features.setShaderInt64                   ( true ) ;
+      this->features.setFragmentStoresAndAtomics      ( true ) ;
+      this->features.setVertexPipelineStoresAndAtomics( true ) ;
+
       info.setQueueCreateInfoCount   ( queue_infos.size()     ) ;
       info.setPQueueCreateInfos      ( queue_infos.data()     ) ;
       info.setEnabledExtensionCount  ( ext_list_char.size()   ) ;
       info.setPpEnabledExtensionNames( ext_list_char.data()   ) ;
       info.setEnabledLayerCount      ( layer_list_char.size() ) ;
       info.setPEnabledLayerNames     ( layer_list_char        ) ;
-      info.setPEnabledFeatures       ( &this->features        ) ;
+      feat.setFeatures( this->features ) ;
       
-//      info.setPNext( static_cast<const void*>( &nyx::vkg::ext_buffer_address ) ) ;
-
+      nyx::vkg::ext_buffer_address.setBufferDeviceAddress( true ) ;
+      feat.setPNext( static_cast<void*>( &nyx::vkg::ext_buffer_address ) ) ;
+      info.setPNext( static_cast<void*>( &feat                         ) ) ;
+      
       vkg::Vulkan::add( this->physical_device.createDevice( &info, nullptr, &this->gpu ) ) ;
     }
     
@@ -481,23 +488,6 @@ namespace nyx
       
       return dummy ;
     }
-//    
-//    const nyx::vkg::Queue& Device::transferQueue()
-//    {
-////      const unsigned family = data().queue_families.transfer.getQueue()      ;
-////      const unsigned index  = data().queue_families.transfer.index( family ) ;
-////      vk::Queue       vk_queue ;
-////      nyx::vkg::Queue queue    ;
-//      
-////      vk_queue = data().gpu.getQueue( family, index ) ;
-////      queue.initialize( *this, vk_queue, family, data().queues.size() ) ;
-////      
-////      data().queues.push_back( queue ) ;
-////      
-////      return data().queues.back() ;
-//      
-////      return queue ;
-//    }
 
     const ::vk::Device& Device::device() const
     {

@@ -95,9 +95,9 @@ namespace nyx
     {
       switch( flags.value() )
       {
-        case nyx::ArrayFlags::StorageBuffer : return nyx::UniformType::SSBO ;
-        case nyx::ArrayFlags::UniformBuffer : return nyx::UniformType::UBO  ;
-        default : return nyx::UniformType::UBO ;
+        case nyx::ArrayFlags::StorageBuffer : return nyx::UniformType::Ssbo ;
+        case nyx::ArrayFlags::UniformBuffer : return nyx::UniformType::Ubo  ;
+        default : return nyx::UniformType::Ubo ;
       }
     }
     
@@ -105,7 +105,7 @@ namespace nyx
     {
       switch( flags )
       {
-        default : return nyx::UniformType::SAMPLER ;
+        default : return nyx::UniformType::Sampler ;
       }
     }
     
@@ -113,8 +113,8 @@ namespace nyx
     {
       switch( flags )
       {
-        case nyx::UniformType::SAMPLER : return vk::DescriptorType::eCombinedImageSampler ;
-        case nyx::UniformType::SSBO    : return vk::DescriptorType::eStorageBuffer        ;
+        case nyx::UniformType::Sampler    : return vk::DescriptorType::eCombinedImageSampler ;
+        case nyx::UniformType::InputImage : return vk::DescriptorType::eStorageBuffer        ;
         default : return vk::DescriptorType::eUniformBuffer ;
       }
     }
@@ -156,13 +156,15 @@ namespace nyx
       info.setDescriptorPool    ( pool.data().pool    ) ;
       info.setPSetLayouts       ( &pool.data().layout ) ;
       info.setDescriptorSetCount( 1                   ) ;
-
-      auto result = pool.data().device.device().allocateDescriptorSets( info ) ;
-      vkg::Vulkan::add( result.result ) ;
       
-      data().device     = pool.data().device.device()                                         ;
-      data().parent_map = std::make_shared<DescriptorPoolData::UniformMap>( pool.data().map ) ; 
-      data().set        = result.value[ 0 ]                                                   ;
+      if( pool.data().pool )
+      {
+        auto result = pool.data().device.device().allocateDescriptorSets( info ) ;
+        vkg::Vulkan::add( result.result ) ;
+        data().device     = pool.data().device.device()                                         ;
+        data().parent_map = std::make_shared<DescriptorPoolData::UniformMap>( pool.data().map ) ; 
+        data().set        = result.value[ 0 ]                                                   ;
+      }
     }
 
     const vk::DescriptorSet& Descriptor::set() const
@@ -256,13 +258,13 @@ namespace nyx
             data().map[ shader.uniformName( index ) ] = { shader.uniformType( index ), shader.uniformBinding( index ) } ;
           }
         }
-      }
       
       data().device_id = shader.device()                   ;
       data().device    = Vulkan::device( shader.device() ) ;
       data().layout    = shader.layout()                   ;
 
       this->initialize() ;
+      }
     }
 
     void DescriptorPool::initialize()
@@ -286,10 +288,13 @@ namespace nyx
       info.setPPoolSizes   ( sizes.data()  ) ;
       info.setMaxSets      ( data().amount ) ;
       info.setFlags        ( flag          ) ;
-      
-      auto result = data().device.device().createDescriptorPool( info, nullptr ) ;
-      vkg::Vulkan::add( result.result ) ;
-      data().pool = result.value ;
+     
+      if( info.poolSizeCount != 0 )
+      {
+        auto result = data().device.device().createDescriptorPool( info, nullptr ) ;
+        vkg::Vulkan::add( result.result ) ;
+        data().pool = result.value ;
+      }
     }
     
     void DescriptorPool::addArrayInput( const char* name, unsigned binding, const nyx::ArrayFlags& type )

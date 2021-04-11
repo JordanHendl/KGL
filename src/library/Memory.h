@@ -15,8 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NYX_MEMORY_H
-#define NYX_MEMORY_H
+#pragma once
 
 namespace nyx
 {
@@ -352,7 +351,7 @@ namespace nyx
   {
     if( this->data )
     {
-      delete this->data ;
+      delete[] this->data ;
     }
 
     impl.free( this->memory_ptr, this->gpu ) ;
@@ -442,7 +441,7 @@ namespace nyx
   {
     auto amt = token_amt > this->byte_size ? this->byte_size : token_amt ;
     
-    memcpy( this->data, src, amt * this->element_sz ) ;
+    memcpy( this->data, src, amt * sizeof( TYPE ) ) ;
   }
 
   template<typename Framework>
@@ -489,5 +488,4 @@ namespace nyx
     return this->byte_size ;
   }
 }
-#endif 
 

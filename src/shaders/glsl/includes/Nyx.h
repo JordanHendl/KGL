@@ -29,10 +29,11 @@
 #extension GL_EXT_buffer_reference2   : enable 
 #extension GL_EXT_scalar_block_layout : enable 
 
-#define NyxBuffer layout( buffer_reference, buffer_reference_align=16, scalar ) buffer
-#define nyx_seek( iter  , pos  ) ( iter.position = pos < iter.position ? pos : iter.position ) ;
-#define nyx_get(  buff  , iter ) buff[ iter.position ]
-
+#define NyxBuffer layout( buffer_reference, scalar ) buffer
+#define NyxPushConstant layout( push_constant ) uniform
+#define nyx_seek( iter, pos  ) ( iter.position = pos < iter.position ? pos : iter.position ) ;
+#define nyx_get(  buff, iter ) buff[ iter.position ]
+#define nyx_set(  buff, iter, value ) buff[ iter.position ] = value
 struct NyxIterator
 {
   uint size         ;

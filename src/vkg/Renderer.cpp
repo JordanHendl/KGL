@@ -25,73 +25,42 @@
 #include "Renderer.h"
 #include "Vulkan.h"
 #include "library/Renderer.h"
-#include <template/List.h>
 #include <library/Image.h>
 
 namespace nyx
 {
   namespace vkg
   {
-    static nyx::ImageLayout layout( nyx::ImageFormat format ) ;
-    
     struct RendererData
     {
 
-      vkg::RenderPass     pass            ;
-      vkg::NyxShader      shader          ;
-      vkg::Pipeline       pipeline        ;
-      vkg::Swapchain      swapchain       ;
-      vkg::CommandBuffer  cmd             ;
-      vkg::Queue          queue           ;
-      vkg::DescriptorPool pool            ;
-      vkg::Descriptor     descriptor      ;
-      unsigned            device          ;
-      unsigned            amt_attachments ;
-      unsigned            width           ;
-      unsigned            height          ;
-      unsigned            sample_count    ;
-
+      const vkg::RenderPass* pass            ;
+      vkg::NyxShader         shader          ;
+      vkg::Pipeline          pipeline        ;
+      vkg::DescriptorPool    pool            ;
+      vkg::Descriptor        descriptor      ;
+      unsigned               device          ;
+      unsigned               width           ;
+      unsigned               height          ;
+      unsigned               sample_count    ;
+      unsigned long long     window_id       ;
+      
       RendererData() ;
       
       void remake() ;
     };
     
-    nyx::ImageLayout layout( nyx::ImageFormat format )
-    {
-      switch( format )
-      {
-        case nyx::ImageFormat::R32F :
-          return nyx::ImageLayout::DepthRead ;
-        case nyx::ImageFormat::RGBA8   :
-        case nyx::ImageFormat::RGB8    :
-        case nyx::ImageFormat::R8      :
-        case nyx::ImageFormat::RGBA32F :
-        case nyx::ImageFormat::RGB32F  :
-        default:
-          return nyx::ImageLayout::ColorAttachment ;
-      };
-    }
-    
     void RendererData::remake()
     {
-      this->pass     .reset() ;
-      this->pipeline .reset() ;
-      this->cmd      .reset() ;
+      this->pipeline.reset() ;
       
-      this->pass.setScissorExtentX(   this->swapchain.width () ) ;
-      this->pass.setScissorExtentY(   this->swapchain.height() ) ;
-      this->pass.setViewportWidth (0, this->swapchain.width () ) ;
-      this->pass.setViewportHeight(0, this->swapchain.height() ) ;
-
-      this->pass    .initialize( this->swapchain          ) ;
-      this->pipeline.initialize( this->pass, this->shader ) ;
-      this->cmd     .initialize( this->queue, 1           ) ;
+      this->pipeline.initialize( *this->pass, this->shader ) ;
     }
 
     RendererData::RendererData()
     {
-      this->amt_attachments = 0 ;
-      this->sample_count    = 1 ;
+      this->sample_count    = 1   ;
+      this->window_id         = 0x0 ;
     }
 
     RendererImpl::RendererImpl()
@@ -104,109 +73,32 @@ namespace nyx
       delete this->renderer_data ;
     }
 
-    void RendererImpl::initialize( unsigned device, const char* nyx_file_path )
+    void RendererImpl::initialize( unsigned device, const vkg::RenderPass& pass, const char* nyx_file_path )
     {
       nyx::vkg::NyxShader shader ;
-      data().device = device                          ;
-      data().queue  = Vulkan::graphicsQueue( device ) ;
+      data().device = device ;
+      data().pass   = &pass  ;
 
       shader         .initialize( device, nyx_file_path ) ;
-      data().cmd     .initialize( data().queue, 1       ) ;
-      data().pass    .initialize( device                ) ;
       data().pipeline.initialize( device, nyx_file_path ) ;
       data().pool    .initialize( shader, 1             ) ;
       
       data().descriptor = data().pool.make() ;
+      shader.reset() ;
     }
 
-    void RendererImpl::initialize( unsigned device, const char* nyx_file_path, unsigned long long context )
+    void RendererImpl::initialize( unsigned device, const vkg::RenderPass& pass, const unsigned char* nyx_file_bytes, unsigned size )
     {
-      data().device = device                                  ;
-      data().queue  = Vulkan::presentQueue( context, device ) ;
+      data().device = device ;
+      data().pass   = &pass  ;
 
-      data().cmd      .initialize( data().queue, 1       ) ;
-      data().swapchain.initialize( data().queue, context ) ;
-      data().shader   .initialize( device, nyx_file_path ) ;
-
-      data().pass.setAttachmentFinalLayout( nyx::ImageLayout::PresentSrc                     , data().amt_attachments - 1 ) ;
-      data().pass.setAttachmentFormat     ( vkg::Vulkan::convert( data().swapchain.format() ), data().amt_attachments - 1 ) ;
-      
-      data().pass    .initialize( data().swapchain           ) ;
-      data().pipeline.initialize( data().pass, data().shader ) ;
-      data().pool    .initialize( data().shader, 1           ) ;
-      
-      data().descriptor = data().pool.make() ;
-      
-      if( data().swapchain.acquire() == Vulkan::Error::RecreateSwapchain )
-      {
-        data().remake() ;
-      }
-    }
-    
-    void RendererImpl::initialize( unsigned device, const unsigned char* nyx_file_bytes, unsigned size )
-    {
-      data().device = device                          ;
-      data().queue  = Vulkan::graphicsQueue( device ) ;
-
-      data().shader  .initialize( device, nyx_file_bytes, size      ) ;
-      data().cmd     .initialize( data().queue, 1                   ) ;
-      data().pass    .initialize( device                            ) ;
-      data().pipeline.initialize( data().pass, nyx_file_bytes, size ) ;
-      data().pool    .initialize( data().shader, 1                  ) ;
+      data().shader  .initialize( device, nyx_file_bytes, size       ) ;
+      data().pipeline.initialize( *data().pass, nyx_file_bytes, size ) ;
+      data().pool    .initialize( data().shader, 1                   ) ;
       
       data().descriptor = data().pool.make() ;
     }
 
-    void RendererImpl::initialize( unsigned device, const unsigned char* nyx_file_bytes, unsigned size, unsigned long long context )
-    {
-      nyx::vkg::NyxShader shader ;
-      data().device = device                                  ;
-      data().queue  = Vulkan::presentQueue( context, device ) ;
-
-      data().shader   .initialize( device, nyx_file_bytes, size ) ;
-      data().cmd      .initialize( data().queue, 1              ) ;
-      data().swapchain.initialize( data().queue, context        ) ;
-      
-      data().pass.setAttachmentFinalLayout( nyx::ImageLayout::PresentSrc                     , data().amt_attachments - 1 ) ;
-      data().pass.setAttachmentFormat     ( vkg::Vulkan::convert( data().swapchain.format() ), data().amt_attachments - 1 ) ;
-
-      data().pass     .initialize( data().swapchain           ) ;
-      data().pipeline .initialize( data().pass, data().shader ) ;
-      data().pool     .initialize( data().shader, 1           ) ;
-      
-      data().descriptor = data().pool.make() ;
-      
-      if( data().swapchain.acquire() == Vulkan::Error::RecreateSwapchain )
-      {
-        data().remake() ;
-      }
-    }
-
-    void RendererImpl::addAttachment( nyx::ImageFormat format )
-    {
-      data().pass.setAttachmentFormat       ( format                     , data().amt_attachments ) ;
-      data().pass.setAttachmentFinalLayout  ( vkg::layout( format )      , data().amt_attachments ) ;
-      data().pass.setAttachmentInitialLayout( nyx::ImageLayout::Undefined, data().amt_attachments ) ;
-      data().pass.setAttachmentNumSamples   ( data().sample_count        , data().amt_attachments ) ;
-
-      if( format == nyx::ImageFormat::RGBA8 || format == nyx::ImageFormat::RGBA32F || format == nyx::ImageFormat::BGRA8 )
-      {
-        data().pass.setAttachmentLoad         ( false, data().amt_attachments ) ;
-        data().pass.setAttachmentStore        ( true , data().amt_attachments ) ;
-        data().pass.setAttachmentStencilLoad  ( false, data().amt_attachments ) ;
-        data().pass.setAttachmentStencilStore ( false, data().amt_attachments ) ;
-      }
-      else
-      {
-        data().pass.setAttachmentLoad         ( false, data().amt_attachments ) ;
-        data().pass.setAttachmentStore        ( false, data().amt_attachments ) ;
-        data().pass.setAttachmentStencilLoad  ( false, data().amt_attachments ) ;
-        data().pass.setAttachmentStencilStore ( true , data().amt_attachments ) ;
-      }
-      
-      data().amt_attachments++ ;
-    }
-    
     void RendererImpl::bind( const char* name, const nyx::vkg::Buffer& buffer )
     {
       Vulkan::deviceSynchronize( data().device ) ;
@@ -223,97 +115,44 @@ namespace nyx
     
     void RendererImpl::addViewport( const nyx::Viewport& viewport )
     {
-      data().pass.setViewportWidth ( 0, viewport.width()  ) ;
-      data().pass.setViewportHeight( 0, viewport.height() ) ;
-      data().pass.setViewportX     ( 0, viewport.xpos()   ) ;
-      data().pass.setViewportY     ( 0, viewport.ypos()   ) ;
+      data().pipeline.addViewport( viewport ) ;
       
-      data().pass.setScissorExtentX( viewport.width()  ) ;
-      data().pass.setScissorExtentY( viewport.height() ) ;
-      if( data().pass.initialized() )
+      if( data().pipeline.initialized() )
       {
-        data().remake() ;
+        data().pipeline.reset() ;
+        data().pipeline.initialize( *data().pass, data().shader ) ;
       }
     }
     
-    unsigned RendererImpl::count() const
-    {
-      return data().pass.numFramebuffers() ;
-    }
-
-    unsigned RendererImpl::current() const
-    {
-      return data().swapchain.current() ;
-    }
-
     unsigned RendererImpl::device() const
     {
       return data().device ;
     }
 
-    void RendererImpl::drawBase( const nyx::vkg::Buffer& buffer, unsigned count, unsigned offset )
-    {
-      if( !data().cmd.recording() )
-      {
-        data().cmd.record( data().pass       ) ;
-        data().cmd.bind  ( data().pipeline   ) ;
-        data().cmd.bind  ( data().descriptor ) ;
-      }
+//    void RendererImpl::pushConstantBase( const void* value, unsigned byte_size, nyx::PipelineStage stage_flags )
+//    {
+//      data().cmd.pushConstantBase( value, byte_size, stage_flags ) ;
+//    }
 
-      data().cmd.drawBase( buffer, count, offset ) ;
-    }
-
-    void RendererImpl::drawIndexedBase( const nyx::vkg::Buffer& index, const nyx::vkg::Buffer& vert, unsigned index_count, unsigned vert_count, unsigned offset )
-    {
-      if( !data().cmd.recording() )
-      {
-        data().cmd.record( data().pass       ) ;
-        data().cmd.bind  ( data().pipeline   ) ;
-        data().cmd.bind  ( data().descriptor ) ;
-      }
-      
-      data().cmd.drawIndexedBase( index, vert, index_count, vert_count, offset ) ;
-    }
-
-    const vkg::Image& RendererImpl::image( unsigned index ) const
-    {
-      return data().pass.image( index ) ;
-    }
-
-    void RendererImpl::pushConstantBase( const void* value, unsigned byte_size, nyx::PipelineStage stage_flags )
-    {
-      data().cmd.pushConstantBase( value, byte_size, stage_flags ) ;
-    }
-
-    void RendererImpl::setDimensions( unsigned width, unsigned height )
-    {
-      data().pass.setFramebufferWidth ( width  ) ;
-      data().pass.setFramebufferHeight( height ) ;
-    }
-    
-    void RendererImpl::finalize()
-    {
-      if( data().cmd.recording() )
-      {
-        data().cmd.stop() ;
-        data().queue.submit( data().cmd ) ;
-      }
-      
-      if( data().swapchain.initialized() )
-      {
-        if( data().swapchain.submit()  == Vulkan::Error::RecreateSwapchain ) data().remake() ;
-        if( data().swapchain.acquire() == Vulkan::Error::RecreateSwapchain ) data().remake() ;
-      }
-    }
+//    void RendererImpl::finalize()
+//    {
+//      if( data().cmd.recording() )
+//      {
+//        data().cmd.stop() ;
+//      }
+//      
+//      if( data().swapchain.initialized() )
+//      {
+//        if( data().swapchain.submit()  == Vulkan::Error::RecreateSwapchain ) data().remake() ;
+//        if( data().swapchain.acquire() == Vulkan::Error::RecreateSwapchain ) data().remake() ;
+//      }
+//    }
 
     void RendererImpl::reset()
     {
       Vulkan::device( data().device ).wait() ;
 
       data().pipeline .reset() ;
-      data().pass     .reset() ;
-      data().swapchain.reset() ;
-      data().cmd      .reset() ;
       data().descriptor.reset() ;
 //      data().pool     .reset() ;
     }
@@ -326,6 +165,56 @@ namespace nyx
     const RendererData& RendererImpl::data() const
     {
       return *this->renderer_data ;
+    }
+    
+    void Renderer::initialize( unsigned device, const vkg::RenderPass& pass, const char* nyx_file_path )
+    {
+      this->impl.initialize( device, pass, nyx_file_path ) ;
+    }
+
+    void Renderer::initialize( unsigned device, const vkg::RenderPass& pass, const unsigned char* nyx_file_bytes, unsigned size )
+    {
+      this->impl.initialize( device, pass, nyx_file_bytes, size ) ;
+    }
+
+    bool Renderer::initialized() const
+    {
+      return impl.data().pipeline.initialized() ;
+    }
+    
+    const vkg::Descriptor& Renderer::descriptor() const
+    {
+      return impl.data().descriptor ;
+    }
+
+    const vkg::Pipeline& Renderer::pipeline() const
+    {
+      return impl.data().pipeline ;
+    }
+
+    void Renderer::addViewport( const nyx::Viewport& viewport )
+    {
+      this->impl.addViewport( viewport ) ;
+    }
+
+    void Renderer::bind( const char* name, const vkg::Image& image )
+    {
+      this->impl.bind( name, image ) ;
+    }
+    
+    void Renderer::setTestDepth( bool val )
+    {
+      this->impl.data().pipeline.setTestDepth( val ) ;
+    }
+    
+    void Renderer::reset()
+    {
+      this->impl.reset() ;
+    }
+
+    unsigned Renderer::device() const
+    {
+      return this->impl.device() ;
     }
   }
 }

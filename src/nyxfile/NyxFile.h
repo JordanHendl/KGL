@@ -38,10 +38,10 @@ namespace nyx
   enum UniformType : unsigned
   {
     None,
-    UBO,
-    SAMPLER,
-    IMAGE,
-    SSBO
+    Ubo,
+    Sampler,
+    InputImage,
+    Ssbo
   };
 
   /** Iterator class to iterate over all shader data.
@@ -71,29 +71,6 @@ namespace nyx
        * @return The number of attributes in this shader stage.
        */
       unsigned numAttributes() const ;
-
-      /** Method to retrieve the C-String representation of the attribute name at the specified index.
-       * @param index The index of attribute to retrieve the name for.
-       * @return The C-String representation of the attribute name.
-       */
-      const char* attributeName( unsigned index ) ;
-
-      /** Method to retrieve the attribute's location at the specified index.
-       * @param index The index of attribute to search for.
-       * @return The location of the attribute at the specified index.
-       */
-      unsigned attributeLocation( unsigned index ) ;
-
-      /** Method to retrieve the byte size of the attribute at the specified index.
-       * @param index The index of attribute to look up.
-       * @return The size in bytes of the attribute.
-       */
-      unsigned attributeByteSize( unsigned index ) ;
-
-      /** Method to retrieve whether or not the attribute at the specified index is an input.
-       * @return Whether or not the attribute is classified as an input to the shader.
-       */
-      bool attributeIsInput( unsigned index ) ;
 
       /** Method to retrieve the type of attribute.
        * @param index The index of attribute to search for.
@@ -201,7 +178,7 @@ namespace nyx
        * @return Reference to this object after assignment.
        */
       NyxFile& operator=( const NyxFile& file ) ;
-
+      
       /** Method to load the specified .nyx file at the input path.
        * @param The C-string path of the file on the filesystem to load.
        */
@@ -226,6 +203,63 @@ namespace nyx
        */
       unsigned size() const ;
 
+      /** Method to retrieve the C-String representation of the attribute name at the specified index.
+       * @param index The index of attribute to retrieve the name for.
+       * @return The C-String representation of the attribute name.
+       */
+      const char* inputName( unsigned index ) ;
+
+      /** Method to retrieve the attribute's location at the specified index.
+       * @param index The index of attribute to search for.
+       * @return The location of the attribute at the specified index.
+       */
+      unsigned inputLocation( unsigned index ) ;
+
+      /** Method to retrieve the byte size of the attribute at the specified index.
+       * @param index The index of attribute to look up.
+       * @return The size in bytes of the attribute.
+       */
+      unsigned inputByteSize( unsigned index ) ;
+
+      /** Method to retrieve the type of attribute.
+       * @param index The index of attribute to search for.
+       * @return The attribute type in C-String format.
+       */
+      const char* inputType( unsigned index ) ;
+      
+      /** Method to retrieve the C-String representation of the attribute name at the specified index.
+       * @param index The index of attribute to retrieve the name for.
+       * @return The C-String representation of the attribute name.
+       */
+      const char* outputName( unsigned index ) ;
+
+      /** Method to retrieve the attribute's location at the specified index.
+       * @param index The index of attribute to search for.
+       * @return The location of the attribute at the specified index.
+       */
+      unsigned outputLocation( unsigned index ) ;
+
+      /** Method to retrieve the byte size of the attribute at the specified index.
+       * @param index The index of attribute to look up.
+       * @return The size in bytes of the attribute.
+       */
+      unsigned outputByteSize( unsigned index ) ;
+
+      /** Method to retrieve the type of attribute.
+       * @param index The index of attribute to search for.
+       * @return The attribute type in C-String format.
+       */
+      const char* outputType( unsigned index ) ;
+
+      /** Method to retrieve the number of attributes in this shader stage.
+       * @return The number of attributes in this shader stage.
+       */
+      unsigned numInputs() const ;
+      
+      /** Method to retrieve the number of attributes in this shader stage.
+       * @return The number of attributes in this shader stage.
+       */
+      unsigned numOutputs() const ;
     private:
 
       /** Forward declared structure containing this object's data.

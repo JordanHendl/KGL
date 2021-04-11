@@ -22,9 +22,13 @@
  * Created on December 30, 2020, 2:26 PM
  */
 
+#define VULKAN_HPP_ASSERT_ON_RESULT
+#define VULKAN_HPP_NOEXCEPT
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
+
 #include "NyxShader.h"
 #include "Device.h"
-#include "Image.h"
 #include "Vulkan.h"
 #include <nyxfile/NyxFile.h>
 #include <library/Array.h>
@@ -90,7 +94,7 @@ namespace nyx
       ShaderModules                          modules     ; ///< TODO
       Descriptors                            descriptors ; ///< TODO
       SPIRVMap                               spirv_map   ; ///< TODO
-      Attributes                             attributes  ; ///< TODO
+      Attributes                             inputs      ; ///< TODO
       Bindings                               bindings    ; ///< TODO
       Infos                                  infos       ; ///< TODO
       nyx::NyxFile                           nyxfile     ; ///< TODO
@@ -132,15 +136,15 @@ namespace nyx
       else                   return 1 ;
     }
           
-    unsigned byteSizeFromFormat( nyx::ShaderIterator& it, unsigned index )
+    unsigned byteSizeFromFormat( nyx::NyxFile& file, unsigned index )
     {
-      const std::string s = std::string( it.attributeType( index ) ) ;
+      const std::string s = file.inputType( index ) ;
       
            if( s == "mat4" ) return 4 * sizeof( float ) ;
       else if( s == "mat3" ) return 3 * sizeof( float ) ;
       else if( s == "mat2" ) return 3 * sizeof( float ) ;
       
-      else return it.attributeByteSize( index ) ;
+      else return file.inputByteSize( index ) ;
     }
 
     ::vk::Format formatFromAttributeType( const char* type )
@@ -201,9 +205,9 @@ namespace nyx
     {
       switch( type )
       {
-        case nyx::UniformType::UBO     : desc_type = ::vk::DescriptorType::eUniformBuffer        ; break ;
-        case nyx::UniformType::SAMPLER : desc_type = ::vk::DescriptorType::eCombinedImageSampler ; break ;
-        case nyx::UniformType::SSBO    : desc_type = ::vk::DescriptorType::eStorageBuffer        ; break ;
+        case nyx::UniformType::Ubo     : desc_type = ::vk::DescriptorType::eUniformBuffer        ; break ;
+        case nyx::UniformType::Sampler : desc_type = ::vk::DescriptorType::eCombinedImageSampler ; break ;
+        case nyx::UniformType::Ssbo    : desc_type = ::vk::DescriptorType::eStorageBuffer        ; break ;
         case nyx::UniformType::None    : desc_type = ::vk::DescriptorType::eUniformBuffer        ; break ;
         default : break ;
       }
@@ -269,6 +273,23 @@ namespace nyx
       unsigned offset ;
       
       offset = 0 ;
+      
+              
+      for( unsigned index = 0; index < this->nyxfile.numInputs(); index++ )
+      {
+        /** This is done in the case that a matrix ( or value greater than a vec4 ) is an input.
+         */
+        for( unsigned num_iter = 0 ; num_iter < numIterationsFromType( this->nyxfile.inputType( index ) ); num_iter++ )
+        {
+          attr.setLocation( this->nyxfile.inputLocation( index )                        ) ;
+          attr.setBinding ( 0                                                           ) ; /// Problem? What is this?
+          attr.setFormat  ( formatFromAttributeType( this->nyxfile.inputType( index ) ) ) ;
+          attr.setOffset  ( offset                                                      ) ;
+          
+          this->inputs.push_back      ( attr                 ) ;
+          offset += byteSizeFromFormat( this->nyxfile, index ) ;
+        }
+      }
       for( auto iter = this->nyxfile.begin(); iter != this->nyxfile.end(); ++iter )
       {
         for( index = 0; index < iter.numUniforms(); index++ )
@@ -289,28 +310,6 @@ namespace nyx
             binding_map[ iter.uniformName( index ) ] = binding ;
           }
         }
-        
-        if( iter.stage() == nyx::ShaderStage::Vertex )
-        {
-          for( unsigned index = 0; index < iter.numAttributes(); index++ )
-          {
-            if( iter.attributeIsInput( index ) )
-            {
-              /** This is done in the case that a matrix ( or value greater than a vec4 ) is an input.
-               */
-              for( unsigned num_iter = 0 ; num_iter < numIterationsFromType( iter.attributeType( index ) ); num_iter++ )
-              {
-                attr.setLocation( iter.attributeLocation( index ) + num_iter              ) ;
-                attr.setBinding ( 0                                                       ) ; /// Problem? What is this?
-                attr.setFormat  ( formatFromAttributeType( iter.attributeType( index )  ) ) ;
-                attr.setOffset  ( offset                                                  ) ;
-                
-                this->attributes.push_back  ( attr        ) ;
-                offset += byteSizeFromFormat( iter, index ) ;
-              }
-            }
-          }
-        }
         module_info.setCodeSize( iter.spirvSize() * sizeof( unsigned ) ) ;
         module_info.setPCode   ( iter.spirv()                          ) ;
         this->spirv_map[ convert( iter.stage() ) ] = module_info ;
@@ -321,7 +320,7 @@ namespace nyx
       bind.setBinding  ( 0          ) ;
       bind.setInputRate( this->rate ) ;
       bind.setStride   ( offset     ) ;
-      
+
       this->bindings.push_back( bind ) ;
       this->descriptors.resize( binding_map.size() ) ;
       for( auto bind : binding_map )
@@ -338,7 +337,10 @@ namespace nyx
       info.setBindingCount( this->descriptors.size() ) ;
       info.setPBindings   ( this->descriptors.data() ) ;
       
-      this->layout = this->device.device().createDescriptorSetLayout( info, nullptr ) ;
+      auto result = this->device.device().createDescriptorSetLayout( info, nullptr ) ;
+      vkg::Vulkan::add( result.result ) ;
+      
+      this->layout = result.value ;
     }
     
     void NyxShaderData::makeShaderModules()
@@ -349,7 +351,9 @@ namespace nyx
       
       for( auto shader : this->spirv_map )
       {
-        mod = this->device.device().createShaderModule( shader.second, nullptr ) ;
+        auto result = this->device.device().createShaderModule( shader.second, nullptr ) ;
+        vkg::Vulkan::add( result.result ) ;
+        mod = result.value ;
         
         this->modules[ nyxStageFromVulkan( shader.first ) ] = mod ;
       }
@@ -447,7 +451,7 @@ namespace nyx
 
     unsigned NyxShader::numVertexAttributes() const
     {
-      return data().attributes.size() ;
+      return data().inputs.size() ;
     }
 
     unsigned NyxShader::numVertexBindings() const
@@ -464,7 +468,7 @@ namespace nyx
       attr.setFormat  ( formatFromShaderFormat( format ) ) ;
       attr.setOffset  ( offset                           ) ;
       
-      data().attributes.push_back( attr ) ;
+      data().inputs.push_back( attr ) ;
     }
     
     void NyxShader::addDescriptor( unsigned binding, const nyx::ArrayFlags& type, unsigned count, nyx::ShaderStage stage )
@@ -524,7 +528,7 @@ namespace nyx
 
     const vk::VertexInputAttributeDescription* NyxShader::attributes() const
     {
-      return data().attributes.data() ;
+      return data().inputs.data() ;
     }
 
     const vk::VertexInputBindingDescription* NyxShader::bindings() const
@@ -543,12 +547,13 @@ namespace nyx
       {
         data().device.device().destroy( module.second, nullptr ) ;
       }
+      if( data().layout.operator VkDescriptorSetLayout() != nullptr ) data().device.device().destroy( data().layout, nullptr ) ;
       
-      data().device.device().destroy( data().layout, nullptr ) ;
-
+      data().nyxfile    = nyx::NyxFile() ;
       data().modules    .clear() ;
-      data().attributes .clear() ;
+      data().inputs     .clear() ;
       data().descriptors.clear() ;
+      data().bindings   .clear() ;
       data().spirv_map  .clear() ;
       data().infos      .clear() ;
     }

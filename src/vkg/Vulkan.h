@@ -30,6 +30,7 @@
 #include "Swapchain.h"
 #include "Descriptor.h"
 #include "Renderer.h"
+#include "Chain.h"
 
 typedef unsigned VkFlags            ;
 typedef VkFlags  VkImageUsageFlags  ;
@@ -45,6 +46,7 @@ namespace vk
        class SurfaceKHR                                  ;
        class DeviceMemory                                ;
        class Instance                                    ;
+       class AttachmentDescription                       ;
   enum class ImageLayout                                 ;
   enum class MemoryPropertyFlagBits : VkFlags            ;
   enum class ImageUsageFlagBits     : VkImageUsageFlags  ;
@@ -91,8 +93,7 @@ namespace nyx
   
   /** Forward declared generic image object.
    */
-  template<typename IMPL, ImageFormat FORMAT>
-  
+  template<typename Framework>
   class Image ;
   
   /** Forward declared generic window object.
@@ -128,36 +129,87 @@ namespace nyx
      */
     class Image ;
       
+        /** Wrapper class for a vulkan device memory.
+     */
+    class Memory
+    {
+      public:
+        
+        /** Default constructor.
+         */
+        Memory() ;
+        
+        /** Default deconstructor.
+         */
+        ~Memory() ;
+
+        /** Copy constructor. Copies value into this.
+         * @param val The value to copy to this object.
+         */
+        Memory( vk::DeviceMemory& val ) ;
+        
+        /** Assignment operator. Assigns the input into this object
+         * @param val The value to assign this object to.
+         * @return Reference to this object after assignment.
+         */
+        Memory& operator=( vk::DeviceMemory& val ) ;
+        
+        /** Assignment operator. Assigns the input into this object
+         * @param val The value to assign this object to.
+         * @return Reference to this object after assignment.
+         */
+        Memory& operator=( void* val ) ;
+        
+        /** Conversion operator for a boolean value.
+         * @return Whether or not this object has a address stored.
+         */
+        operator bool() const ;
+
+        /** Conversion operator of this object to a vulkan device memory handle.
+         * @return The vulkan device memory handle representation of this object.
+         */
+        operator vk::DeviceMemory() ;
+        
+        /** Conversion operator of this object to a vulkan device memory handle.
+         * @return The vulkan device memory handle representation of this object.
+         */
+        operator vk::DeviceMemory() const ;
+        
+      private:
+        
+        /** The underlying handle for this object's data.
+         */
+        void* val ;
+    };
+
     /** Class that implements Vulkan functionality.
      */
     class Vulkan
     {
       public:
-        using Buffer          = nyx::vkg::Buffer          ; ///< The object to handle vulkan buffer creation.
-        using CommandRecord   = nyx::vkg::CommandBuffer   ; ///< The object to handle recording of vulkan commands.
-        using Context         = unsigned long long        ; ///< The object to handle a window's context.
-        using Descriptor      = nyx::vkg::Descriptor      ; ///< The object to manage data access in shaders.
-        using DescriptorPool  = nyx::vkg::DescriptorPool  ; ///< The object to manage creating Descriptors.
-        using Device          = nyx::vkg::Device          ; ///< The object to manage a hardware-accelerated device.
-        using DeviceAddress   = unsigned long long        ; ///< The type of device address this library uses.
-        using RenderPass      = nyx::vkg::RenderPass      ; ///< The object to manage a render pass.
-        using Instance        = nyx::vkg::Instance        ; ///< The object to manage vulkan instance creation.
-        using Texture         = nyx::vkg::Image           ; ///< The object to handle all image creation/memory management.
-        using Memory          = vk::DeviceMemory          ; ///< The Framework-specific handle for Device Memory.
-        using Pipeline        = nyx::vkg::Pipeline        ; ///< The object to manage pipeline creation & handling.
-        using Queue           = nyx::vkg::Queue           ; ///< The object to manage vulkan queues.
-        using Shader          = nyx::vkg::NyxShader       ; ///< The object to manage an individual vulkan shader.
-        using Swapchain       = nyx::vkg::Swapchain       ; ///< The object to manage a window's framebuffers.
-        using Synchronization = nyx::vkg::Synchronization ; ///< The object used to manage synchronization in this library.
-
-        template<nyx::ImageFormat ... Formats>
-        using Renderer = nyx::vkg::Renderer<Formats...> ;
+        using Buffer          = nyx::vkg::Buffer             ; ///< The object to handle vulkan buffer creation.
+        using CommandRecord   = nyx::vkg::CommandBuffer      ; ///< The object to handle recording of vulkan commands.
+        using Context         = unsigned long long           ; ///< The object to handle a window's context.
+        using Descriptor      = nyx::vkg::Descriptor         ; ///< The object to manage data access in shaders.
+        using DescriptorPool  = nyx::vkg::DescriptorPool     ; ///< The object to manage creating Descriptors.
+        using Device          = nyx::vkg::Device             ; ///< The object to manage a hardware-accelerated device.
+        using DeviceAddress   = unsigned long long           ; ///< The type of device address this library uses.
+        using RenderPass      = nyx::vkg::RenderPass         ; ///< The object to manage a render pass.
+        using Instance        = nyx::vkg::Instance           ; ///< The object to manage vulkan instance creation.
+        using Texture         = nyx::vkg::Image              ; ///< The object to handle all image creation/memory management.
+        using Memory          = nyx::vkg::Memory             ; ///< The Framework-specific handle for Device Memory.
+        using Pipeline        = nyx::vkg::Pipeline           ; ///< The object to manage pipeline creation & handling.
+        using Queue           = nyx::vkg::Queue              ; ///< The object to manage vulkan queues.
+        using Shader          = nyx::vkg::NyxShader          ; ///< The object to manage an individual vulkan shader.
+        using Swapchain       = nyx::vkg::Swapchain          ; ///< The object to manage a window's framebuffers.
+        using Synchronization = nyx::vkg::Synchronization    ; ///< The object used to manage synchronization in this library.
+        using Renderer        = nyx::vkg::Renderer           ;
+        using Image           = nyx::Image<nyx::vkg::Vulkan> ;
+        using Chain           = nyx::vkg::Chain              ;
 
         template<typename Type>
         using Array  = nyx::Array <nyx::vkg::Vulkan, Type> ;
     
-        template<nyx::ImageFormat Format>
-        using Image = nyx::Image<nyx::vkg::Vulkan, Format> ;
         
         /** Reflective enumeration for a library error severity.
          */
@@ -363,7 +415,7 @@ namespace nyx
          * @param gpu The gpu to generate the queue on.
          * @return A Queue capable of doing graphics.
          */
-        static vkg::Queue presentQueue( unsigned long long surface, unsigned gpu = 0 ) ;
+        static vkg::Queue presentQueue( unsigned window_id, unsigned gpu = 0 ) ;
 
         /** Static method to allow a custom error handler to be set for this library.
          * @param error_handler The error handler to be used by this library.
@@ -388,9 +440,59 @@ namespace nyx
          * @return String names of the platform-specific extensions needed by this system for a vulkan surface.
          */
         static const char* platformSurfaceInstanceExtensions() ;
-
+        
+        /** Method to add a window to the implementation.
+         * @param id The ID to associate with the window. If a conflict occurs, nothing happens.
+         * @param title The title to associate with the window.
+         * @param width The width of the window in pixels.
+         * @param height The height of the window in pixels.
+         */
+        static void addWindow( unsigned id, const char* title, unsigned width, unsigned height ) ;
+        
+        /** Method to handle a window's events.
+         *  For seeing how to recieve window events, use @EventManager.
+         * @param id The id of window to publish events of.
+         */
+        static void handleWindowEvents( unsigned id ) ;
+        
+        /** Method to retrieve whether a window of the input ID exists.
+         * @param id The id associated with the window.
+         * @return Whether or not a window with the specified ID exists.
+         */
+        static bool hasWindow( unsigned id ) ;
+        
+        /** Method to set the title of a window.
+         * @param id The id associated with the window.
+         * @param title The C-String containing the title to set the window to.
+         */
+        static void setWindowTitle( unsigned id, const char* title ) ;
+        
+        /** Method to set the width of a window.
+         * @param id The id associated with the window.
+         * @param width The width of the window in pixels.
+         */
+        static void setWindowWidth( unsigned id, unsigned width ) ;
+        
+        /** Method to set the height of a window.
+         * @param id The id associated with the window.
+         * @param height The height of the window in pixels.
+         */
+        static void setWindowHeight( unsigned id, unsigned height ) ;
+        
+        /** Method to set whether a window is borderless or now.
+         * @param id The id associated with the window.
+         * @param value Whether or not the window should be borderless.
+         */
+        static void setWindowBorderless( unsigned id, bool value ) ;
+        
       private:
         
+        /** Method to retrieve an implementation context from a window id.
+         * @param id The id of window to retrieve the context of.
+         * @return The vulkan surface handle for the given window.
+         */
+        static unsigned long long context( unsigned id ) ;
+
         /** Typedef to avoid using void* directly.
          */
         typedef void* Data ;
@@ -418,7 +520,8 @@ namespace nyx
         friend class nyx::vkg::SwapchainData     ;
         friend class nyx::vkg::Synchronization   ;
         friend class nyx::vkg::RendererImpl      ;
-
+        friend class nyx::vkg::Chain             ;
+        
         /** Default constructor.
          */
         Vulkan() = default ;
@@ -444,7 +547,13 @@ namespace nyx
          * @return The vulkan-library specific version.
          */
         static vk::ShaderStageFlags convert( nyx::PipelineStage stage ) ;
-
+        
+        /** Static method to convert a library attachment to a vulkan attachment.
+         * @param attachment The attachment to convert.
+         * @return The converted attachment.
+         */
+        static vk::AttachmentDescription convert( const nyx::Attachment& attachment ) ;
+        
         /** Static method to convert a library format to the implementation-specific format.
          * @param format The library format to convert.
          * @return The implementation-specific format.

@@ -35,7 +35,6 @@ namespace nyx
   namespace vkg
   {
     class Queue ;
-
     class Device 
     {
       public:

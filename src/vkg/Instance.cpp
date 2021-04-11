@@ -1,3 +1,8 @@
+#define VULKAN_HPP_ASSERT_ON_RESULT
+#define VULKAN_HPP_NOEXCEPT
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
+
 #include "Instance.h"
 #include "Vulkan.h"
 #include <vulkan/vulkan.hpp>
@@ -207,7 +212,10 @@ namespace nyx
       List                                   list                 ;
       std::vector<::vk::ExtensionProperties> available_extentions ;
       
-      available_extentions = ::vk::enumerateInstanceExtensionProperties() ;
+      auto result = vk::enumerateInstanceExtensionProperties() ;
+      
+      vkg::Vulkan::add( result.result ) ;
+      available_extentions = result.value ;
       
       for( const auto& ext : available_extentions )
       {
@@ -230,7 +238,9 @@ namespace nyx
       
       if( this->debug )
       {
-        available_layers = ::vk::enumerateInstanceLayerProperties() ;
+        auto result = vk::enumerateInstanceLayerProperties() ;
+        vkg::Vulkan::add( result.result ) ;
+        available_layers = result.value ;
         
         for( const auto& prop : available_layers )
         {
@@ -359,8 +369,14 @@ namespace nyx
       info.setPpEnabledExtensionNames( ext_list_char.data()   ) ;
       info.setPApplicationInfo       ( &app_info              ) ;
       
-      data().instance     = ::vk::createInstance( info )               ;
-      data().physical_dev = data().instance.enumeratePhysicalDevices() ;
+      auto result = vk::createInstance( info ) ;
+      vkg::Vulkan::add( result.result ) ;
+      data().instance = result.value ;
+      
+      auto result2 = data().instance.enumeratePhysicalDevices() ;
+      vkg::Vulkan::add( result2.result ) ;
+      data().physical_dev = result2.value ;
+      
     }
 
     void Instance::setApplicationVersion( unsigned major, unsigned minor, unsigned revision )

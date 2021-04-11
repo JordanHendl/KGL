@@ -44,6 +44,7 @@ namespace nyx
     BGRA8,  ///< Three channel Char.
     RGBA32I,///< Four channel Integer.
     RGBA32F,///< Four channel Float.
+    D32F,   ///< Since channel depth float .
   };
   
   enum class ImageLayout : unsigned
@@ -56,6 +57,7 @@ namespace nyx
     TransferDst,     ///< Only valid for copies to.
     PresentSrc,      ///< Only valid for presenting.
     DepthRead,       ///< Only valid for being read from as depth.
+    DepthStencil,    ///< Only valid for using as render pass attachmnent.
   };
     
 
@@ -81,7 +83,7 @@ namespace nyx
 
   /** Generic Image object.
    */
-  template<typename Impl, ImageFormat Format = ImageFormat::RGBA8>
+  template<typename Impl>
   class Image
   {
     public:
@@ -92,13 +94,13 @@ namespace nyx
       
       /** Copy constructor. Copies the input image.
        */
-      Image( const Image<Impl, Format>& image ) ;
+      inline Image( const Image<Impl>& image ) ;
       
       /** Copy constructor with an framework's texture object as input. Copies texture object into this one.
        * @warning This CAN take in a texture of the incorrect 
        * @param texture
        */
-      Image( const typename Impl::Texture& texture ) ;
+      inline Image( const typename Impl::Texture& texture ) ;
 
       /** Default deconstructor.
        */
@@ -108,45 +110,37 @@ namespace nyx
        * @param image The image to assign this object to.
        * @return Reference to this image after the assignment.
        */
-      Image& operator=( const Image<Impl, Format>& image ) ;
+      inline Image& operator=( const Image<Impl>& image ) ;
       
       /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
        */
-      operator const typename Impl::Texture&() const ;
+      inline operator const typename Impl::Texture&() const ;
 
       /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
        */
-      operator typename Impl::Texture() const ;
+      inline operator typename Impl::Texture&() ;
       
-      /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
+      /** Method to perform a deep copy on the input image.
+       * @param src The image to copy from.
+       * @param cmd Reference to a valid command record to record the copy operation to.
        */
-      operator const typename Impl::Texture&() ;
-      
-      /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
-       */
-      operator typename Impl::Texture() ;
+      inline void copy( const Image& src, typename Impl::Queue& cmd ) ;
 
       /** Method to perform a deep copy on the input image.
        * @param src The image to copy from.
        * @param cmd Reference to a valid command record to record the copy operation to.
        */
-      void copy( const Image& src, typename Impl::Queue& cmd ) ;
-
-      /** Method to perform a deep copy on the input image.
-       * @param src The image to copy from.
-       * @param cmd Reference to a valid command record to record the copy operation to.
-       */
-      void copy( const typename Impl::Buffer& src, typename Impl::Queue& cmd ) ;
+      inline void copy( const typename Impl::Buffer& src, typename Impl::Queue& cmd ) ;
 
       /** Method to retrieve the device associated with this image.
        * @return the GPU Device associated with this image.
        */
-      unsigned device() const ;
+      inline unsigned device() const ;
       
       /** Method to check whether this object is initialized or not.
        * @return Whether this object is initialized or not.
        */
-      bool initialized() const ;
+      inline bool initialized() const ;
 
       /** Method to initialize this image with the input parameters.
        * @param gpu The Implementation-specific GPU to use for this image.
@@ -155,7 +149,7 @@ namespace nyx
        * @param layers The number of layers in the image.
        * @return Whether or not this image was able to successfully initialize.
        */
-      bool initialize( unsigned gpu, unsigned width, unsigned height, unsigned layers = 1 ) ;
+      inline bool initialize( nyx::ImageFormat format, unsigned gpu, unsigned width, unsigned height, unsigned layers = 1 ) ;
       
       /** Method to initialize this image with preallocated memory.
        * @param prealloc The preallocated memory to use for this image's memory.
@@ -164,69 +158,68 @@ namespace nyx
        * @param layers The number of layers in this image.
        * @return Whether or not this image was able to successfully initialize.
        */
-      bool initialize( const Memory<Impl>& prealloc, unsigned width, unsigned height, unsigned layers = 1 ) ;
+      inline bool initialize( nyx::ImageFormat format, const Memory<Impl>& prealloc, unsigned width, unsigned height, unsigned layers = 1 ) ;
       
+      /** Method to retrieve the format of this image.
+       * @return The format of this image.
+       */
+      inline nyx::ImageFormat format() ;
+
       /** Method to retrieve the width of this image.
        * @return The width of this image in pixels.
        */
-      unsigned width() const ;
+      inline unsigned width() const ;
       
       /** Method to retrieve the height of this image.
        * @return The height of this image in pixels.
        */
-      unsigned height() const ;
+      inline unsigned height() const ;
       
       /** Method to retrieve the number of layers there are in this image.
        * @return The number of layers there are of this image.
        */
-      unsigned layers() const ;
+      inline unsigned layers() const ;
       
       /** Method to resize this object to the desired width and height.
        * @return Whether or not this object performed a resize.
        * @param width The width in pixels to resize this object to.
        * @param height The Height in pixels to resize this object to.
        */
-      bool resize( unsigned width, unsigned height ) ;
-
-      /** Method to transition this image to a different layout.
-       * @param layout The implementaion-specific layout to transition this image to.
-       * @param record The implementation-specific Command Record to use for this operation.
-       */
-      void transition( const typename nyx::ImageLayout& layout, typename Impl::Queue& record ) ;
+      inline bool resize( unsigned width, unsigned height ) ;
       
       /** Method to set the mip-levels of this image.
        * @param num_levels The number of mip levels to use for this image.
        */
-      void setMipLevels( unsigned num_levels ) ;
+      inline void setMipLevels( unsigned num_levels ) ;
       
       /** Method to retrieve the size of this image.
        * @return The size of this image in pixels.
        */
-      unsigned size() const ;
+      inline unsigned size() const ;
       
       /** Method to retrieve the byte size of this image.
        * @return The size of this byte image in pixels.
        */
-      unsigned byteSize() const ;
+      inline unsigned byteSize() const ;
 
       /** Method to reset this image and deallocate any allocated data.
        */
-      void reset() ;
+      inline void reset() ;
       
       /** Method to retrieve the layout of this image.
        * @return The layout of the image.
        */
-      nyx::ImageLayout layout() const ;
+      inline nyx::ImageLayout layout() const ;
       
       /** Method to return the a const-reference to the implementation-specific image handle this image contains.
        * @return Const-Reference to the implementation-specific image handle this image contains.
        */
-      const typename Impl::Texture& image() const ;
+      inline const typename Impl::Texture& image() const ;
       
       /** Method to return the a reference to the implementation-specific image handle this image contains.
        * @return Reference to the implementation-specific image handle this image contains.
        */
-      typename Impl::Texture& image() ;
+      inline typename Impl::Texture& image() ;
       
     private:
       /** The implementation specific texture handle.
@@ -234,165 +227,137 @@ namespace nyx
       typename Impl::Texture impl_image ;
   };
 
-  template<typename Impl, ImageFormat Format>
-  Image<Impl, Format>::Image( const Image<Impl, Format>& image )
+  template<typename Impl>
+  Image<Impl>::Image( const Image<Impl>& image )
   {
     *this = image ;
   }
   
-  template<typename Impl, ImageFormat Format>
-  Image<Impl, Format>::Image( const typename Impl::Texture& image )
+  template<typename Impl>
+  Image<Impl>::Image( const typename Impl::Texture& image )
   {
-    if( image.format() != Format ) nyx::handleError( nyx::Error::InvalidImageConversion ) ;
     this->impl_image = image ;
   }
   
-  template<typename Impl, ImageFormat Format>
-  Image<Impl, Format>& Image<Impl, Format>::operator=( const Image<Impl, Format>& image )
+  template<typename Impl>
+  Image<Impl>& Image<Impl>::operator=( const Image<Impl>& image )
   {
     this->impl_image = image.impl_image ;
     
     return *this ;
   }
 
-  template<typename Impl, ImageFormat Format>
-  Image<Impl, Format>::operator const typename Impl::Texture&() const
+  template<typename Impl>
+  Image<Impl>::operator const typename Impl::Texture&() const
   {
     return this->impl_image ;
   }
   
-  template<typename Impl, ImageFormat Format>
-  Image<Impl, Format>::operator typename Impl::Texture() const
+  template<typename Impl>
+  Image<Impl>::operator typename Impl::Texture&()
   {
     return this->impl_image ;
   }
   
-  template<typename Impl, ImageFormat Format>
-  Image<Impl, Format>::operator const typename Impl::Texture&()
-  {
-    return this->impl_image ;
-  }
-  
-  template<typename Impl, ImageFormat Format>
-  Image<Impl, Format>::operator typename Impl::Texture()
-  {
-    return this->impl_image ;
-  }
-
-  template<typename Impl, ImageFormat Format>
-  void Image<Impl, Format>::copy( const Image& src, typename Impl::Queue& cmd ) 
+  template<typename Impl>
+  void Image<Impl>::copy( const Image& src, typename Impl::Queue& cmd ) 
   {
     this->impl_image.copy( src, cmd ) ;
   }
   
-  template<typename Impl, ImageFormat Format>
-  void Image<Impl, Format>::copy( const typename Impl::Buffer& src, typename Impl::Queue& cmd )
+  template<typename Impl>
+  void Image<Impl>::copy( const typename Impl::Buffer& src, typename Impl::Queue& cmd )
   {
     this->impl_image.copy( src, cmd ) ;
   }
   
-  template<typename Impl, ImageFormat Format>
-  unsigned Image<Impl, Format>::device() const
+  template<typename Impl>
+  unsigned Image<Impl>::device() const
   {
     return this->impl_image.device() ;
   }
   
-  template<typename Impl, ImageFormat Format>
-  nyx::ImageLayout Image<Impl, Format>::layout() const
+  template<typename Impl>
+  nyx::ImageLayout Image<Impl>::layout() const
   {
     return this->impl_image.layout() ;
   }
 
-  template<typename Impl, ImageFormat Format>
-  bool Image<Impl, Format>::initialized() const
+  template<typename Impl>
+  bool Image<Impl>::initialized() const
   {
     return this->impl_image.initialized() ;
   }
   
-  template<typename Impl, ImageFormat Format>
-  bool Image<Impl, Format>::initialize( unsigned gpu, unsigned width, unsigned height, unsigned layers )
+  template<typename Impl>
+  bool Image<Impl>::initialize( nyx::ImageFormat format, unsigned gpu, unsigned width, unsigned height, unsigned layers )
   {
-    return this->impl_image.initialize( gpu, Format, width, height, layers ) ;
+    return this->impl_image.initialize( gpu, format, width, height, layers ) ;
   }
 
-  template<typename Impl, ImageFormat Format>
-  bool Image<Impl, Format>::initialize( const Memory<Impl>& prealloc, unsigned width, unsigned height, unsigned layers )
+  template<typename Impl>
+  bool Image<Impl>::initialize( nyx::ImageFormat format, const Memory<Impl>& prealloc, unsigned width, unsigned height, unsigned layers )
   {
-    return this->impl_image.initialize( prealloc, Format, width, height, layers ) ;
+    return this->impl_image.initialize( prealloc, format, width, height, layers ) ;
   }
 
-  template<typename Impl, ImageFormat Format>
-  unsigned Image<Impl, Format>::width() const
+  template<typename Impl>
+  unsigned Image<Impl>::width() const
   {
     return this->impl_image.width() ;
   }
 
-  template<typename Impl, ImageFormat Format>
-  unsigned Image<Impl, Format>::height() const
+  template<typename Impl>
+  unsigned Image<Impl>::height() const
   {
     return this->impl_image.height() ;
   }
 
-  template<typename Impl, ImageFormat Format>
-  unsigned Image<Impl, Format>::layers() const
+  template<typename Impl>
+  unsigned Image<Impl>::layers() const
   {
     return this->impl_image.layers() ;
   }
 
-  template<typename Impl, ImageFormat Format>
-  void Image<Impl, Format>::transition( const typename nyx::ImageLayout& layout, typename Impl::Queue& record )
-  {
-    this->impl_image.transition( layout, record ) ;
-  }
-
-  template<typename Impl, ImageFormat Format>
-  void Image<Impl, Format>::setMipLevels( unsigned num_levels )
+  template<typename Impl>
+  void Image<Impl>::setMipLevels( unsigned num_levels )
   {
     this->impl_image.setMipLevels( num_levels ) ;
   }
 
-  template<typename Impl, ImageFormat Format>
-  unsigned Image<Impl, Format>::size() const
+  template<typename Impl>
+  unsigned Image<Impl>::size() const
   {
     return this->impl_image.size() ;
   }
   
-  template<typename Impl, ImageFormat Format>
-  bool Image<Impl, Format>::resize( unsigned width, unsigned height )
+  template<typename Impl>
+  bool Image<Impl>::resize( unsigned width, unsigned height )
   {
     return this->impl_image.resize( width, height ) ;
   }
   
-  template<typename Impl, ImageFormat Format>
-  unsigned Image<Impl, Format>::byteSize() const
+  template<typename Impl>
+  unsigned Image<Impl>::byteSize() const
   {
     return this->impl_image.byteSize() ;
   }
   
-  template<typename Impl, ImageFormat Format>
-  void Image<Impl, Format>::reset()
+  template<typename Impl>
+  void Image<Impl>::reset()
   {
     this->impl_image.reset() ;
   }
 
-  template<typename Impl, ImageFormat Format>
-  const typename Impl::Texture& Image<Impl, Format>::image() const
+  template<typename Impl>
+  const typename Impl::Texture& Image<Impl>::image() const
   {
     return this->impl_image ;
   }
 
-  template<typename Impl, ImageFormat Format>
-  typename Impl::Texture& Image<Impl, Format>::image()
+  template<typename Impl>
+  typename Impl::Texture& Image<Impl>::image()
   {
     return this->impl_image ;
   }
-  
-  template<typename Impl>
-  using RGBAImage = nyx::Image<Impl, ImageFormat::RGBA8> ;
-  
-  template<typename Impl>
-  using RGBImage = nyx::Image<Impl, ImageFormat::RGB8> ;
-  
-  template<typename Impl>
-  using RGBA32FImage = nyx::Image<Impl, ImageFormat::RGBA32F> ;
 }

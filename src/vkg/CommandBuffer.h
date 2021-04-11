@@ -46,6 +46,8 @@ namespace nyx
     class Pipeline   ;
     class Vulkan     ;
     class Descriptor ;
+    class Chain      ;
+    class Queue      ;
 
     /** Class for handling command buffer generation & management.
      */
@@ -79,7 +81,7 @@ namespace nyx
          * @param stage The stage of the pipeline that the constant is used in.
          */
         template<typename Type>
-        void pushConstant( const Type& value, nyx::PipelineStage stage ) ;
+        void push( const Type& value, nyx::PipelineStage stage ) ;
         
         /** Method to bind a descriptor to this command buffer.
          * @note Requires a pipeline already bound to this object.
@@ -105,6 +107,7 @@ namespace nyx
          */
         void initialize( const nyx::vkg::Queue& queue, unsigned count, CommandBuffer::Level level = CommandBuffer::Level::Primary ) ;
         
+        bool initialized() ;
         /** Method to combine a secondary command buffer into this object.
          * @param cmd The secondary command buffer to consume into this object.
          */
@@ -129,7 +132,7 @@ namespace nyx
          * @param idx The index of command buffer to retrieve.
          * @return The command buffer at the specified index.
          */
-        const vk::CommandBuffer& buffer( unsigned idx = 0 ) const ;
+        const vk::CommandBuffer& buffer() const ;
         
         /** Method to retrieve the level of command buffer this object is.
          * @return The level ( Primary or Secondary ) of this object.
@@ -174,10 +177,6 @@ namespace nyx
          */
         void record( const nyx::vkg::RenderPass& render_pass, unsigned index ) ;
         
-        /** Method to begin all of this object's command buffers recording.
-         */
-        void record( unsigned index ) ;
-        
         /** Method to begin all this object's command buffers record using input render pass.
          * @param render_pass Method to begin the render pass & all this object's command buffers record as well.
          */
@@ -187,15 +186,11 @@ namespace nyx
          */
         void record() ;
         
-        /** Method to stop all recording of this object's command buffers. If started a render pass, stops as well.
-         * @param index The index of command buffer to stop.
-         */
-        void stop( unsigned index ) ;
-
+        unsigned current() const ;
+        
         /** Method to stop all recording of this object's command buffers. If started a render pass, stops as well.
          */
         void stop() ;
-        
         
         /** Method to release all of this object's allocated data.
          */
@@ -204,6 +199,9 @@ namespace nyx
       private:
         
          friend class RendererImpl ;
+         friend class Chain        ;
+         friend class Queue        ;
+         
         /** Base method to use a buffer as vertices to draw.
          * @param buffer The buffer to use for vertices.
          * @param count The amount of vertices in the buffer.
@@ -225,8 +223,15 @@ namespace nyx
          * @param byte_size The size in bytes of the object being pushed.
          * @param stage_flags The stage that the push constant is used on.
          */
-        void pushConstantBase( const void* value, unsigned byte_size, nyx::PipelineStage stage_flags ) ;
-
+        void pushConstantBase( const void* value, unsigned byte_size, unsigned offset ) ;
+        
+        /**
+         * @return 
+         */
+        vk::Fence fence() const ;
+        
+        void advance() const ;
+        
         /** Forward declared structure containing this object's data.
          */
         struct CommandBufferData *cmd_data ;
@@ -255,9 +260,9 @@ namespace nyx
     }
 
     template<typename Type>
-    void CommandBuffer::pushConstant( const Type& value, nyx::PipelineStage stage )
+    void CommandBuffer::push( const Type& value, nyx::PipelineStage stage )
     {
-      this->pushConstantBase( static_cast<const void*>( &value ), sizeof( Type ), stage ) ;
+      this->pushConstantBase( static_cast<const void*>( &value ), sizeof( Type ), 0 ) ;
     }
   }
 }

@@ -1,4 +1,5 @@
-#/usr/bin/python3
+#! /usr/bin/python3
+
 import os
 import sys 
 import nyx_model     
@@ -6,13 +7,26 @@ import nyx_obj_reader
 import nyx_model_writer
 
 from pathlib import Path
-from typing import Union
+from typing  import Union
 
 class GlobalState:
   verbose   = False 
   recursive = False
 
 global_state = GlobalState()
+
+def printUsage():
+  print( " Usage: nyx_model_converter <options> <path_to_models>                            " )
+  print( "    Options:                                                                      " )
+  print( "     -o/-O <param>                                                                " )
+  print( "         The name to associate with the output .nmp file.                         " )
+  print( "                                                                                  " )
+  print( "     -v/-V /-verbose                                                              " )
+  print( "         Whether to use verbose output when converting models.                    " )
+  print( "                                                                                  " )
+  print( "     -r/-R                                                                        " )
+  print( "         Whether to recursively load files, assumes paths to directories.         " )
+  print( "         Expects output flag to point to the directory to store converted models. " )
 
 def convert( name ):
   if ( name.find( ".obj" ) != -1 ):
@@ -27,7 +41,7 @@ def convert( name ):
 def convertName( name ):
   path = Path( name )
   extensions = "".join(Path(path).suffixes)
-  return str( Path( str( path ).replace( extensions, ".nmo" ) ) )
+  return str( Path( str( path ).replace( extensions, ".nmp" ) ) )
 
 def getFileName( name ):
   return name.split( '/' )[ -1 ]
@@ -41,6 +55,9 @@ def main():
   recursive = False
   index     = 0
   
+  if( len( sys.argv ) == 1 ):
+    printUsage()
+   
   while index < len( sys.argv ):
     arg = sys.argv[ index ]
     if ( arg == "-v" or arg == "-verbose" ):
@@ -79,7 +96,7 @@ def main():
   for name, model in models:
     if( model ):
       if( verbose == True ):
-        print( f"{name}" )
+        print( f"  Converted model at {name}" )
         nyx_model.printModel( model )
         print()
         print( f"Outputting: {outputs[ index ]}" )
