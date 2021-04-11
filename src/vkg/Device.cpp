@@ -267,7 +267,10 @@ namespace nyx
         queue_infos[ i ].setPQueuePriorities( priorities.data() ) ;
       }
       
-      this->features.setShaderInt64( true ) ;
+      this->features.setShaderInt64                   ( true ) ;
+      this->features.setFragmentStoresAndAtomics      ( true ) ;
+      this->features.setVertexPipelineStoresAndAtomics( true ) ;
+
       info.setQueueCreateInfoCount   ( queue_infos.size()     ) ;
       info.setPQueueCreateInfos      ( queue_infos.data()     ) ;
       info.setEnabledExtensionCount  ( ext_list_char.size()   ) ;
@@ -485,23 +488,6 @@ namespace nyx
       
       return dummy ;
     }
-//    
-//    const nyx::vkg::Queue& Device::transferQueue()
-//    {
-////      const unsigned family = data().queue_families.transfer.getQueue()      ;
-////      const unsigned index  = data().queue_families.transfer.index( family ) ;
-////      vk::Queue       vk_queue ;
-////      nyx::vkg::Queue queue    ;
-//      
-////      vk_queue = data().gpu.getQueue( family, index ) ;
-////      queue.initialize( *this, vk_queue, family, data().queues.size() ) ;
-////      
-////      data().queues.push_back( queue ) ;
-////      
-////      return data().queues.back() ;
-//      
-////      return queue ;
-//    }
 
     const ::vk::Device& Device::device() const
     {

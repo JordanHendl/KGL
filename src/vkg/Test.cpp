@@ -23,6 +23,7 @@
  */
 
 #include "Vulkan.h"
+#include "stb_image.h"
 #include <library/Array.h>
 #include <library/Memory.h>
 #include <library/Image.h>
@@ -30,8 +31,6 @@
 #include <library/Renderer.h>
 #include "library/RenderPass.h"
 #include "library/Chain.h"
-#include "library/Pass.h"
-#include <template/List.h>
 #include <nyxfile/NyxFile.h>
 #include <shaders/headers/draw.h>
 #include <shaders/headers/buffer_reference.h>
@@ -41,8 +40,6 @@
 #include <assert.h>
 #include <iostream>
 #include <athena/Manager.h>
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 
 constexpr unsigned device = 0 ;
 
@@ -54,7 +51,6 @@ static Impl::Instance        instance       ;
 static Impl::Queue           graphics_queue ;
 static Impl::Swapchain       swapchain      ;
 static nyx::RenderPass<Impl> render_pass    ;
-static nyx::Pass<Impl>       pass           ;
 static athena::Manager       manager        ;
 
 static std::vector<unsigned> test_array ;
@@ -488,13 +484,9 @@ athena::Result test_rendering_with_subpasses()
   
   pipeline.addViewport  ( viewport   ) ;
   
-  attachment.setClearColor( 0.0f, 0.f, 0.f, 1.0f      ) ;
+  attachment.setClearColor( 0.0f, 0.f, 0.f, 1.0f              ) ;
   attachment.setLayout    ( nyx::ImageLayout::ColorAttachment ) ;
   attachment.setFormat    ( nyx::ImageFormat::RGBA8           ) ;
-  subpass.addAttachment( attachment ) ;
-  
-  attachment.setLayout    ( nyx::ImageLayout::DepthStencil ) ;
-  attachment.setFormat    ( nyx::ImageFormat::D32F         ) ;
   subpass.addAttachment( attachment ) ;
   
   pass.addSubpass( subpass ) ;

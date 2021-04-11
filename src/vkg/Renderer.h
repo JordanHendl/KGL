@@ -262,15 +262,10 @@ namespace nyx
          */
         unsigned device() const ;
         
+        void setTestDepth( bool val ) ;
         void reset() ;
         const vkg::Descriptor& descriptor() const ;
         const vkg::Pipeline& pipeline() const ;
-        
-//        /**  Method to push a value straight onto the pipeline of this object, if it's available.
-//         * @param value The value to copy up to the GPU for this pipeline's operation.
-//         */
-//        template<typename Type>
-//        void push( const Type& value ) ;
   
         /** The underlying implementation of this object.
          */
@@ -282,17 +277,6 @@ namespace nyx
     {
       this->impl.bind( name, array ) ;
     }
-    
-//    template<typename Type>
-//    void Renderer::push( const Type& value )
-//    {
-//      this->impl.pushConstantBase( static_cast<const void*>( &value ), sizeof( Type ), static_cast<nyx::PipelineStage>( 0 ) ) ;
-//    }
-//    
-//    void Renderer::setDimensions( unsigned width, unsigned height )
-//    {
-//      this->impl.setDimensions( width, height ) ;
-//    }
   }
 }
 

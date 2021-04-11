@@ -405,6 +405,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
 
       vk::AttachmentDescription desc ;
       
+      desc.setSamples       ( vk::SampleCountFlagBits::e1 ) ;
       desc.setLoadOp        ( load_op                     ) ;
       desc.setStoreOp       ( store_op                    ) ;
       desc.setFormat        ( format                      ) ;
@@ -430,7 +431,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case nyx::ImageFormat::R32F    : return vk::Format::eR32Sfloat          ;
         case nyx::ImageFormat::RGB32F  : return vk::Format::eR32G32B32Sfloat    ;
         case nyx::ImageFormat::RGBA32F : return vk::Format::eR32G32B32A32Sfloat ;
-        case nyx::ImageFormat::D32F    : return vk::Format::eD32Sfloat          ;
+        case nyx::ImageFormat::D32F    : return vk::Format::eD24UnormS8Uint     ;
         default : return vk::Format::eUndefined ;
       }
     }
@@ -451,6 +452,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case vk::Format::eR32G32B32Sfloat    : return nyx::ImageFormat::RGB32F  ;
         case vk::Format::eR32G32B32A32Sfloat : return nyx::ImageFormat::RGBA32F ;
         case vk::Format::eD32Sfloat          : return nyx::ImageFormat::D32F    ;
+        case vk::Format::eD24UnormS8Uint     : return nyx::ImageFormat::D32F    ;
         default : return nyx::ImageFormat::RGB8 ;
       }
     }

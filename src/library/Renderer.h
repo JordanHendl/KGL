@@ -193,6 +193,8 @@ namespace nyx
       template<unsigned index = 0>
       const auto framebuffer() const ;
       
+      void setTestDepth( bool test ) ;
+      void setTestStencil( bool test ) ;
       void reset() ;
       
     private:
@@ -247,26 +249,24 @@ namespace nyx
   {
     return this->impl.count() ;
   }
+  
+  template<typename Framework>
+  void Renderer<Framework>::setTestDepth( bool val )
+  {
+    return this->impl.setTestDepth( val ) ;
+  }
+  
+  template<typename Framework>
+  void Renderer<Framework>::setTestStencil( bool val )
+  {
+    return this->impl.setTestStencil( val ) ;
+  }
 
   template<typename Framework>
   const typename Framework::Device& Renderer<Framework>::device() const
   {
     return this->impl.device() ;
   }
-
-//  template<typename Framework>
-//  template<typename Type>
-//  void Renderer<Framework>::draw( const Array<Framework, Type>& array, unsigned offset )
-//  {
-//    this->impl.draw( array, offset ) ;
-//  }
-//
-//  template<typename Framework>
-//  template<typename Type, typename Type2>
-//  void Renderer<Framework>::drawIndexed( const Array<Framework, Type2>& indices, const Array<Framework, Type>& vertices )
-//  {
-//    this->impl.drawIndexed( indices, vertices ) ;
-//  }
 
   template<typename Framework>
   void Renderer<Framework>::reset()

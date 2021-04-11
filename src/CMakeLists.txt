@@ -17,12 +17,10 @@
 
 
 ADD_SUBDIRECTORY( library  )
-ADD_SUBDIRECTORY( common   )
 ADD_SUBDIRECTORY( linux    )
 ADD_SUBDIRECTORY( event    )
 ADD_SUBDIRECTORY( cg       )
 ADD_SUBDIRECTORY( vkg      )
-ADD_SUBDIRECTORY( template )
 ADD_SUBDIRECTORY( win32    )
 ADD_SUBDIRECTORY( nyxfile  )
 ADD_SUBDIRECTORY( shaders  )

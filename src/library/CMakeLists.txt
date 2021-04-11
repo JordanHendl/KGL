@@ -3,7 +3,6 @@ SET( NYX_LIBRARY_SOURCES
      Chain.cpp
      Array.cpp
      Image.cpp
-     Model.cpp
      Window.cpp
      Renderer.cpp
      RenderPass.cpp
@@ -14,7 +13,6 @@ SET( NYX_LIBRARY_HEADERS
      Memory.h
      Chain.h
      Array.h
-     Model.h
      Image.h
      Window.h
      Renderer.h
@@ -26,7 +24,6 @@ SET( NYX_LIBRARY_INCLUDE_DIRS
    )
 
 SET( NYX_LIBRARY_LIBRARIES
-      nyx_common
     )
 
 ADD_LIBRARY               ( nyx_library SHARED  ${NYX_LIBRARY_SOURCES} ${NYX_LIBRARY_HEADERS} )

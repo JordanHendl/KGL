@@ -25,7 +25,6 @@
 #include "Renderer.h"
 #include "Vulkan.h"
 #include "library/Renderer.h"
-#include <template/List.h>
 #include <library/Image.h>
 
 namespace nyx
@@ -201,6 +200,11 @@ namespace nyx
     void Renderer::bind( const char* name, const vkg::Image& image )
     {
       this->impl.bind( name, image ) ;
+    }
+    
+    void Renderer::setTestDepth( bool val )
+    {
+      this->impl.data().pipeline.setTestDepth( val ) ;
     }
     
     void Renderer::reset()

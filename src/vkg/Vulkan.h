@@ -30,7 +30,6 @@
 #include "Swapchain.h"
 #include "Descriptor.h"
 #include "Renderer.h"
-#include "Pass.h"
 #include "Chain.h"
 
 typedef unsigned VkFlags            ;
@@ -204,7 +203,6 @@ namespace nyx
         using Shader          = nyx::vkg::NyxShader          ; ///< The object to manage an individual vulkan shader.
         using Swapchain       = nyx::vkg::Swapchain          ; ///< The object to manage a window's framebuffers.
         using Synchronization = nyx::vkg::Synchronization    ; ///< The object used to manage synchronization in this library.
-        using Pass            = nyx::vkg::Pass               ; ///< The object used to manage a single GPU Pass.
         using Renderer        = nyx::vkg::Renderer           ;
         using Image           = nyx::Image<nyx::vkg::Vulkan> ;
         using Chain           = nyx::vkg::Chain              ;

@@ -123,7 +123,11 @@ namespace nyx
       
       if( this->format == vk::Format::eD32Sfloat )
       {
-        range.setAspectMask( vk::ImageAspectFlagBits::eDepth ) ; // @TODO: Make configurable.
+        range.setAspectMask( vk::ImageAspectFlagBits::eDepth  ) ; // @TODO: Make configurable.
+      }
+      if( this->format == vk::Format::eD24UnormS8Uint )
+      {
+        range.setAspectMask( vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil ) ; // @TODO: Make configurable.
       }
       else
       {
@@ -303,10 +307,6 @@ namespace nyx
       data().format = nyx::vkg::Vulkan::convert( format ) ;
       data().subresource.setLayerCount( num_layers ) ;
       
-      if( format == nyx::ImageFormat::D32F )
-      {
-//        data().
-      }
       data().image = data().createImage() ;
 
       data().requirements = data().device.device().getImageMemoryRequirements( data().image ) ;

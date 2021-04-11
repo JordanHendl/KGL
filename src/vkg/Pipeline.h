@@ -152,6 +152,8 @@ namespace nyx
          * @return The internal vulkan pipeline layout of this object.
          */
         const vk::PipelineLayout& layout() const ;
+        
+        void setTestDepth( bool val ) ;
       private:
       
         /** Forward Declared structure to contain this object's internal data.

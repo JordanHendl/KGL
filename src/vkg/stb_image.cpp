@@ -5,12 +5,11 @@
  */
 
 /* 
- * File:   Pass.cpp
+ * File:   stb_image.cpp
  * Author: jhendl
- * 
- * Created on March 23, 2021, 5:26 AM
+ *
+ * Created on April 10, 2021, 4:18 PM
  */
 
-#include "Pass.h"
-
-
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"

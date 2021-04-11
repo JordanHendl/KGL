@@ -50,7 +50,8 @@ namespace nyx
       vk::PipelineRasterizationStateCreateInfo rasterization_info     ; ///< TODO
       vk::PipelineInputAssemblyStateCreateInfo assembly_info          ; ///< TODO
       vk::PipelineMultisampleStateCreateInfo   multisample_info       ; ///< TODO
-      
+      vk::PipelineDepthStencilStateCreateInfo  depth_stencil_info     ;
+
       std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachments ; ///< TODO
       
       /** Default constructor.
@@ -76,7 +77,8 @@ namespace nyx
       vk::PipelineCache           cache               ; ///< TODO
       vk::ShaderStageFlags        push_constant_flags ; ///< TODO
       unsigned                    push_constant_size  ; ///< TODO
-      
+      bool                        depth_test          ;
+
       /** Default constructor.
        */
       PipelineData() ;
@@ -188,8 +190,8 @@ namespace nyx
         graphics_info.setPRasterizationState( &this->config.rasterization_info ) ;
         graphics_info.setPMultisampleState  ( &this->config.multisample_info   ) ;
         graphics_info.setPColorBlendState   ( &this->config.color_blend_info   ) ;
+        graphics_info.setPDepthStencilState ( &this->config.depth_stencil_info ) ;
         graphics_info.setRenderPass         ( this->render_pass->pass()        ) ;
-        
         auto result = this->device.device().createGraphicsPipeline( this->cache, graphics_info ) ;
         vkg::Vulkan::add( result.result ) ;
         this->pipeline = result.value ;
@@ -362,6 +364,21 @@ namespace nyx
     const vk::Pipeline& Pipeline::pipeline() const
     {
       return data().pipeline ;
+    }
+    
+    void Pipeline::setTestDepth( bool val )
+    {
+      data().depth_test = val ;
+      
+      if( val )
+      {
+        data().config.depth_stencil_info.setDepthTestEnable ( true                 ) ;
+        data().config.depth_stencil_info.setDepthWriteEnable( true                 ) ;
+        data().config.depth_stencil_info.setDepthCompareOp  ( vk::CompareOp::eLess ) ;
+        data().config.depth_stencil_info.setDepthBoundsTestEnable( false ) ;
+        data().config.depth_stencil_info.setMinDepthBounds( 0.0f ) ;
+        data().config.depth_stencil_info.setMaxDepthBounds( 1.0f ) ;
+      }
     }
 
     const vk::PipelineLayout& Pipeline::layout() const

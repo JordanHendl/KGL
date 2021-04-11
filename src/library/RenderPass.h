@@ -73,7 +73,7 @@ namespace nyx
       float blue() const ;
       float alpha() const ;
     private:
-      float r, g, b, a ;
+      float    r, g, b, a    ;
       bool     test_stencil  ;
       bool     store_stencil ;
       bool     clear_stencil ;
@@ -95,12 +95,25 @@ namespace nyx
         this->subpass_deps.push_back( subpass_index ) ;
       };
       
+      inline void setDepthStencilEnable( bool val )
+      {
+        this->depth_stencil_enable = val ;
+      }
+      
+      inline void setDepthClearValue( float val )
+      {
+        this->depth_clear = val ;
+      }
+      
     private:
       template<typename Framework>
       friend class RenderPass ;
 
-      std::vector<nyx::Attachment> attachment_deps ;
-      std::vector<unsigned>        subpass_deps    ;
+      std::vector<nyx::Attachment> attachment_deps      ;
+      std::vector<unsigned>        subpass_deps         ;
+      
+      bool  depth_stencil_enable = false ;
+      float depth_clear          = 1.0f  ;
   };
 
   template<typename Framework>
@@ -167,6 +180,9 @@ namespace nyx
       
       void reset() ;
       
+      /** Method to present this render pass to the screen, if initialized with a window.
+       * @return Whether or not this render pass had to reallocate data based on window events.
+       */
       bool present() ;
       
       void addSubpass( const nyx::Subpass& attachment ) ;
@@ -209,7 +225,8 @@ namespace nyx
   void RenderPass<Framework>::addSubpass( const nyx::Subpass& subpass )
   {
     this->impl.addSubpass( subpass.attachment_deps.data(), subpass.attachment_deps.size(),
-                           subpass.subpass_deps   .data(), subpass.subpass_deps   .size() ) ;
+                           subpass.subpass_deps   .data(), subpass.subpass_deps   .size(), 
+                           subpass.depth_stencil_enable  , subpass.depth_clear           ) ;
   }
 
   template<typename Framework>

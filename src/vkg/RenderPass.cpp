@@ -56,6 +56,8 @@ namespace nyx
       Framebuffers     framebuffers        ;
       Dependencies     dependencies        ;
       References       references          ;
+      References       color_references    ;
+      References       depth_references    ;
       Subpasses        subpasses           ;
       Images           images              ;
       Attachments      attachments         ;
@@ -97,12 +99,8 @@ namespace nyx
       std::vector<vk::ImageView> views  ;
       vk::Format                 format ;
       
-      if( !this->swapchain.initialized() )
-      {
-        this->images.resize( NUM_BUFFERS * this->attachments.size() ) ;
-      }
-
-      this->framebuffers.resize( NUM_BUFFERS ) ;
+      this->images      .resize( NUM_BUFFERS * this->attachments.size() ) ;
+      this->framebuffers.resize( NUM_BUFFERS                            ) ;
       
       for( unsigned attach = 1; attach <= NUM_BUFFERS; attach++ )
       {
@@ -111,7 +109,7 @@ namespace nyx
           unsigned idx = attach * index ;
           
           format = this->attachments[ index ].format ;
-          if( this->swapchain.initialized() )
+          if( this->swapchain.initialized() && format != vk::Format::eD24UnormS8Uint )
           {
             // Grab from swapchain here.
             views.push_back( this->swapchain.image( attach - 1 ).view() ) ;
@@ -123,7 +121,7 @@ namespace nyx
             info.setWidth          ( this->area.extent.width  ) ;
             info.setHeight         ( this->area.extent.height ) ;
 
-            if( attachments[ index ].format == vk::Format::eD32Sfloat )
+            if( attachments[ index ].format == vk::Format::eD24UnormS8Uint )
             {
               this->images[ idx ].setUsage( nyx::ImageUsage::DepthStencil ) ;
             }
@@ -279,7 +277,9 @@ namespace nyx
       return data().images[ 0 ] ;
     }
     
-    void RenderPass::addSubpass( const nyx::Attachment* attachments, unsigned attachment_count, const unsigned* subpass_deps, unsigned num_subpass_deps )
+    void RenderPass::addSubpass( const nyx::Attachment* attachments, unsigned attachment_count,
+                                 const unsigned* subpass_deps, unsigned num_subpass_deps, 
+                                 bool depth_enable, float depth_clear )
     {
       const unsigned src_subpass = data().subpasses.empty() ? 0 : data().subpasses.size() ;
       
@@ -292,6 +292,29 @@ namespace nyx
       
       subpass_desc.setPipelineBindPoint( vk::PipelineBindPoint::eGraphics ) ;
       
+      // There can be only one depth per subpass, so append one if its enabled.
+      if( depth_enable )
+      {
+        clear.depthStencil.depth   = depth_clear ;
+        clear.depthStencil.stencil = 0           ;
+        data().clear_colors.push_back( clear ) ;
+        attach_desc.setStoreOp       ( vk::AttachmentStoreOp::eStore                   ) ;
+        attach_desc.setLoadOp        ( vk::AttachmentLoadOp::eClear                    ) ;
+        attach_desc.setSamples       ( vk::SampleCountFlagBits::e1                     ) ;
+        attach_desc.setFinalLayout   ( vk::ImageLayout::eDepthStencilAttachmentOptimal ) ;
+        attach_desc.setFormat        ( vk::Format::eD24UnormS8Uint                     ) ;
+        attach_desc.setInitialLayout ( vk::ImageLayout::eUndefined                     ) ;
+        attach_desc.setStencilLoadOp ( vk::AttachmentLoadOp::eClear                    ) ;
+        attach_desc.setStencilStoreOp( vk::AttachmentStoreOp::eStore                   ) ;
+       
+        attach_ref.setAttachment    ( data().attachments.size() ) ;
+        attach_ref.setLayout        ( attach_desc.finalLayout   ) ;
+        
+        data().attachments     .push_back( attach_desc ) ;
+        data().references      .push_back( attach_ref  ) ;
+        data().depth_references.push_back( attach_ref  ) ;
+      }
+      
       for( unsigned index = 0; index < attachment_count; index++ )
       {
         attach_desc = Vulkan::convert( attachments[ index ] ) ;
@@ -300,27 +323,26 @@ namespace nyx
         color.float32[ 1 ] = attachments[ index ].green() ;
         color.float32[ 2 ] = attachments[ index ].blue () ;
         color.float32[ 3 ] = attachments[ index ].alpha() ;
-        
         clear.setColor( color ) ;
+        
         attach_ref.setAttachment( data().attachments.size() ) ;
         attach_ref.setLayout    ( attach_desc.finalLayout ) ;
-        data().clear_colors.push_back( clear       ) ;
-        if( attach_desc.finalLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal )
-        {
-          attach_desc.setFormat( vk::Format::eD32Sfloat ) ;
-          data().attachments.push_back ( attach_desc ) ;
-        }
-        else
-        {
-          data().attachments.push_back ( attach_desc ) ;
-          data().references .push_back ( attach_ref  ) ;
-          subpass_desc.colorAttachmentCount++ ;
-        }
+        
+        data().clear_colors    .push_back( clear       ) ;
+        data().attachments     .push_back( attach_desc ) ;
+        data().references      .push_back( attach_ref  ) ;
+        data().color_references.push_back( attach_ref  ) ;
+        subpass_desc.colorAttachmentCount++ ;
       }
       
       if( subpass_desc.pColorAttachments == nullptr )
       {
-        subpass_desc.setPColorAttachments( data().references.data() + data().references.size() - subpass_desc.colorAttachmentCount ) ;
+        subpass_desc.setPColorAttachments( data().color_references.data() + data().color_references.size() - subpass_desc.colorAttachmentCount ) ;
+      }
+      
+      if( subpass_desc.pDepthStencilAttachment == nullptr )
+      {
+        subpass_desc.setPDepthStencilAttachment( data().depth_references.data() ) ;
       }
       
       // TODO Add attachment references here for referencing other attachments.
@@ -331,8 +353,10 @@ namespace nyx
         {
           subpass_dep.setDstSubpass( subpass_deps[ index ] ) ;
         }  
-        subpass_dep.setSrcStageMask( vk::PipelineStageFlagBits::eBottomOfPipe ) ;
-        subpass_dep.setDstStageMask( vk::PipelineStageFlagBits::eTopOfPipe    ) ;
+        
+        subpass_dep.setSrcStageMask( vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests ) ;
+        subpass_dep.setDstStageMask( vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests ) ;
+        subpass_dep.setDstAccessMask( vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite      ) ;
       }
 
       if( attachment_count != 0 ) data().subpasses   .push_back( subpass_desc ) ;
