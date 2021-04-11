@@ -30,7 +30,7 @@
 #include "NyxShader.h"
 #include "Device.h"
 #include "Vulkan.h"
-#include <nyxfile/NyxFile.h>
+#include <loaders/NyxFile.h>
 #include <library/Array.h>
 #include <library/Image.h>
 #include <vulkan/vulkan.hpp>

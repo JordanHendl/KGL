@@ -16,11 +16,12 @@
 # 
 
 
-ADD_SUBDIRECTORY( library  )
-ADD_SUBDIRECTORY( linux    )
-ADD_SUBDIRECTORY( event    )
-ADD_SUBDIRECTORY( cg       )
-ADD_SUBDIRECTORY( vkg      )
-ADD_SUBDIRECTORY( win32    )
-ADD_SUBDIRECTORY( nyxfile  )
-ADD_SUBDIRECTORY( shaders  )
+ADD_SUBDIRECTORY( library    )
+ADD_SUBDIRECTORY( linux      )
+ADD_SUBDIRECTORY( event      )
+ADD_SUBDIRECTORY( cg         )
+ADD_SUBDIRECTORY( vkg        )
+ADD_SUBDIRECTORY( win32      )
+ADD_SUBDIRECTORY( loaders    )
+ADD_SUBDIRECTORY( structures )
+ADD_SUBDIRECTORY( shaders    )

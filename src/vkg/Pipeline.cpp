@@ -33,7 +33,7 @@
 #include "RenderPass.h"
 #include "Vulkan.h"
 #include "library/Renderer.h"
-#include "nyxfile/NyxFile.h"
+#include "loaders/NyxFile.h"
 #include <vulkan/vulkan.hpp>
 #include <stdio.h>
 

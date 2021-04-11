@@ -218,6 +218,11 @@ void setupTexture( const char* file_path )
 
 void respond( const nyx::Event& event )
 {
+  if( event.type() == nyx::Event::Type::WindowExit )
+  {
+    running = false ;
+  }
+
   if( event.type() == nyx::Event::Type::KeyDown )
   {  
     switch( event.key() )

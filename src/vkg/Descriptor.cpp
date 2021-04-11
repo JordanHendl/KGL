@@ -32,7 +32,7 @@
 #include "library/Array.h"
 #include "library/Image.h"
 #include "Vulkan.h"
-#include <nyxfile/NyxFile.h>
+#include <loaders/NyxFile.h>
 #include <vulkan/vulkan.hpp>
 #include <unordered_map>
 #include <string>

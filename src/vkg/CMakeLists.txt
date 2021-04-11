@@ -48,7 +48,7 @@ IF( ${Vulkan_FOUND} )
     SET( NYX_VULKAN_LIBRARIES
          ${Vulkan_LIBRARIES}
          nyx_library
-         nyxfile 
+         nyx_loaders 
         )
     
     # Add the appropriate OS library to link depending on platform being built.

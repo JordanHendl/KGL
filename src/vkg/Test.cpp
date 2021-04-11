@@ -31,7 +31,7 @@
 #include <library/Renderer.h>
 #include "library/RenderPass.h"
 #include "library/Chain.h"
-#include <nyxfile/NyxFile.h>
+#include <loaders/NyxFile.h>
 #include <shaders/headers/draw.h>
 #include <shaders/headers/buffer_reference.h>
 #include <shaders/headers/color_depth.h>
