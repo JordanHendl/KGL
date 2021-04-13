@@ -602,7 +602,6 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       Vulkan::add( device.mapMemory  ( dst, offset, amount, flag, &mem    ) ) ;
                    std::memcpy       ( mem, src, static_cast<size_t>( amt ) ) ;
                    device.unmapMemory( dst                                  ) ;
-                 
     }
     
     bool Vulkan::hasDevice( unsigned id )

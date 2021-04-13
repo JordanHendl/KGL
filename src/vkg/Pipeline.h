@@ -154,6 +154,9 @@ namespace nyx
         const vk::PipelineLayout& layout() const ;
         
         void setTestDepth( bool val ) ;
+        
+        const nyx::vkg::NyxShader& shader() const ;
+        
       private:
       
         /** Forward Declared structure to contain this object's internal data.

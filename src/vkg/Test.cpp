@@ -23,7 +23,6 @@
  */
 
 #include "Vulkan.h"
-#include "stb_image.h"
 #include <library/Array.h>
 #include <library/Memory.h>
 #include <library/Image.h>
@@ -31,7 +30,9 @@
 #include <library/Renderer.h>
 #include "library/RenderPass.h"
 #include "library/Chain.h"
+#include <loaders/NgtFile.h>
 #include <loaders/NyxFile.h>
+#include <binary/sheep.h>
 #include <shaders/headers/draw.h>
 #include <shaders/headers/buffer_reference.h>
 #include <shaders/headers/color_depth.h>
@@ -350,22 +351,28 @@ athena::Result test_image_copy()
   Impl::Array<unsigned char> staging ; 
   nyx::Image<Impl>           image   ;
   nyx::Chain<Impl>           chain   ;
-  int width  ;
-  int height ;
-  int chan   ;
+  nyx::NgtFile               loader  ;
+  unsigned                   width   ;
+  unsigned                   height  ;
+  unsigned                   channel ;
   
   if( !Impl::initialized() ) return athena::Result::Skip ;
   
   chain.initialize( device, nyx::ChainType::Graphics ) ;
-  auto bytes = stbi_load( "test_image.jpeg", &width, &height, &chan, STBI_rgb_alpha ) ;
-  if( !bytes ) return false ;
   
   // Initialize objects.
-  image  .initialize( nyx::ImageFormat::RGBA8, device, static_cast<unsigned>( width ), static_cast<unsigned>( height ), 1 ) ;
-  staging.initialize( device, static_cast<unsigned>( width * height * 4 ), true, nyx::ArrayFlags::TransferSrc | nyx::ArrayFlags::TransferDst ) ;
+  loader.load( nyx::bytes::sheep, sizeof( nyx::bytes::sheep ) ) ;
   
-  chain.copy( bytes  , staging ) ;
-  chain.copy( staging, image   ) ;
+  width   = loader.width   () ;
+  height  = loader.height  () ;
+  channel = loader.channels() ;
+
+  image  .initialize( nyx::ImageFormat::RGBA8, device, static_cast<unsigned>( width ), static_cast<unsigned>( height ) ) ;
+  staging.initialize( device, static_cast<unsigned>( width * height * channel ) ) ;
+  
+  chain.copy( loader.image(), staging ) ;
+  chain.copy( staging       , image   ) ;
+
   chain.submit() ;
   chain.synchronize() ;
   return true ;

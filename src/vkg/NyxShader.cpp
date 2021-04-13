@@ -191,13 +191,13 @@ namespace nyx
     {
       switch( stage )
       {
-        case nyx::ShaderStage::Fragment      : return ::vk::ShaderStageFlagBits::eFragment               ;
-        case nyx::ShaderStage::Geometry      : return ::vk::ShaderStageFlagBits::eGeometry               ;
-        case nyx::ShaderStage::Tess_C : return ::vk::ShaderStageFlagBits::eTessellationControl    ;
-        case nyx::ShaderStage::Tess_E : return ::vk::ShaderStageFlagBits::eTessellationEvaluation ;
-        case nyx::ShaderStage::Compute       : return ::vk::ShaderStageFlagBits::eCompute                ;
-        case nyx::ShaderStage::Vertex        : return ::vk::ShaderStageFlagBits::eVertex                 ;
-        default                                          : return ::vk::ShaderStageFlagBits::eFragment   ;
+        case nyx::ShaderStage::Fragment : return ::vk::ShaderStageFlagBits::eFragment               ;
+        case nyx::ShaderStage::Geometry : return ::vk::ShaderStageFlagBits::eGeometry               ;
+        case nyx::ShaderStage::Tess_C   : return ::vk::ShaderStageFlagBits::eTessellationControl    ;
+        case nyx::ShaderStage::Tess_E   : return ::vk::ShaderStageFlagBits::eTessellationEvaluation ;
+        case nyx::ShaderStage::Compute  : return ::vk::ShaderStageFlagBits::eCompute                ;
+        case nyx::ShaderStage::Vertex   : return ::vk::ShaderStageFlagBits::eVertex                 ;
+        default                         : return ::vk::ShaderStageFlagBits::eFragment               ;
       }
     }
 

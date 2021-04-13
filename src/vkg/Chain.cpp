@@ -297,7 +297,7 @@ namespace nyx
       region.setSize     ( copy_amt * element_size ) ;
       region.setSrcOffset( src_offset              ) ;
       region.setDstOffset( dst_offset              ) ;
-      
+
       data().record() ;
       data().cmd.buffer().copyBuffer( src.buffer(), dst.buffer(), 1, &region ) ;
     }
@@ -418,6 +418,14 @@ namespace nyx
       data().cmd.bind    ( renderer.pipeline()     ) ;
       data().cmd.bind    ( renderer.descriptor()   ) ;
       data().cmd.drawBase( vertices, count, offset ) ;
+    }
+    
+    void Chain::drawIndexedBase( const vkg::Renderer& renderer, const vkg::Buffer& indices, unsigned index_count, const vkg::Buffer& vertices, unsigned vertex_count )
+    {
+      data().record( true ) ;
+      data().cmd.bind    ( renderer.pipeline()     ) ;
+      data().cmd.bind    ( renderer.descriptor()   ) ;
+      data().cmd.drawIndexedBase( indices, vertices, index_count, vertex_count ) ;
     }
 
     void Chain::pushBase( const Renderer& pipeline, const void* value, unsigned byte_size, unsigned offset )

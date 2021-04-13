@@ -1,9 +1,13 @@
 SET( NYX_LOADERS_SOURCES 
      NyxFile.cpp
+     NggFile.cpp
+     NgtFile.cpp
    )
      
 SET( NYX_LOADERS_HEADERS
      NyxFile.h
+     NggFile.h
+     NgtFile.h
    )
 
 SET( NYX_LOADERS_INCLUDE_DIRS

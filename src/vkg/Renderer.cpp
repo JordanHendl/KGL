@@ -94,7 +94,7 @@ namespace nyx
 
       data().shader  .initialize( device, nyx_file_bytes, size       ) ;
       data().pipeline.initialize( *data().pass, nyx_file_bytes, size ) ;
-      data().pool    .initialize( data().shader, 1                   ) ;
+      data().pool    .initialize( data().pipeline.shader(), 1        ) ;
       
       data().descriptor = data().pool.make() ;
     }

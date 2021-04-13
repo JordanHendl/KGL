@@ -5,7 +5,6 @@ FIND_PACKAGE( Vulkan 1.2 )
 IF( ${Vulkan_FOUND} )
     SET( NYX_VULKAN_SOURCES 
          Vulkan.cpp
-         stb_image.cpp
          Buffer.cpp
          Chain.cpp
          Device.cpp
@@ -24,7 +23,6 @@ IF( ${Vulkan_FOUND} )
 
     SET( NYX_VULKAN_HEADERS
          Vulkan.h
-         stb_image.h
          Buffer.h
          Chain.h
          Device.h

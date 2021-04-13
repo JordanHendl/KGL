@@ -385,6 +385,11 @@ namespace nyx
     {
       return data().layout ;
     }
+    
+    const nyx::vkg::NyxShader& Pipeline::shader() const
+    {
+      return data().shader ;
+    }
 
     PipelineData& Pipeline::data()
     {
