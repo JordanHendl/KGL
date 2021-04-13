@@ -21,11 +21,11 @@
   
   And then simply open the generated .sln with whatever editor of your preference and build.
 
-  Generated RPM's default install to '/usr/local/Nyx' on UNIX, and 'C:\Program Files\Nyx' on Windows.
+  Generated RPM's default install to '/usr/local/lib/Nyx' on UNIX, and 'C:\Program Files\Nyx' on Windows.
 
   Using with CMake: 
   1) Add the path to the install to your *CMAKE_PREFIX_PATH*.
-  2) ```FIND_PACKAGE( Nyx ) ```
+  2) ```FIND_PACKAGE( nyxgpu ) ```
   3) Link against any Nyx library ( nyx, nyx_vkg, nyx_linux, etc. ) you need!
   
 ## How to use
@@ -57,45 +57,7 @@
   }
   ```
 
-  Windowing is implicit to each OS, but also allows to grab the underlying library Window object, which in turn allows the raw OS handles for all the usual things.
-
-### Example 2 :
-  ```
-  // For Nyx Window.
-  #include <library/Window.h>
-  
-  // For linux window.
-  #include <linux/Window.h>
-  
-  // For vulkan API.
-  #include <vkg/Vulkan.h>
-  #include <vkg/Window.h>
-  
-  // For CUDA API.
-  #include <cg/Cuda.h>
-
-  int main()
-  {
-    // Aliases for API's.
-    using VULKAN = nyx::vkg::Vulkan ;
-    using CUDA   = nyx::cg::Cuda    ;
- 
-    // Implicit XCB on Linux or WINAPI on Windows depending on OS.
-    nyx::Window<VULKAN> window       ;
-    nyx::lx::Window     linux_window ;
-
-    // Initialize window 
-    window.initialize( "Test window", 1024, 720 ) ;
-  
-    // We can grab the OS-specific window if we need it, and do more OS-specific stuff.
-    linux_window = window.window() ;  
-   
-    // Windows supplies a Graphics API-specific context.
-    vk::Surface surface = window.context() ;
-
-    return 0 ;
-  }
-  ```
+For more examples, I suggest looking at the test files in the vulkan/cuda libraries.
 
 ## Dependancies
 
@@ -103,12 +65,12 @@
  
   E.g. If vulkan is found, Nyx Vulkan libs will be build.
 
-  XCB is used for Linux windowing, however it should be already installed on mosts systems.
+  XCB is used for Linux windowing, however it should be already installed on most systems.
 
-  athena is used for testing. To output tests, install the athena testing library. ( See https://github.com/JordanHendl/athena )
+  AthenaLib is used for testing. To output tests, install the athena testing library. ( See https://github.com/JordanHendl/athena )
 
 ## Closing
   For usages of each specific API, I suggest checking out the Test.cpp in each one!
 
   If you have any questions or suggestions shoot me an email at jordiehendl@gmail.com
-  or hit me up on twitter ( twitter.com/jajajordie )
+  or hit me up on twitter ( twitter.com/overcasterisk )
