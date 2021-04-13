@@ -22,12 +22,7 @@
  * Created on December 30, 2020, 6:11 PM
  */
 
-#ifndef NYX_VKG_QUEUE_H
-#define NYX_VKG_QUEUE_H
-
-#include "Swapchain.h"
-#include "Synchronization.h"
-
+#pragma once
 
 namespace vk
 {
@@ -45,7 +40,9 @@ namespace nyx
     class CommandBuffer   ;
     class Device          ;
     class QueueFamily     ;
-
+    class Swapchain       ;
+    class Synchronization ;
+    
     /** Class for managing a vulkan queue. 
      * This object should only be created via a library device object.
      */
@@ -190,6 +187,3 @@ namespace nyx
     };
   }
 }
-
-#endif /* QUEUE_H */
-

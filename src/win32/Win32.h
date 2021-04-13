@@ -22,9 +22,7 @@
  * Created on January 9, 2021, 6:04 AM
  */
 
-#ifndef NYX_WIN32_H
-#define NYX_WIN32_H
-
+#pragma once
 #include "Window.h"
 
 namespace nyx
@@ -40,6 +38,4 @@ namespace nyx
     };
   }
 }
-
-#endif /* WIN32_H */
 

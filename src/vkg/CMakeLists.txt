@@ -63,8 +63,6 @@ IF( ${Vulkan_FOUND} )
     
     INCLUDE_DIRECTORIES( ${NYX_VULKAN_INCLUDE_DIRS} )
 
-    FILE( COPY test_image.jpeg DESTINATION ${BUILD_DIR}/ )
-
     BUILD_TEST( TARGET nyx_vkg )
     
     ADD_EXECUTABLE            ( nyx_vkg_window_test RenderTest.cpp                          )

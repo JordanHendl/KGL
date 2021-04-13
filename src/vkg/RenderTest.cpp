@@ -110,7 +110,7 @@ void setupVertices( const char* path )
     exit( 0 ) ;
   }
  
-  auto& mesh = loader.mesh( 7 ) ;
+  auto& mesh = loader.mesh( 0 ) ;
   vertices.initialize( DEVICE_ID, mesh.numVertices(), false, nyx::ArrayFlags::Vertex ) ;
   indices .initialize( DEVICE_ID, mesh.numIndices (), false, nyx::ArrayFlags::Index  ) ;
   

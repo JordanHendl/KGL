@@ -41,9 +41,9 @@ OPTION( RUN_TESTS     "Whether or not the Nyx tests should be run"              
 OPTION( BUILD_DOCS    "Whether or not to generate documentation of Nyx"                   OFF )
 OPTION( BUILD_RELEASE "Whether or not the to build for release."                          OFF )
 
-PROJECT( nyx CXX )
+PROJECT( nyxgpu CXX )
 
-MESSAGE( INFO "Nyx Library Prebuild" ) 
+MESSAGE( INFO "Nyx GPU Library Prebuild" ) 
 MESSAGE( INFO " " ) 
 
 IF( BUILD_RELEASE  )
@@ -80,14 +80,14 @@ SET( MAJOR             "0"     CACHE STRING "The major version of this build."  
 SET( MINOR             "2"     CACHE STRING "The minor version of this build."             )
 SET( BRANCH            "0"     CACHE STRING "The branch version of this build."            )
 SET( REVISION          "0"     CACHE STRING "The revision of this build."                  )
-SET( GENERATOR         "RPM"   CACHE STRING "The Package Generator to use for this build." )
+SET( GENERATOR         "DEB"   CACHE STRING "The Package Generator to use for this build." )
 
 IF( WIN32 )
-  SET( CMAKE_PREFIX_PATH "C:/Program Files" CACHE STRING "The default path to look for dependancies." )
+  SET( CMAKE_PREFIX_PATH "C:/Program Files/athena" CACHE STRING "The default path to look for dependancies." )
   SET( INSTALL_LOCATION "C:/Program Files" CACHE STRING "The default NSIS install location of this library" )
 ELSEIF( UNIX AND NOT APPLE )
-  SET( CMAKE_PREFIX_PATH "/usr/local/lib64/athena;/usr/lib64;/usr/local" CACHE STRING "The default path to look for dependancies." )
-  SET( INSTALL_LOCATION  "/usr/local/lib64" CACHE STRING "The RPM install location of this library." ) 
+  SET( CMAKE_PREFIX_PATH "/usr/local/lib/athena;/usr/lib;/usr/local" CACHE STRING "The default path to look for dependancies." )
+  SET( INSTALL_LOCATION  "/usr/local/lib"                            CACHE STRING "The RPM install location of this library." ) 
 ENDIF()
 
 SET(CMAKE_CXX_STANDARD          17 )

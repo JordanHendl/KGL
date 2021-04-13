@@ -1,5 +1,4 @@
-#ifndef NYX_VKG_INSTANCE_H
-#define NYX_VKG_INSTANCE_H
+#pragma once
 
 /** Forward declared vulkan objects.
  */
@@ -160,6 +159,4 @@ namespace nyx
     };
   }
 }
-
-#endif /* INSTANCE_H */
 

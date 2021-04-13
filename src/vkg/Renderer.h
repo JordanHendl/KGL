@@ -24,12 +24,6 @@
 
 #pragma once
 
-#include "Image.h"
-#include "Buffer.h"
-#include "RenderPass.h"
-#include "Pipeline.h"
-
-
 namespace vk
 {
   class SurfaceKHR ;
@@ -66,17 +60,14 @@ namespace nyx
   {
     using Surface = vk::SurfaceKHR ;
 
-    class Vulkan ;
-    
-    class Buffer ;
-    
-    class Image ;
-    
-    class Renderer ;
-    
-    class Pipeline ;
-    
-    class Chain ;
+    class Vulkan     ;
+    class Buffer     ;
+    class Image      ;
+    class Renderer   ;
+    class Pipeline   ;
+    class Chain      ;
+    class RenderPass ;
+    class Descriptor ;
     
     /* Forward declared implmentation.
      */

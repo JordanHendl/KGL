@@ -24,9 +24,6 @@
 
 #pragma once
 
-#include "RenderPass.h"
-#include "Device.h"
-
 namespace vk
 {
   class PipelineLayout ;
@@ -153,8 +150,14 @@ namespace nyx
          */
         const vk::PipelineLayout& layout() const ;
         
+        /** Method to set whether this object should write depth values out.
+         * @param val Whether or not this object should write depth values out.
+         */
         void setTestDepth( bool val ) ;
         
+        /** Method to retrieve reference to this object's vulkan shader generator.
+         * @return Reference to this object's to this object's vulkan shader generator.
+         */
         const nyx::vkg::NyxShader& shader() const ;
         
       private:

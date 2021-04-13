@@ -22,9 +22,7 @@
  * Created on December 30, 2020, 8:57 PM
  */
 
-#ifndef NYX_LINUX_H
-#define NYX_LINUX_H
-
+#pragma once
 #include "Window.h"
 
 
@@ -41,6 +39,3 @@ namespace nyx
     };
   }
 }
-
-#endif /* X11_H */
-
