@@ -58,7 +58,8 @@ constexpr unsigned  WINDOW_ID = 0   ;
 constexpr unsigned  WIDTH     = 720 ;
 constexpr unsigned  HEIGHT    = 524 ;
 
-static glm::vec3 POSITION  = glm::vec3( 0.0f, 0.0f, 0.0f ) ;
+static glm::vec3 POSITION  = glm::vec3( 0.0f, 0.0f, 0.0f ) ;  
+static float     ROTATION  = 0.f                           ;
 
 static nyx::EventManager                      manager       ;
 static nyx::RenderPass <Framework>            render_pass   ;
@@ -127,8 +128,8 @@ void setupVertices( const char* path )
 
 void setupMatrices()
 {
-  mat.view  = glm::lookAt( glm::vec3(0.f, -2.0f, -1.f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f ) ) ;
-  mat.proj  = glm::perspective( glm::radians( 90.0f ), static_cast<float>( WIDTH ) / static_cast<float>( HEIGHT ), 0.1f, 10.0f ) ;
+  mat.view  = glm::lookAt( glm::vec3(0.f, -2.0f, -1.f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f )                ) ;
+  mat.proj  = glm::perspective( glm::radians( 90.0f ), static_cast<float>( WIDTH ) / static_cast<float>( HEIGHT ), 0.1f, 5000.0f ) ;
   
   matrices.initialize( DEVICE_ID, 1 ) ;
   transfer.copy( &mat, matrices ) ;
@@ -215,20 +216,24 @@ void respond( const nyx::Event& event )
           start_time = std::chrono::high_resolution_clock::now() ;
         }
       break ;
+      
+      case nyx::Key::Z :
+        ROTATION = ROTATION < glm::radians( 180.f ) ? glm::radians( 180.f ) : 0.f ;
+        break ;
       case nyx::Key::ESC :
         running = false ;
       break ;
       case nyx::Key::Up :
-        POSITION.z -= 0.05f ;
+        POSITION.y += 0.5f ;
       break ;
       case nyx::Key::Down :
-        POSITION.z += 0.05f ;
+        POSITION.y -= 0.5f ;
       break ;
       case nyx::Key::Left :
-        POSITION.x -= 0.05f ;
+        POSITION.z -= 0.5f ;
       break ;
       case nyx::Key::Right :
-        POSITION.x += 0.05f ;
+        POSITION.z += 0.5f ;
       break ;
       default : break ;
     }
@@ -286,6 +291,7 @@ int main( int argc, char** argv )
       time     += std::chrono::duration<float, std::chrono::seconds::period>( current_time - start_time ).count() ;
       pos       = glm::translate( glm::mat4( 1.0f ), POSITION ) ;
       mat.model = glm::rotate( pos, time * glm::radians( 90.0f ), glm::vec3(0.0f, 0.0f, 1.0f ) ) ;
+      mat.model = glm::rotate( mat.model, ROTATION, glm::vec3( 0.f, 1.0f, 0.0f ) ) ;
       
       // Update the matrix buffer
       transfer.copy( &mat, matrices ) ;
