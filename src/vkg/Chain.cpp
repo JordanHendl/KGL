@@ -40,6 +40,7 @@
 #include <mutex>
 #include <map>
 #include <algorithm>
+#include <limits>
 
 namespace nyx
 {
@@ -60,12 +61,13 @@ namespace nyx
     
     struct ChainData
     {
-      vkg::Queue             queue   ;
-      vkg::CommandBuffer     parent  ;
-      vkg::CommandBuffer     cmd     ;
-      const vkg::RenderPass* pass    ;
-      unsigned               current ;
-      
+      vkg::Queue             queue      ;
+      vkg::Chain*            parent     ;
+      vkg::CommandBuffer     cmd        ;
+      const vkg::RenderPass* pass       ;
+      unsigned               current    ;
+      unsigned               subpass_id ;
+
       ChainData() ;
       void record( bool use_render_pass = false ) ;
       
@@ -92,7 +94,14 @@ namespace nyx
       {
         if( this->pass != nullptr && this->pass->initialized() && use_render_pass )
         {
-          this->cmd.record( *this->pass ) ;
+          if( this->parent != nullptr )
+          {
+            this->cmd.record( *this->pass, this->subpass_id ) ;
+          }
+          else
+          {
+            this->cmd.record( *this->pass ) ;
+          }
         }
         else
         {
@@ -136,8 +145,10 @@ namespace nyx
 
     ChainData::ChainData()
     {
-      this->pass    = nullptr ;
-      this->current = 0       ;
+      this->subpass_id = UINT32_MAX ;
+      this->parent     = nullptr    ;
+      this->pass       = nullptr    ;
+      this->current    = 0          ;
     }
 
     Chain::Chain()
@@ -150,6 +161,14 @@ namespace nyx
       delete this->chain_data ;
     }
 
+    void Chain::initialize( const Chain& parent, unsigned subpass_id )
+    {
+      data().pass       = parent.data().pass ;
+      data().subpass_id = subpass_id         ;
+
+      data().cmd.initialize( parent.data().cmd ) ;
+    }
+    
     void Chain::initialize( unsigned gpu, unsigned window_id )
     {
       if( Vulkan::hasWindow( window_id ) )
@@ -250,7 +269,7 @@ namespace nyx
         data().cmd.stop() ;
       }
 
-      if( !data().parent.initialized() )
+      if( data().parent == nullptr )
       {
         data().queue.submit( data().cmd ) ;
         data().cmd.advance() ;

@@ -110,6 +110,11 @@ namespace nyx
          */
         const vkg::Image& framebuffer( unsigned index ) const ;
         
+        /** Method to retrieve the number of binded subpasses.
+         * @return The number of binded subpasses.
+         */
+        unsigned numBindedSubpasses() const ;
+        
         /** Method to reset this object and deallocate all allocated data.
          */
         void reset() ;

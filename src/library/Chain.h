@@ -129,7 +129,12 @@ namespace nyx
        * @return The device id used by this object.
        */
       inline unsigned device() const ;
-
+      
+      /** Method to combine the child chain's recorded data to this object's. 
+       * If this object is part of rendering, this command causes the next 
+       * @param child
+       */
+      inline void combine( const nyx::Chain<Framework>& child ) ;
       /** Method to append a draw command to this renderer.
        * @param array The array of vertices to draw.
        * @param offset The offset into the vertex array to start drawing at.
@@ -150,6 +155,12 @@ namespace nyx
        */
       inline void transition( nyx::Image<Framework>& image, nyx::ImageLayout layout ) ;
       
+      /** Method to initialize this chain with a parent, making this chain a child of the input.
+       * @param parent The chain to use as a parent.
+       * @param subpass_id If the parent is part of a render pass, which id of subpass this child is recording for.
+       */
+      inline void initialize( const nyx::Chain<Framework>& parent, unsigned subpass_id = 0 ) ;
+
       /** Method to initialize this object with the given parameters.
        * @param gpu The ID of gpu to use.
        * @param type The type of queue to use for this chain.
@@ -277,6 +288,12 @@ namespace nyx
     this->impl.synchronize() ;
   }
  
+  template<typename Framework>
+  void Chain<Framework>::initialize( const nyx::Chain<Framework>& parent, unsigned subpass_id )
+  {
+    this->impl.initialize( parent, subpass_id ) ;
+  }
+  
   template<typename Framework>
   void Chain<Framework>::initialize( unsigned gpu, ChainType type )
   {

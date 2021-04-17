@@ -101,6 +101,11 @@ namespace nyx
         CommandBuffer& operator=( const CommandBuffer& cmd ) ;
         
         /** Method to initialize this command buffer object.
+         * @param buffer the parent buffer of this object.
+         */
+        void initialize( const CommandBuffer& buffer ) ;
+        
+        /** Method to initialize this command buffer object.
          * @param queue The queue to use for this object's creation.
          * @param count The number of command buffers to generate.
          * @param level The command buffer level of this object.
@@ -173,7 +178,7 @@ namespace nyx
 
         /** Method to begin all this object's command buffers record using input render pass.
          * @param render_pass Method to begin the render pass & all this object's command buffers record as well.
-         * @param index The index of command buffer to start recording.
+         * @param index The index of subpass to use if a secondary command buffer.
          */
         void record( const nyx::vkg::RenderPass& render_pass, unsigned index ) ;
         

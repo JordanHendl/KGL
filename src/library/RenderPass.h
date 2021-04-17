@@ -90,9 +90,25 @@ namespace nyx
         this->attachment_deps.push_back( attachment ) ;
       };
       
+      inline void setAttachment( unsigned index, nyx::Attachment attachment )
+      {
+        if( this->attachment_deps.size() < index )
+        {
+          this->attachment_deps[ index ] = attachment ;
+        }
+      }
+
       inline void addSubpassDependancy( unsigned subpass_index )
       {
         this->subpass_deps.push_back( subpass_index ) ;
+      };
+      
+      inline void setSubpassDependancy( unsigned index, unsigned subpass_index )
+      {
+        if( this->subpass_deps.size() < index )
+        {
+          this->subpass_deps[ index ] = subpass_index ;
+        }
       };
       
       inline void setDepthStencilEnable( bool val )
@@ -109,8 +125,8 @@ namespace nyx
       template<typename Framework>
       friend class RenderPass ;
 
-      std::vector<nyx::Attachment> attachment_deps      ;
-      std::vector<unsigned>        subpass_deps         ;
+      std::vector<nyx::Attachment> attachment_deps ;
+      std::vector<unsigned>        subpass_deps    ;
       
       bool  depth_stencil_enable = false ;
       float depth_clear          = 1.0f  ;

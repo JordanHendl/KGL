@@ -52,21 +52,22 @@ namespace nyx
       using Subpasses    = std::vector<vk::SubpassDescription>    ;
       using ClearColors  = std::vector<vk::ClearValue>            ;
       
-      ClearColors      clear_colors        ;
-      Framebuffers     framebuffers        ;
-      Dependencies     dependencies        ;
-      References       references          ;
-      References       color_references    ;
-      References       depth_references    ;
-      Subpasses        subpasses           ;
-      Images           images              ;
-      Attachments      attachments         ;
-      vkg::Device      device              ;
-      vkg::Swapchain   swapchain           ;
-      vk::RenderPass   pass                ;
-      vk::Rect2D       area                ;
-      mutable unsigned current_framebuffer ;
-      unsigned         window_id           ;
+      ClearColors      clear_colors         ;
+      Framebuffers     framebuffers         ;
+      Dependencies     dependencies         ;
+      References       references           ;
+      References       color_references     ;
+      References       depth_references     ;
+      Subpasses        subpasses            ;
+      Images           images               ;
+      Attachments      attachments          ;
+      vkg::Device      device               ;
+      vkg::Swapchain   swapchain            ;
+      vk::RenderPass   pass                 ;
+      vk::Rect2D       area                 ;
+      mutable unsigned current_framebuffer  ;
+      mutable unsigned num_binded_subpasses ;
+      unsigned         window_id            ;
       
       RenderPassData() ;
       ~RenderPassData() ;
@@ -76,7 +77,9 @@ namespace nyx
     
     RenderPassData::RenderPassData()
     {
-      this->current_framebuffer = 0 ;
+      this->current_framebuffer  = 0 ;
+      this->num_binded_subpasses = 0 ;
+     
       this->area.extent.setWidth ( 1280 ) ;
       this->area.extent.setHeight( 1024 ) ;
     }
@@ -227,7 +230,11 @@ namespace nyx
         {
           unsigned device = data().device    ;
           unsigned id     = data().window_id ;
-          this->reset() ;
+          for( auto& framebuffer : data().framebuffers ) data().device.device().destroy( framebuffer ) ;
+          if( data().pass ) data().device.device().destroy( data().pass ) ;
+          data().images      .clear() ;
+          data().framebuffers.clear() ;
+          data().current_framebuffer = 0 ;
           this->initialize( device, id ) ;
           recreate = true ;
         }
@@ -235,7 +242,11 @@ namespace nyx
         {
           unsigned device = data().device    ;
           unsigned id     = data().window_id ;
-          this->reset() ;
+          for( auto& framebuffer : data().framebuffers ) data().device.device().destroy( framebuffer ) ;
+          if( data().pass ) data().device.device().destroy( data().pass ) ;
+          data().images      .clear() ;
+          data().framebuffers.clear() ;
+          data().current_framebuffer = 0 ;
           this->initialize( device, id ) ;
           recreate = true ;
         }
@@ -251,9 +262,6 @@ namespace nyx
     
     unsigned RenderPass::currentIndex() const
     {
-//      if( data().swapchain.initialized() ) 
-//      return data().swapchain.current() ;
-      
       return data().current_framebuffer ;
     }
     
@@ -261,16 +269,21 @@ namespace nyx
     {
       for( auto& framebuffer : data().framebuffers ) data().device.device().destroy( framebuffer ) ;
       if( data().pass ) data().device.device().destroy( data().pass ) ;
-//      data().swapchain.reset() ;
+      data().swapchain.reset() ;
       
       data().images      .clear() ;
       data().framebuffers.clear() ;
-//      data().attachments .clear() ;
-//      data().subpasses   .clear() ;
-//      data().references  .clear() ;
-//      data().dependencies.clear() ;
+      data().attachments .clear() ;
+      data().subpasses   .clear() ;
+      data().references  .clear() ;
+      data().dependencies.clear() ;
     }
-
+    
+    unsigned RenderPass::numBindedSubpasses() const
+    {
+      return data().num_binded_subpasses++ ;
+    }
+    
     const vkg::Image& RenderPass::framebuffer( unsigned index ) const
     {
       if( index < data().images.size() ) return data().images[ index ] ;

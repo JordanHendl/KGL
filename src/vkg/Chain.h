@@ -60,6 +60,11 @@ namespace nyx
          */
         ~Chain() ;
         
+        /** Method to initialize this chain as a child of the input.
+         * @param parent The chain to initialize this object off of.
+         */
+        void initialize( const Chain& parent, unsigned subpass_id ) ;
+        
         /** Method to initialize this object with the given parameters.
          * @param gpu The ID of gpu to use.
          * @param type The type of queue to use for this chain.
