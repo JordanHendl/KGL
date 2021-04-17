@@ -22,8 +22,7 @@
  * Created on January 8, 2021, 7:17 PM
  */
 
-#ifndef NYX_VKG_SYNCHRONIZATION_H
-#define NYX_VKG_SYNCHRONIZATION_H
+#pragma once
 
 namespace vk
 {
@@ -187,6 +186,4 @@ namespace nyx
     };
   }
 }
-
-#endif 
 

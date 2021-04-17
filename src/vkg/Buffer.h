@@ -94,11 +94,6 @@ namespace nyx
          */
         Buffer& operator=( const Buffer& src ) ;
         
-        /** Method to retrieve the pointer to this object's host allocated data.
-         * @return The host pointer to this object's internal data.
-         */
-        const unsigned char* host() const ;
-
         /** Method to retrieve whether or not this object is initialized.
          * @return Whether or not this buffer is initialized
          */

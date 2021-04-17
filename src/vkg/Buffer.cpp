@@ -38,8 +38,6 @@ namespace nyx
     struct BufferData
     {
       nyx::Memory<IMPL>          internal_memory ;
-      nyx::Memory<IMPL>          staging_memory  ;
-      std::vector<unsigned char> host_copy       ;
       nyx::Memory<IMPL>          staging         ;
       ::nyx::vkg::Device         device          ;
       vkg::CommandBuffer         cmd             ;
@@ -138,11 +136,6 @@ namespace nyx
         data().device.device().destroyBuffer( data().buffer ) ;
       }
       
-      if( data().staging_memory.initialized() )
-      {
-        data().staging_memory.deallocate() ;
-      }
-      
       if( !data().preallocated && this->initialized() )
       {
         data().internal_memory.deallocate() ;
@@ -202,8 +195,8 @@ namespace nyx
 
       if( !data().preallocated )
       {
-        if( host_local ) data().internal_memory.initialize( gpu, data().requirements.size, data().requirements.memoryTypeBits, true, nyx::MemoryFlags::HostVisible ) ;
-        else             data().internal_memory.initialize( gpu, data().requirements.size, data().requirements.memoryTypeBits, false                               ) ;
+        if( host_local ) data().internal_memory.initialize( gpu, data().requirements.size, data().requirements.memoryTypeBits, true, nyx::MemoryFlags::HostCoherent ) ;
+        else             data().internal_memory.initialize( gpu, data().requirements.size, data().requirements.memoryTypeBits, false                                ) ;
         
       }
 
@@ -212,7 +205,6 @@ namespace nyx
       if( data().requirements.size <= needed_size )
       {
         vkg::Vulkan::add( data().device.device().bindBufferMemory( data().buffer, data().internal_memory.memory(), data().internal_memory.offset() ) ) ;
-        if( host_local ) data().host_copy.resize( data().requirements.size ) ;
 
         data().makeDeviceAddress() ;
         data().initialized = true ;
@@ -239,11 +231,6 @@ namespace nyx
       return data().requirements.size ;
     }
     
-    const unsigned char* Buffer::host() const
-    {
-      return data().host_copy.data() ;
-    }
-
     nyx::Memory<nyx::vkg::Vulkan>& Buffer::memory()
     {
       return data().internal_memory ;

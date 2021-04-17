@@ -31,18 +31,18 @@
 #include "library/Renderer.h"
 #include "library/Chain.h"
 #include "event/Event.h"
-#include "stb_image.h"
+#include <loaders/NgtFile.h>
+#include <loaders/NggFile.h>
 #include <library/Nyx.h>
 #include <shaders/headers/draw_3d.h>
 #include <vector>
 #include <iostream>
 #include <chrono>
+#include <algorithm>
 
 // Temporarily using glm for now. Prob use something else in the future.
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-#include "stb_image.h"
 
 using Framework = nyx::vkg::Vulkan ;
 
@@ -53,71 +53,28 @@ struct Matrices
   glm::mat4 proj  ;
 };
 
-struct Vertex
-{
-  glm::vec4 vertex     ;
-  glm::vec2 tex_coords ;
-};
-
 constexpr unsigned  DEVICE_ID = 0   ;
 constexpr unsigned  WINDOW_ID = 0   ;
 constexpr unsigned  WIDTH     = 720 ;
 constexpr unsigned  HEIGHT    = 524 ;
 
-static glm::vec3 POSITION  = glm::vec3( 0.0f, 0.0f, 0.0f ) ;
+static glm::vec3 POSITION  = glm::vec3( 0.0f, 0.0f, 0.0f ) ;  
+static float     ROTATION  = 0.f                           ;
 
-static nyx::EventManager           manager       ;
-static nyx::RenderPass <Framework> render_pass   ;
-static nyx::Renderer   <Framework> pipeline      ;
-static nyx::Chain      <Framework> chain         ;
-static nyx::Chain      <Framework> transfer      ;
-static nyx::Image      <Framework> image         ;
-static Framework::Array<Vertex>    vertices      ;
-static Framework::Array<Matrices > matrices      ;
-static bool                        running       ;
-static bool                        paused        ;
-static Matrices                    mat           ;
+static nyx::EventManager                      manager       ;
+static nyx::RenderPass <Framework>            render_pass   ;
+static nyx::Renderer   <Framework>            pipeline      ;
+static nyx::Chain      <Framework>            chain         ;
+static nyx::Chain      <Framework>            transfer      ;
+static nyx::Image      <Framework>            image         ;
+static Framework::Array<nyx::NggFile::Vertex> vertices      ;
+static Framework::Array<unsigned            > indices       ;
+static Framework::Array<Matrices >            matrices      ;
+static Matrices                               mat           ;
+static bool                                   running       ;
+static bool                                   paused        ;
 
 static auto start_time = std::chrono::high_resolution_clock::now() ;
-
-std::vector<Vertex> host_vertices = {
-        Vertex{ glm::vec4( -0.5f, -0.5f, -0.5f, 1.0f ),  glm::vec2( 0.0f, 0.0f ) },
-        Vertex{ glm::vec4(  0.5f, -0.5f, -0.5f, 1.0f ),  glm::vec2( 1.0f, 0.0f ) },
-        Vertex{ glm::vec4(  0.5f,  0.5f, -0.5f, 1.0f ),  glm::vec2( 1.0f, 1.0f ) },
-        Vertex{ glm::vec4(  0.5f,  0.5f, -0.5f, 1.0f ),  glm::vec2( 1.0f, 1.0f ) },
-        Vertex{ glm::vec4( -0.5f,  0.5f, -0.5f, 1.0f ),  glm::vec2( 0.0f, 1.0f ) },
-        Vertex{ glm::vec4( -0.5f, -0.5f, -0.5f, 1.0f ),  glm::vec2( 0.0f, 0.0f ) },
-        Vertex{ glm::vec4( -0.5f, -0.5f,  0.5f, 1.0f ),  glm::vec2( 0.0f, 0.0f ) },
-        Vertex{ glm::vec4(  0.5f, -0.5f,  0.5f, 1.0f ),  glm::vec2( 1.0f, 0.0f ) },
-        Vertex{ glm::vec4(  0.5f,  0.5f,  0.5f, 1.0f ),  glm::vec2( 1.0f, 1.0f ) },
-        Vertex{ glm::vec4(  0.5f,  0.5f,  0.5f, 1.0f ),  glm::vec2( 1.0f, 1.0f ) },
-        Vertex{ glm::vec4( -0.5f,  0.5f,  0.5f, 1.0f ),  glm::vec2( 0.0f, 1.0f ) },
-        Vertex{ glm::vec4( -0.5f, -0.5f,  0.5f, 1.0f ),  glm::vec2( 0.0f, 0.0f ) },
-        Vertex{ glm::vec4( -0.5f,  0.5f,  0.5f, 1.0f ),  glm::vec2( 1.0f, 0.0f ) },
-        Vertex{ glm::vec4( -0.5f,  0.5f, -0.5f, 1.0f ),  glm::vec2( 1.0f, 1.0f ) },
-        Vertex{ glm::vec4( -0.5f, -0.5f, -0.5f, 1.0f ),  glm::vec2( 0.0f, 1.0f ) },
-        Vertex{ glm::vec4( -0.5f, -0.5f, -0.5f, 1.0f ),  glm::vec2( 0.0f, 1.0f ) },
-        Vertex{ glm::vec4( -0.5f, -0.5f,  0.5f, 1.0f ),  glm::vec2( 0.0f, 0.0f ) },
-        Vertex{ glm::vec4( -0.5f,  0.5f,  0.5f, 1.0f ),  glm::vec2( 1.0f, 0.0f ) },
-        Vertex{ glm::vec4(  0.5f,  0.5f,  0.5f, 1.0f ),  glm::vec2( 1.0f, 0.0f ) },
-        Vertex{ glm::vec4(  0.5f,  0.5f, -0.5f, 1.0f ),  glm::vec2( 1.0f, 1.0f ) },
-        Vertex{ glm::vec4(  0.5f, -0.5f, -0.5f, 1.0f ),  glm::vec2( 0.0f, 1.0f ) },
-        Vertex{ glm::vec4(  0.5f, -0.5f, -0.5f, 1.0f ),  glm::vec2( 0.0f, 1.0f ) },
-        Vertex{ glm::vec4(  0.5f, -0.5f,  0.5f, 1.0f ),  glm::vec2( 0.0f, 0.0f ) },
-        Vertex{ glm::vec4(  0.5f,  0.5f,  0.5f, 1.0f ),  glm::vec2( 1.0f, 0.0f ) },
-        Vertex{ glm::vec4( -0.5f, -0.5f, -0.5f, 1.0f ),  glm::vec2( 0.0f, 1.0f ) },
-        Vertex{ glm::vec4(  0.5f, -0.5f, -0.5f, 1.0f ),  glm::vec2( 1.0f, 1.0f ) },
-        Vertex{ glm::vec4(  0.5f, -0.5f,  0.5f, 1.0f ),  glm::vec2( 1.0f, 0.0f ) },
-        Vertex{ glm::vec4(  0.5f, -0.5f,  0.5f, 1.0f ),  glm::vec2( 1.0f, 0.0f ) },
-        Vertex{ glm::vec4( -0.5f, -0.5f,  0.5f, 1.0f ),  glm::vec2( 0.0f, 0.0f ) },
-        Vertex{ glm::vec4( -0.5f, -0.5f, -0.5f, 1.0f ),  glm::vec2( 0.0f, 1.0f ) },
-        Vertex{ glm::vec4( -0.5f,  0.5f, -0.5f, 1.0f ),  glm::vec2( 0.0f, 1.0f ) },
-        Vertex{ glm::vec4(  0.5f,  0.5f, -0.5f, 1.0f ),  glm::vec2( 1.0f, 1.0f ) },
-        Vertex{ glm::vec4(  0.5f,  0.5f,  0.5f, 1.0f ),  glm::vec2( 1.0f, 0.0f ) },
-        Vertex{ glm::vec4(  0.5f,  0.5f,  0.5f, 1.0f ),  glm::vec2( 1.0f, 0.0f ) },
-        Vertex{ glm::vec4( -0.5f,  0.5f,  0.5f, 1.0f ),  glm::vec2( 0.0f, 0.0f ) },
-        Vertex{ glm::vec4( -0.5f,  0.5f, -0.5f, 1.0f ),  glm::vec2( 0.0f, 1.0f ) }
-      };
 
 void setupRenderPass()
 {
@@ -144,20 +101,35 @@ void setupChain()
   transfer.initialize( DEVICE_ID     , nyx::ChainType::Compute ) ;
 }
 
-void setupVertices()
+void setupVertices( const char* path )
 {
-  vertices.initialize( DEVICE_ID, host_vertices.size(), false, nyx::ArrayFlags::Vertex ) ;
+  nyx::NggFile loader ;
+  
+  if( !loader.load( path ) )
+  {
+    std::cout << "Error loading model at " << path << ".\n" ;
+    exit( 0 ) ;
+  }
+ 
+  auto& mesh = loader.mesh( 0 ) ;
+  vertices.initialize( DEVICE_ID, mesh.numVertices(), false, nyx::ArrayFlags::Vertex ) ;
+  indices .initialize( DEVICE_ID, mesh.numIndices (), false, nyx::ArrayFlags::Index  ) ;
   
   std::cout << "Copying Vertices to Device" << std::endl ;
-  chain.copy( host_vertices.data(), vertices ) ;
-  chain.submit()      ;
-  chain.synchronize() ;
+  transfer.copy( mesh.vertices(), vertices ) ;
+  transfer.submit() ;
+  transfer.synchronize() ;
+  
+  std::cout << "Copying Indices to Device" << std::endl ;
+  transfer.copy( mesh.indices (), indices  ) ;
+  transfer.submit()      ;
+  transfer.synchronize() ;
 }
 
 void setupMatrices()
 {
-  mat.view  = glm::lookAt( glm::vec3(0.f, -2.0f, -1.f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f ) ) ;
-  mat.proj  = glm::perspective( glm::radians( 90.0f ), static_cast<float>( WIDTH ) / static_cast<float>( HEIGHT ), 0.1f, 10.0f ) ;
+  mat.view  = glm::lookAt( glm::vec3(0.f, -2.0f, -1.f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f )                ) ;
+  mat.proj  = glm::perspective( glm::radians( 90.0f ), static_cast<float>( WIDTH ) / static_cast<float>( HEIGHT ), 0.1f, 5000.0f ) ;
   
   matrices.initialize( DEVICE_ID, 1 ) ;
   transfer.copy( &mat, matrices ) ;
@@ -186,17 +158,24 @@ void setupPipeline()
 void setupTexture( const char* file_path )
 {
   Framework::Array<unsigned char> staging_buffer ;
+  nyx::NgtFile                    loader         ;
+  unsigned                        width          ;
+  unsigned                        height         ;
+  const unsigned char*            bytes          ;
   
-  int width  = 0 ;
-  int height = 0 ;
-  int chan   = 0 ;
-  
-  stbi_set_flip_vertically_on_load( true ) ;
-  auto bytes = stbi_load( file_path, &width, &height, &chan, 4 ) ;
+  if( !loader.load( file_path ) ) 
+  {
+    std::cout << "Problem loading image " << file_path << std::endl ;
+    exit( 0 ) ;
+  }
+
+  width  = loader.width   () ;
+  height = loader.height  () ;
+  bytes  = loader.image   () ;
   
   if( width != 0 && height != 0 )
   {
-    staging_buffer.initialize( DEVICE_ID, width * height * 4, true                  ) ;
+    staging_buffer.initialize( DEVICE_ID, width * height * 4, true ) ;
     image         .initialize( nyx::ImageFormat::RGBA8, DEVICE_ID, width, height, 1 ) ;
     
     transfer.copy( bytes, staging_buffer ) ;
@@ -214,10 +193,17 @@ void setupTexture( const char* file_path )
     std::cout << "Problem loading image " << file_path << std::endl ;
     exit( 0 ) ;
   }
+  
+  loader.reset() ;
 }
 
 void respond( const nyx::Event& event )
 {
+  if( event.type() == nyx::Event::Type::WindowExit )
+  {
+    running = false ;
+  }
+
   if( event.type() == nyx::Event::Type::KeyDown )
   {  
     switch( event.key() )
@@ -230,20 +216,24 @@ void respond( const nyx::Event& event )
           start_time = std::chrono::high_resolution_clock::now() ;
         }
       break ;
+      
+      case nyx::Key::Z :
+        ROTATION = ROTATION < glm::radians( 180.f ) ? glm::radians( 180.f ) : 0.f ;
+        break ;
       case nyx::Key::ESC :
         running = false ;
       break ;
       case nyx::Key::Up :
-        POSITION.z -= 0.05f ;
+        POSITION.y += 0.5f ;
       break ;
       case nyx::Key::Down :
-        POSITION.z += 0.05f ;
+        POSITION.y -= 0.5f ;
       break ;
       case nyx::Key::Left :
-        POSITION.x -= 0.05f ;
+        POSITION.z -= 0.5f ;
       break ;
       case nyx::Key::Right :
-        POSITION.x += 0.05f ;
+        POSITION.z += 0.5f ;
       break ;
       default : break ;
     }
@@ -256,55 +246,59 @@ int main( int argc, char** argv )
   float     time ;
 
   start_time = std::chrono::high_resolution_clock::now() ;
+  
+  // Set the necessary required extensions/debug layers.
   Framework::setApplicationName  ( "NYX-VKG Window Test App"                      ) ;
   Framework::addInstanceExtension( Framework::platformSurfaceInstanceExtensions() ) ;
   Framework::addInstanceExtension( "VK_KHR_surface"                               ) ;
   Framework::addValidationLayer  ( "VK_LAYER_KHRONOS_validation"                  ) ;
   Framework::addValidationLayer  ( "VK_LAYER_LUNARG_standard_validation"          ) ;
   Framework::addDeviceExtension  ( "VK_KHR_swapchain"                             ) ;
-  Framework::addDeviceExtension  ( "VK_KHR_shader_non_semantic_info"              ) ;
 
   Framework::addWindow( WINDOW_ID, "Nyx Render Test", WIDTH, HEIGHT ) ;
   
   running = true  ;
   paused  = false ;
 
-  if( argc < 2 ) 
+  if( argc < 3 ) 
   {
-    std::cout << "Usage: nyx_vkg_window_text <cube_image_file>\n" << std::endl ;
+    std::cout << "Usage: nyx_vkg_window_text <model>.ngg <texture>.ngt\n" << std::endl ;
     return 0 ;
   }
-  
+  // Setup all necessary parts for rendering.
   setupRenderPass(           ) ;
   setupChain     (           ) ;
-  setupVertices  (           ) ;
-  setupTexture   ( argv[ 1 ] ) ;
+  setupVertices  ( argv[ 1 ] ) ;
+  setupTexture   ( argv[ 2 ] ) ;
   setupMatrices  (           ) ;
   setupPipeline  (           ) ;
   
+  // Enroll a function so we can respond to inputs.
   manager.enroll( &respond, "Keyboard Response" ) ;
   
+  // Render loop.
   while( running )
   {
     auto current_time = std::chrono::high_resolution_clock::now();
     
     // Push the iterator to the matrices & draw.
-    chain.push( pipeline, matrices.iterator() ) ;
-    chain.draw( pipeline, vertices ) ;
+    chain.push( pipeline, matrices.iterator()      ) ;
+    chain.drawIndexed( pipeline, indices, vertices ) ;
     chain.submit() ;
-    Framework::deviceSynchronize( DEVICE_ID ) ;
     
     if( !paused )
     {
-      time += std::chrono::duration<float, std::chrono::seconds::period>( current_time - start_time ).count() ;
-      pos   = glm::translate( glm::mat4( 1.0f ), POSITION ) ;
+      time     += std::chrono::duration<float, std::chrono::seconds::period>( current_time - start_time ).count() ;
+      pos       = glm::translate( glm::mat4( 1.0f ), POSITION ) ;
       mat.model = glm::rotate( pos, time * glm::radians( 90.0f ), glm::vec3(0.0f, 0.0f, 1.0f ) ) ;
+      mat.model = glm::rotate( mat.model, ROTATION, glm::vec3( 0.f, 1.0f, 0.0f ) ) ;
       
       // Update the matrix buffer
       transfer.copy( &mat, matrices ) ;
       transfer.submit() ;
     }
-
+    
+    // Present to screen and publish window events.
     render_pass.present() ;
     Framework::handleWindowEvents( WINDOW_ID ) ;
     

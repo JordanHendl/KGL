@@ -22,10 +22,7 @@
  * Created on January 14, 2021, 2:21 AM
  */
 
-#ifndef NYX_VKG_SWAPCHAIN_H
-#define NYX_VKG_SWAPCHAIN_H
-
-#include "Image.h"
+#pragma once
 
 namespace vk
 {
@@ -182,6 +179,4 @@ namespace nyx
     };
   }
 }
-
-#endif /* SWAPCHAIN_H */
 

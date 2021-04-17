@@ -5,7 +5,6 @@ FIND_PACKAGE( Vulkan 1.2 )
 IF( ${Vulkan_FOUND} )
     SET( NYX_VULKAN_SOURCES 
          Vulkan.cpp
-         stb_image.cpp
          Buffer.cpp
          Chain.cpp
          Device.cpp
@@ -24,7 +23,6 @@ IF( ${Vulkan_FOUND} )
 
     SET( NYX_VULKAN_HEADERS
          Vulkan.h
-         stb_image.h
          Buffer.h
          Chain.h
          Device.h
@@ -48,7 +46,7 @@ IF( ${Vulkan_FOUND} )
     SET( NYX_VULKAN_LIBRARIES
          ${Vulkan_LIBRARIES}
          nyx_library
-         nyxfile 
+         nyx_loaders 
         )
     
     # Add the appropriate OS library to link depending on platform being built.
@@ -64,8 +62,6 @@ IF( ${Vulkan_FOUND} )
     TARGET_INCLUDE_DIRECTORIES( nyx_vkg PRIVATE ${NYX_VULKAN_INCLUDE_DIRS}                  )
     
     INCLUDE_DIRECTORIES( ${NYX_VULKAN_INCLUDE_DIRS} )
-
-    FILE( COPY test_image.jpeg DESTINATION ${BUILD_DIR}/ )
 
     BUILD_TEST( TARGET nyx_vkg )
     

@@ -1,11 +1,13 @@
 #version 450 core
 #extension GL_GOOGLE_include_directive    : enable
 #extension GL_ARB_separate_shader_objects : enable
-#extension GL_EXT_debug_printf            : enable
 #include "Nyx.h"
 
-layout ( location = 0 ) in vec4 vertex     ; 
-layout ( location = 1 ) in vec2 tex_coords ;
+layout ( location = 0 ) in vec4  vertex     ; 
+layout ( location = 1 ) in vec4  normals    ; 
+layout ( location = 2 ) in vec4  weights    ;
+layout ( location = 3 ) in uvec4 ids        ;
+layout ( location = 4 ) in vec2  tex_coords ;
 
 layout( location = 0 ) out vec2 frag_coords ;
 
@@ -26,19 +28,26 @@ NyxPushConstant push
 void main()
 {
   NyxIterator iterator ;
+  mat4        model    ;
+  mat4        view     ;
+  mat4        proj     ;
   vec4        position ;
+  vec4        normal   ;
+  float       weight   ;
+  uint        id       ;
 
-  iterator = const_iterator                                 ;
-  position = vec4( vertex.x, vertex.y, vertex.z, vertex.w ) ;
+  normal   = normals                                   ;
+  weight   = weights[ 0 ]                              ;
+  id       = ids    [ 0 ]                              ;
+  iterator = const_iterator                            ;
+  position = vec4( vertex.x, vertex.y, vertex.z, 1.0 ) ;
 
   nyx_seek( iterator, 0 ) ;
 
-  mat4 model = nyx_get( device_ptr, iterator ).model ;
-  mat4 view  = nyx_get( device_ptr, iterator ).view  ;
-  mat4 proj  = nyx_get( device_ptr, iterator ).proj  ;
+  model = nyx_get( device_ptr, iterator ).model ;
+  view  = nyx_get( device_ptr, iterator ).view  ;
+  proj  = nyx_get( device_ptr, iterator ).proj  ;
   
-  //debugPrintfEXT( "Id: %d, Vertex: %f, %f, %f, %f | Coords %f, %f\\n ", gl_VertexIndex, vertex.x, vertex.y, vertex.z, vertex.w, tex_coords.x, tex_coords.y ) ;
-
   frag_coords = tex_coords.xy                  ;
   gl_Position = proj * view * model * position ;
 }

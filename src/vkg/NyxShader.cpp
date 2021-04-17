@@ -30,7 +30,7 @@
 #include "NyxShader.h"
 #include "Device.h"
 #include "Vulkan.h"
-#include <nyxfile/NyxFile.h>
+#include <loaders/NyxFile.h>
 #include <library/Array.h>
 #include <library/Image.h>
 #include <vulkan/vulkan.hpp>
@@ -191,13 +191,13 @@ namespace nyx
     {
       switch( stage )
       {
-        case nyx::ShaderStage::Fragment      : return ::vk::ShaderStageFlagBits::eFragment               ;
-        case nyx::ShaderStage::Geometry      : return ::vk::ShaderStageFlagBits::eGeometry               ;
-        case nyx::ShaderStage::Tess_C : return ::vk::ShaderStageFlagBits::eTessellationControl    ;
-        case nyx::ShaderStage::Tess_E : return ::vk::ShaderStageFlagBits::eTessellationEvaluation ;
-        case nyx::ShaderStage::Compute       : return ::vk::ShaderStageFlagBits::eCompute                ;
-        case nyx::ShaderStage::Vertex        : return ::vk::ShaderStageFlagBits::eVertex                 ;
-        default                                          : return ::vk::ShaderStageFlagBits::eFragment   ;
+        case nyx::ShaderStage::Fragment : return ::vk::ShaderStageFlagBits::eFragment               ;
+        case nyx::ShaderStage::Geometry : return ::vk::ShaderStageFlagBits::eGeometry               ;
+        case nyx::ShaderStage::Tess_C   : return ::vk::ShaderStageFlagBits::eTessellationControl    ;
+        case nyx::ShaderStage::Tess_E   : return ::vk::ShaderStageFlagBits::eTessellationEvaluation ;
+        case nyx::ShaderStage::Compute  : return ::vk::ShaderStageFlagBits::eCompute                ;
+        case nyx::ShaderStage::Vertex   : return ::vk::ShaderStageFlagBits::eVertex                 ;
+        default                         : return ::vk::ShaderStageFlagBits::eFragment               ;
       }
     }
 

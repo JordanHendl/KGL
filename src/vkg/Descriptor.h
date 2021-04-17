@@ -24,10 +24,6 @@
 
 #pragma once
 
-#include "Renderer.h"
-
-
-
 namespace vk
 {
   // Forward declared vullkan objects.

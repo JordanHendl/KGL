@@ -60,6 +60,11 @@ namespace nyx
          */
         ~Chain() ;
         
+        /** Method to initialize this chain as a child of the input.
+         * @param parent The chain to initialize this object off of.
+         */
+        void initialize( const Chain& parent, unsigned subpass_id ) ;
+        
         /** Method to initialize this object with the given parameters.
          * @param gpu The ID of gpu to use.
          * @param type The type of queue to use for this chain.
@@ -191,6 +196,7 @@ namespace nyx
       private:
         
         void drawBase( const vkg::Renderer& renderer, const vkg::Buffer& vertices, unsigned count, unsigned offset ) ;
+
         void drawIndexedBase( const vkg::Renderer& renderer, const vkg::Buffer& indices, unsigned index_count, const vkg::Buffer& vertices, unsigned vertex_count ) ;
         
         void copy( const vkg::Buffer& src, vkg::Buffer& dst, unsigned copy_amt, unsigned element_size, unsigned src_offset, unsigned dst_offset ) ;

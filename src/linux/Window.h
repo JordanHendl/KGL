@@ -22,8 +22,7 @@
  * Created on December 30, 2020, 9:00 PM
  */
 
-#ifndef NYX_LINUX_WINDOW_H
-#define NYX_LINUX_WINDOW_H
+#pragma once
 
 typedef struct xcb_connection_t xcb_connection_t ; 
 typedef        unsigned         xcb_window_t     ;
@@ -156,6 +155,3 @@ namespace nyx
     };
   }
 }
-
-#endif /* WINDOW_H */
-

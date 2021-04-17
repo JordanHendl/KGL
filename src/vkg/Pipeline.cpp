@@ -33,7 +33,7 @@
 #include "RenderPass.h"
 #include "Vulkan.h"
 #include "library/Renderer.h"
-#include "nyxfile/NyxFile.h"
+#include "loaders/NyxFile.h"
 #include <vulkan/vulkan.hpp>
 #include <stdio.h>
 
@@ -384,6 +384,11 @@ namespace nyx
     const vk::PipelineLayout& Pipeline::layout() const
     {
       return data().layout ;
+    }
+    
+    const nyx::vkg::NyxShader& Pipeline::shader() const
+    {
+      return data().shader ;
     }
 
     PipelineData& Pipeline::data()
