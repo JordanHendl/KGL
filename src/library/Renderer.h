@@ -140,14 +140,14 @@ namespace nyx
        * @param device The device to use for all GPU operations.
        * @param nyx_file_path The path to the .nyx file on the filesystem to use.
        */
-      void initialize( unsigned device, nyx::RenderPass<Framework>& pass, const char* nyx_file_path ) ;
+      void initialize( unsigned device, const nyx::RenderPass<Framework>& pass, const char* nyx_file_path ) ;
       
       /** Method to initialize this object.
        * @param device The device to use for all GPU operations.
        * @param nyx_file_bytes The bytes of the .nyx file to use for this object.
        * @param size The size of the bytes array.
        */
-      void initialize( unsigned device, nyx::RenderPass<Framework>& pass, const unsigned char* nyx_file_bytes, unsigned size ) ;
+      void initialize( unsigned device, const nyx::RenderPass<Framework>& pass, const unsigned char* nyx_file_bytes, unsigned size ) ;
       
       bool initialized() const ;
       
@@ -208,13 +208,13 @@ namespace nyx
   }
 
   template<typename Framework>
-  void Renderer<Framework>::initialize( unsigned device, nyx::RenderPass<Framework>& pass, const char* nyx_file_path )
+  void Renderer<Framework>::initialize( unsigned device, const nyx::RenderPass<Framework>& pass, const char* nyx_file_path )
   {
     this->impl.initialize( device, pass, nyx_file_path ) ;
   }
 
   template<typename Framework>
-  void Renderer<Framework>::initialize( unsigned device, nyx::RenderPass<Framework>& pass, const unsigned char* nyx_file_bytes, unsigned size )
+  void Renderer<Framework>::initialize( unsigned device, const nyx::RenderPass<Framework>& pass, const unsigned char* nyx_file_bytes, unsigned size )
   {
     this->impl.initialize( device, pass, nyx_file_bytes, size ) ;
   }
