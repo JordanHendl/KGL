@@ -185,6 +185,11 @@ namespace nyx
        */
       inline void initialize( const nyx::RenderPass<Framework>& render_pass, unsigned window_id ) ;
       
+      /** Method to check whether or not this object is initialized.
+       * @return Whether or not this object is initialized.
+       */
+      inline bool initialized() const ;
+
       /** Method to push a variable onto the input pipeline.
        * @param pipeline The pipeline to push the data to.
        * @param data The data to push.
@@ -288,6 +293,12 @@ namespace nyx
     this->impl.synchronize() ;
   }
  
+  template<typename Framework>
+  bool Chain<Framework>::initialized() const
+  {
+    return this->impl.initialized() ;
+  }
+
   template<typename Framework>
   void Chain<Framework>::initialize( const nyx::Chain<Framework>& parent, unsigned subpass_id )
   {

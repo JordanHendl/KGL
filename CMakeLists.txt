@@ -77,7 +77,7 @@ MESSAGE( STATUS "" )
 SET( ARCHITECTURE      "64bit" CACHE STRING "The system architecture."                     )
 SET( CXX_STANDARD      "17"    CACHE STRING "The C++ standard to use for building."        )
 SET( MAJOR             "0"     CACHE STRING "The major version of this build."             )
-SET( MINOR             "2"     CACHE STRING "The minor version of this build."             )
+SET( MINOR             "0"     CACHE STRING "The minor version of this build."             )
 SET( BRANCH            "0"     CACHE STRING "The branch version of this build."            )
 SET( REVISION          "0"     CACHE STRING "The revision of this build."                  )
 SET( GENERATOR         "DEB"   CACHE STRING "The Package Generator to use for this build." )
@@ -140,7 +140,7 @@ MESSAGE( INFO  "├─GNU:               ${GNU}"               )
 MESSAGE( INFO  "└─MSVC:              ${MSVC}"              )
 MESSAGE( INFO " " ) 
 
-INCLUDE( KPackage ) 
+
 
 SET( BIN_DIR           "bin"                                 )
 SET( INCLUDE_DIR       "include"                             )
@@ -177,6 +177,13 @@ INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR}/src )
 
 INCLUDE ( BuildDocs )
 
-ADD_SUBDIRECTORY( src )
+SET( CPACK_COMPONENTS_ALL                 release devel                                                                   )
+SET( CPACK_COMPONENT_DEVEL_DISPLAY_NAME   "${CMAKE_PROJECT_NAME}-devel"                                                   )
+SET( CPACK_COMPONENT_RELEASE_DISPLAY_NAME "${CMAKE_PROJECT_NAME}-release"                                                 )
+SET( CPACK_COMPONENT_DEVEL_DESCRIPTION    "Development Headers & Runtime Libraries for the ${CMAKE_PROJECT_NAME} library" )
+SET( CPACK_COMPONENT_RELEASE_DESCRIPTION  "Runtime Libraries for the ${CMAKE_PROJECT_NAME} library"                       )
+SET( CPACK_COMPONENT_DEVEL_DEPENDS        release                                                                         )
+INCLUDE( KPackage ) 
 
-INSTALL( EXPORT Nyx FILE NyxGPUConfig.cmake DESTINATION ${CMAKE_PROJECT_NAME} COMPONENT dev )
+ADD_SUBDIRECTORY( src )
+INSTALL( EXPORT Nyx FILE NyxGPUConfig.cmake DESTINATION ${CMAKE_PROJECT_NAME} COMPONENT devel )

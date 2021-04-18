@@ -89,6 +89,11 @@ namespace nyx
          */
         void initialize( const RenderPass& pass, unsigned window_id ) ;
         
+        /** Method to check whether or not this object is initialized.
+         * @return Whether or not this object is initialized.
+         */
+        bool initialized() const ;
+
         /** Method to record a copy two library arrays to eachother.
          * @param src The array to copy from.
          * @param dst The array to copy to.

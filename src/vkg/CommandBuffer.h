@@ -112,7 +112,11 @@ namespace nyx
          */
         void initialize( const nyx::vkg::Queue& queue, unsigned count, CommandBuffer::Level level = CommandBuffer::Level::Primary ) ;
         
-        bool initialized() ;
+        /** Method to check whether or not this object is initialized.
+         * @return Whether or not this object is initialized.
+         */
+        bool initialized() const ;
+
         /** Method to combine a secondary command buffer into this object.
          * @param cmd The secondary command buffer to consume into this object.
          */

@@ -246,7 +246,7 @@ namespace nyx
       }
     }
     
-    bool CommandBuffer::initialized()
+    bool CommandBuffer::initialized() const
     {
       return !data().cmd_buffers.empty() ;
     }

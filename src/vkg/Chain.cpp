@@ -215,6 +215,11 @@ namespace nyx
       data().queue = Vulkan::presentQueue( window_id, pass.device() ) ;
       this->initialize( pass.device(), window_id ) ;
     }
+    
+    bool Chain::initialized() const 
+    {
+      return data().cmd.initialized() ;
+    }
 
     unsigned Chain::device() const
     {
