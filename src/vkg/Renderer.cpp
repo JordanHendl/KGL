@@ -80,7 +80,7 @@ namespace nyx
       data().pass   = &pass  ;
 
       shader         .initialize( device, nyx_file_path ) ;
-      data().pipeline.initialize( device, nyx_file_path ) ;
+      data().pipeline.initialize( pass  , nyx_file_path ) ;
       data().pool    .initialize( shader, 1             ) ;
       
       data().descriptor = data().pool.make() ;
@@ -92,9 +92,9 @@ namespace nyx
       data().device = device ;
       data().pass   = &pass  ;
 
-      data().shader  .initialize( device, nyx_file_bytes, size       ) ;
-      data().pipeline.initialize( *data().pass, nyx_file_bytes, size ) ;
-      data().pool    .initialize( data().pipeline.shader(), 1        ) ;
+      data().shader  .initialize( device, nyx_file_bytes, size ) ;
+      data().pipeline.initialize( pass  , nyx_file_bytes, size ) ;
+      data().pool    .initialize( data().pipeline.shader(), 1  ) ;
       
       data().descriptor = data().pool.make() ;
     }

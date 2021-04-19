@@ -34,6 +34,7 @@
 #define nyx_seek( iter, pos  ) ( iter.position = pos < iter.position ? pos : iter.position ) ;
 #define nyx_get(  buff, iter ) buff[ iter.position ]
 #define nyx_set(  buff, iter, value ) buff[ iter.position ] = value
+
 struct NyxIterator
 {
   uint size         ;

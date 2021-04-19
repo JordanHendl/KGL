@@ -66,6 +66,14 @@ namespace nyx
        */
       ~Chain() = default ;
       
+      /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
+       */
+      inline operator const typename Framework::Chain&() const ;
+
+      /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
+       */
+      inline operator typename Framework::Chain&() ;
+      
       /** Method to record a copy two library arrays to eachother.
        * @param src The array to copy from.
        * @param dst The array to copy to.
@@ -135,6 +143,7 @@ namespace nyx
        * @param child
        */
       inline void combine( const nyx::Chain<Framework>& child ) ;
+      
       /** Method to append a draw command to this renderer.
        * @param array The array of vertices to draw.
        * @param offset The offset into the vertex array to start drawing at.
@@ -214,6 +223,19 @@ namespace nyx
       typename Framework::Chain impl ;
   };
   
+  
+  template<typename Framework>
+  Chain<Framework>::operator const typename Framework::Chain&() const
+  {
+    return this->impl ;
+  }
+
+  template<typename Framework>
+  Chain<Framework>::operator typename Framework::Chain&()
+  {
+    return this->impl ;
+  }
+  
   template<typename Framework>
   template<typename Type>
   void Chain<Framework>::copy( const nyx::Array<Framework, Type>& src, Array<Framework, Type>& dst, unsigned amt, unsigned src_offset, unsigned dst_offset )
@@ -261,6 +283,12 @@ namespace nyx
     this->impl.copy( src, dst, amt, src_offset, dst_offset ) ;
   }
 
+  template<typename Framework>
+  void Chain<Framework>::combine( const nyx::Chain<Framework>& child )
+  {
+    this->impl.combine( child ) ;
+  }
+  
   template<typename Framework>
   template<typename Type, typename Type2>
   void Chain<Framework>::drawIndexed( const nyx::Renderer<Framework>& renderer, const Array<Framework, Type2>& indices, const Array<Framework, Type>& vertices )

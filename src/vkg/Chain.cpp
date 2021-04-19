@@ -67,6 +67,7 @@ namespace nyx
       const vkg::RenderPass* pass       ;
       unsigned               current    ;
       unsigned               subpass_id ;
+      std::mutex             mutex      ;
 
       ChainData() ;
       void record( bool use_render_pass = false ) ;
@@ -258,7 +259,9 @@ namespace nyx
       data().record() ;
       if( new_layout != vk::ImageLayout::eUndefined )
       {
+        data().mutex.lock() ;
         data().cmd.buffer().pipelineBarrier( src, dst, dep_flags, 0, nullptr, 0, nullptr, 1, &barrier ) ;
+        data().mutex.unlock() ;
       }
     }
 
@@ -271,13 +274,17 @@ namespace nyx
     {
       if( data().cmd.recording() )
       {
+        data().mutex.lock() ;
         data().cmd.stop() ;
+        data().mutex.unlock() ;
       }
 
       if( data().parent == nullptr )
       {
+        data().mutex.lock() ;
         data().queue.submit( data().cmd ) ;
         data().cmd.advance() ;
+        data().mutex.unlock() ;
       }
     }
     
@@ -306,8 +313,10 @@ namespace nyx
       region.setSrcSubresource( src.subresource() ) ;
       region.setDstSubresource( dst.subresource() ) ;
       
+      data().mutex.lock() ;
       data().record() ;
       data().cmd.buffer().copyImage( src.image(), src_layout, dst.image(), dst_layout, 1, &region ) ;
+      data().mutex.unlock() ;
     }
     
     void Chain::copy( const vkg::Buffer& src, vkg::Buffer& dst, unsigned copy_amt, unsigned element_size, unsigned src_offset, unsigned dst_offset )
@@ -322,8 +331,10 @@ namespace nyx
       region.setSrcOffset( src_offset              ) ;
       region.setDstOffset( dst_offset              ) ;
 
+      data().mutex.lock() ;
       data().record() ;
       data().cmd.buffer().copyBuffer( src.buffer(), dst.buffer(), 1, &region ) ;
+      data().mutex.unlock() ;
     }
     
     void Chain::copy( const void* src, vkg::Buffer& dst, unsigned copy_amt, unsigned element_size, unsigned src_offset, unsigned dst_offset )
@@ -404,8 +415,10 @@ namespace nyx
       src_offset   = src_offset   ;
       copy_amt     = copy_amt     ;
 
+      data().mutex.lock() ;
       data().record() ;
       data().cmd.buffer().copyImageToBuffer( src.image(), vk::ImageLayout::eTransferSrcOptimal, dst.buffer(), 1, &info ) ;
+      data().mutex.unlock() ;
     }
     
     void Chain::copy( const vkg::Buffer& src, vkg::Image& dst, unsigned copy_amt, unsigned element_size, unsigned src_offset, unsigned dst_offset )
@@ -432,31 +445,50 @@ namespace nyx
       element_size = element_size ;
 
       this->transition ( dst, nyx::ImageLayout::TransferDst ) ;
+      data().mutex.lock() ;
       data().cmd.buffer().copyBufferToImage( src.buffer(), dst.image(), vk::ImageLayout::eTransferDstOptimal, 1, &info ) ;
+      data().mutex.unlock() ;
       this->transition ( dst, old_layout ) ;
     }
     
+    void Chain::combine( const vkg::Chain& chain )
+    {
+      if( data().parent == nullptr && chain.data().parent == this ) 
+      {
+        data().mutex.lock() ;
+        data().record( data().pass != nullptr ) ;
+        data().cmd.combine( chain.data().cmd ) ;
+        data().mutex.unlock() ;
+      }
+    }
+
     void Chain::drawBase( const vkg::Renderer& renderer, const vkg::Buffer& vertices, unsigned count, unsigned offset )
     {
       data().record( true ) ;
+      data().mutex.lock() ;
       data().cmd.bind    ( renderer.pipeline()     ) ;
       data().cmd.bind    ( renderer.descriptor()   ) ;
       data().cmd.drawBase( vertices, count, offset ) ;
+      data().mutex.unlock() ;
     }
     
     void Chain::drawIndexedBase( const vkg::Renderer& renderer, const vkg::Buffer& indices, unsigned index_count, const vkg::Buffer& vertices, unsigned vertex_count )
     {
       data().record( true ) ;
+      data().mutex.lock() ;
       data().cmd.bind    ( renderer.pipeline()     ) ;
       data().cmd.bind    ( renderer.descriptor()   ) ;
       data().cmd.drawIndexedBase( indices, vertices, index_count, vertex_count ) ;
+      data().mutex.unlock() ;
     }
 
     void Chain::pushBase( const Renderer& pipeline, const void* value, unsigned byte_size, unsigned offset )
     {
       data().record( true ) ;
+      data().mutex.lock() ;
       data().cmd.bind( pipeline.pipeline()                  ) ;
       data().cmd.pushConstantBase( value, byte_size, offset ) ;
+      data().mutex.unlock() ;
     }
 
     const ChainData& Chain::data() const

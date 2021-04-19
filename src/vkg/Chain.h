@@ -153,6 +153,12 @@ namespace nyx
          */
         void copy( const vkg::Image& src, vkg::Image& dst, unsigned amt = 0, unsigned src_offset = 0, unsigned dst_offset = 0 ) ;
         
+        /** Method to combine the child chain's recorded data to this object's. 
+         * If this object is part of rendering, this command causes the next subpass to push.
+         * @param chain
+         */
+        void combine( const vkg::Chain& chain ) ;
+
         /** Method to append a draw command to this object.
          * @param array The array of vertices to draw.
          * @param offset The offset into the vertex array to start drawing at.

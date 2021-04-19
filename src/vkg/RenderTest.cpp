@@ -34,7 +34,7 @@
 #include <loaders/NgtFile.h>
 #include <loaders/NggFile.h>
 #include <library/Nyx.h>
-#include <shaders/headers/draw_3d.h>
+#include <binary/draw_3d.h>
 #include <vector>
 #include <iostream>
 #include <chrono>

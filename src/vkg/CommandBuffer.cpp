@@ -55,7 +55,7 @@ namespace nyx
       using Fences     = std::vector<vk::Fence>         ;
 
       vk::CommandBufferInheritanceInfo inheritance         ;
-      vk::SubpassContents              subpass_flags       ;
+      mutable vk::SubpassContents      subpass_flags       ;
       vk::PipelineBindPoint            bind_point          ;
       vk::Device                       device              ;
       unsigned                         id                  ;
@@ -86,6 +86,7 @@ namespace nyx
     
     CommandBufferData::CommandBufferData()
     {
+      this->subpass_flags       = vk::SubpassContents::eInline  ;
       this->pipeline            = nullptr                       ;
       this->pipeline_layout     = nullptr                       ;
       this->level               = CommandBuffer::Level::Primary ;
@@ -199,6 +200,8 @@ namespace nyx
       
       vkg::Vulkan::add( device.allocateCommandBuffers( &info, data().cmd_buffers.data() ) ) ;
       
+      parent.data().subpass_flags = vk::SubpassContents::eSecondaryCommandBuffers ;
+      
       for( auto& fence : data().fences )
       {
         auto result = device.createFence( fence_info ) ;
@@ -256,6 +259,8 @@ namespace nyx
       if( data().level == Level::Primary && cmd.data().level == Level::Secondary )
       {
         data().cmd_buffers[ data().current ].executeCommands( 1, &cmd.buffer() ) ;
+        
+        if( data().started_render_pass ) data().cmd_buffers[ data().current ].nextSubpass( data().subpass_flags ) ;
       }
     }
     

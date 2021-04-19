@@ -33,9 +33,9 @@
 #include <loaders/NgtFile.h>
 #include <loaders/NyxFile.h>
 #include <binary/sheep.h>
-#include <shaders/headers/draw.h>
-#include <shaders/headers/buffer_reference.h>
-#include <shaders/headers/color_depth.h>
+#include <binary/draw.h>
+#include <binary/buffer_reference.h>
+#include <binary/color_depth.h>
 #include <vector>
 #include <algorithm>
 #include <assert.h>
