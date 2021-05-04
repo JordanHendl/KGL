@@ -185,8 +185,6 @@ namespace nyx
        */
       unsigned device() const ;
       
-      void setClearColor( float red, float green, float blue, float alpha ) ;
-      
       /** Method to retrieve a framebuffer from this object.
        * @param index The index of framebuffer to retrieve. See @count for the amount.
        * @return Const reference to this object's internal framebuffer.

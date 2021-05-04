@@ -37,7 +37,7 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <array>
-
+#include <iostream>
 namespace nyx
 {
   namespace vkg
@@ -211,12 +211,16 @@ namespace nyx
       return data().attachments.size() ;
     }
     
-    vk::Framebuffer RenderPass::current() const
+    void RenderPass::advance() const 
     {
-//      if( data().swapchain.initialized() ) return data().framebuffers[ data().swapchain.current() ] ;
-      
-      auto ret = data().framebuffers[ data().current_framebuffer++ ] ;
-      if( data().current_framebuffer > data().framebuffers.size() - 1 ) data().current_framebuffer = 0 ;
+      data().current_framebuffer++ ;
+      if( data().current_framebuffer >= data().framebuffers.size() ) data().current_framebuffer = 0 ;
+    }
+    
+    vk::Framebuffer RenderPass::current() const
+    { 
+      auto ret = data().framebuffers[ data().current_framebuffer ] ;
+
       return ret ;
     }
     
@@ -282,6 +286,11 @@ namespace nyx
     unsigned RenderPass::numBindedSubpasses() const
     {
       return data().num_binded_subpasses++ ;
+    }
+    
+    unsigned RenderPass::subpassCount() const
+    {
+      return data().subpasses.size() ;
     }
     
     const vkg::Image& RenderPass::framebuffer( unsigned index ) const

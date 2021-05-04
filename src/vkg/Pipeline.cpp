@@ -71,7 +71,7 @@ namespace nyx
       Viewports                   viewports           ;
       PipelineConfig              config              ; ///< TODO
       nyx::vkg::Device            device              ; ///< TODO
-      nyx::vkg::NyxShader         shader              ; ///< TODO
+      nyx::vkg::NyxShader*        shader              ; ///< TODO
       vk::Pipeline                pipeline            ; ///< TODO
       vk::PipelineLayout          layout              ; ///< TODO
       vk::PipelineCache           cache               ; ///< TODO
@@ -146,9 +146,9 @@ namespace nyx
       vk::PushConstantRange        range       ;
       vk::DescriptorSetLayout      desc_layout ;
       
-      desc_layout = this->shader.layout() ;
+      desc_layout = this->shader->layout() ;
 
-      this->config.color_blend_attachments.resize( this->shader.file().numOutputs() ) ;
+      this->config.color_blend_attachments.resize( this->shader->file().numOutputs() ) ;
       this->config.color_blend_info.setAttachments( this->config.color_blend_attachments ) ;
       
       range.setOffset    ( 0                         ) ;
@@ -171,18 +171,18 @@ namespace nyx
       vk::ComputePipelineCreateInfo          compute_info  ;
       vk::PipelineVertexInputStateCreateInfo vertex_input  ;
       
-      vertex_input.setVertexAttributeDescriptionCount( this->shader.numVertexAttributes() ) ;
-      vertex_input.setVertexBindingDescriptionCount  ( this->shader.numVertexBindings()   ) ;
-      vertex_input.setPVertexAttributeDescriptions   ( this->shader.attributes()          ) ;
-      vertex_input.setPVertexBindingDescriptions     ( this->shader.bindings()            ) ;
+      vertex_input.setVertexAttributeDescriptionCount( this->shader->numVertexAttributes() ) ;
+      vertex_input.setVertexBindingDescriptionCount  ( this->shader->numVertexBindings()   ) ;
+      vertex_input.setPVertexAttributeDescriptions   ( this->shader->attributes()          ) ;
+      vertex_input.setPVertexBindingDescriptions     ( this->shader->bindings()            ) ;
 
       if( this->render_pass && this->render_pass->initialized() )
       {
         this->config.viewport_info.setPViewports( this->viewports.data() ) ;
         this->config.viewport_info.setPScissors ( this->scissors .data() ) ;
 
-        graphics_info.setPStages            ( this->shader.infos()             ) ;
-        graphics_info.setStageCount         ( this->shader.numStages()         ) ;
+        graphics_info.setPStages            ( this->shader->infos()            ) ;
+        graphics_info.setStageCount         ( this->shader->numStages()        ) ;
         graphics_info.setLayout             ( this->layout                     ) ;
         graphics_info.setPVertexInputState  ( &vertex_input                    ) ;
         graphics_info.setPInputAssemblyState( &this->config.assembly_info      ) ;
@@ -198,8 +198,8 @@ namespace nyx
       }
       else
       {
-        compute_info.setLayout( this->layout              ) ;
-        compute_info.setStage ( this->shader.infos()[ 0 ] ) ;
+        compute_info.setLayout( this->layout               ) ;
+        compute_info.setStage ( this->shader->infos()[ 0 ] ) ;
         
         auto result = ( this->device.device().createComputePipeline( this->cache, compute_info ) ) ;
         vkg::Vulkan::add( result.result ) ;
@@ -245,8 +245,10 @@ namespace nyx
     {
       Vulkan::initialize() ;
 
+      data().shader = new nyx::vkg::NyxShader() ;
+      
       data().device = Vulkan::device( device ) ;
-      data().shader.initialize( device, nyx_file ) ;
+      data().shader->initialize( device, nyx_file ) ;
       
       data().config.color_blend_info.setAttachments( data().config.color_blend_attachments ) ;
       data().createLayout() ;
@@ -257,11 +259,13 @@ namespace nyx
     {
       if( !Vulkan::initialized() ) Vulkan::initialize() ;
 
+      data().shader = new nyx::vkg::NyxShader() ;
+      
       data().render_pass = &pass                           ;
       data().device      = Vulkan::device( pass.device() ) ;
       
       data().config.color_blend_info.setAttachments( data().config.color_blend_attachments ) ;
-      data().shader.initialize( pass.device(), nyx_file ) ;
+      data().shader->initialize( pass.device(), nyx_file ) ;
       
       data().createLayout() ;
       data().createPipeline() ;
@@ -270,9 +274,11 @@ namespace nyx
     void Pipeline::initialize( unsigned device, const unsigned char* nyx_bytes, unsigned size )
     {
       Vulkan::initialize() ;
-
+      
+      data().shader = new nyx::vkg::NyxShader() ;
+      
       data().device = Vulkan::device( device ) ;
-      data().shader.initialize( device, nyx_bytes, size ) ;
+      data().shader->initialize( device, nyx_bytes, size ) ;
       data().config.color_blend_info.setAttachments( data().config.color_blend_attachments ) ;
       data().createLayout() ;
       data().createPipeline() ;
@@ -285,8 +291,9 @@ namespace nyx
       data().render_pass = &pass                           ;
       data().device      = Vulkan::device( pass.device() ) ;
 
-      data().shader.initialize( pass.device(), nyx_bytes, size ) ;
+      data().shader = new nyx::vkg::NyxShader() ;
       
+      data().shader->initialize( pass.device(), nyx_bytes, size ) ;
       data().config.color_blend_info.setAttachments( data().config.color_blend_attachments ) ;
       data().createLayout() ;
       data().createPipeline() ;
@@ -306,7 +313,7 @@ namespace nyx
     {
       Vulkan::initialize() ;
 
-      data().shader = shader                            ;
+      data().shader = const_cast<NyxShader*>( &shader ) ;
       data().device = Vulkan::device( shader.device() ) ;
       
       data().createLayout() ;
@@ -336,9 +343,9 @@ namespace nyx
     {
       Vulkan::initialize() ;
 
-      data().render_pass = &pass                           ;
-      data().device      = Vulkan::device( pass.device() ) ;
-      data().shader      = shader                          ;
+      data().render_pass = &pass                             ;
+      data().device      = Vulkan::device( pass.device() )   ;
+      data().shader      = const_cast<NyxShader*>( &shader ) ;
       
       data().createLayout() ;
       data().createPipeline() ;
@@ -356,7 +363,7 @@ namespace nyx
     
     void Pipeline::reset()
     {
-      data().shader.reset() ;
+//      data().shader.reset() ;
       if( data().pipeline ) data().device.device().destroy( data().pipeline, nullptr ) ;
       if( data().layout   ) data().device.device().destroy( data().layout  , nullptr ) ;
     }
@@ -388,7 +395,7 @@ namespace nyx
     
     const nyx::vkg::NyxShader& Pipeline::shader() const
     {
-      return data().shader ;
+      return *data().shader ;
     }
 
     PipelineData& Pipeline::data()

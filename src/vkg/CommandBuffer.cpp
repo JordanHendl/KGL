@@ -40,6 +40,7 @@
 #include <vector>
 #include <mutex>
 #include <thread>
+#include <algorithm>
 
 namespace nyx
 {
@@ -67,7 +68,8 @@ namespace nyx
       Fences                           fences              ;
       CommandBuffer::Level             level               ;
       CmdBuffers                       cmd_buffers         ;
-      bool                             started_render_pass ;
+      mutable std::vector<bool>        is_signaled         ;
+      std::vector<bool>                started_render_pass ;
       bool                             recording           ;
       mutable unsigned                 current             ;
       
@@ -91,7 +93,6 @@ namespace nyx
       this->pipeline_layout     = nullptr                       ;
       this->level               = CommandBuffer::Level::Primary ;
       this->recording           = false                         ;
-      this->started_render_pass = false                         ;
       this->current             = 0                             ;
     }
     
@@ -139,6 +140,32 @@ namespace nyx
       return *this ;
     }
     
+    void CommandBuffer::barrier( const vkg::Buffer& read, const vkg::Buffer& write )
+    {
+      vk::BufferMemoryBarrier barrier ;
+      
+      write.size() ;
+      barrier.setBuffer       ( read.buffer()                    ) ;
+      barrier.setSize         ( VK_WHOLE_SIZE                    ) ;
+      barrier.setSrcAccessMask( vk::AccessFlagBits::eMemoryWrite ) ;
+      barrier.setDstAccessMask( vk::AccessFlagBits::eMemoryRead  ) ;
+      data().cmd_buffers[ data().current ].pipelineBarrier( vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands,
+                                                            vk::DependencyFlags(), nullptr, barrier, nullptr ) ;
+    }
+    
+    void CommandBuffer::barrier( const vkg::Buffer& read, const vkg::Image& write )
+    {
+      vk::BufferMemoryBarrier barrier ;
+      
+      write.size() ;
+      barrier.setBuffer       ( read.buffer()                    ) ;
+      barrier.setSize         ( VK_WHOLE_SIZE                    ) ;
+      barrier.setSrcAccessMask( vk::AccessFlagBits::eMemoryWrite ) ;
+      barrier.setDstAccessMask( vk::AccessFlagBits::eMemoryRead  ) ;
+      data().cmd_buffers[ data().current ].pipelineBarrier( vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands,
+                                                            vk::DependencyFlags(), nullptr, barrier, nullptr ) ;
+    }
+    
     void CommandBuffer::bind( const nyx::vkg::Descriptor& descriptor )
     {
       if( descriptor.set() ) 
@@ -160,13 +187,12 @@ namespace nyx
     {
       const auto flags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment | vk::ShaderStageFlagBits::eCompute ;
       char buff[ 256 ] ;
-//     
+     
       if( byte_size < 256 )
       {
         std::memcpy( buff, reinterpret_cast<const char*>( ( value ) ), byte_size ) ;
-        data().cmd_buffers[ data().current ].pushConstants( data().pipeline_layout, flags, offset, 256, buff ) ;
+        data().cmd_buffers[ data().current ].pushConstants( data().pipeline_layout, flags, offset, 256 - offset, buff ) ;
       }
-//      data().cmd_buffers[ data().current ].pushConstants( data().pipeline_layout, flags, offset, 256, value ) ;
     }
     
     void CommandBuffer::initialize( const CommandBuffer& parent ) 
@@ -195,12 +221,17 @@ namespace nyx
       info.setLevel             ( cmd_level                        ) ;
       info.setCommandPool       ( pool                             ) ;
       
-      data().cmd_buffers.resize( parent.data().cmd_buffers.size() ) ;
-      data().fences     .resize( parent.data().cmd_buffers.size() ) ;
+      data().cmd_buffers        .resize( parent.data().cmd_buffers.size() ) ;
+      data().fences             .resize( parent.data().cmd_buffers.size() ) ;
+      data().started_render_pass.resize( parent.data().cmd_buffers.size() ) ;
+      data().is_signaled        .resize( parent.data().cmd_buffers.size() ) ;
+      
+      std::fill( data().started_render_pass.begin(), data().started_render_pass.end(), false ) ;
+      std::fill( data().is_signaled        .begin(), data().is_signaled        .end(), true  ) ;
       
       vkg::Vulkan::add( device.allocateCommandBuffers( &info, data().cmd_buffers.data() ) ) ;
       
-      parent.data().subpass_flags = vk::SubpassContents::eSecondaryCommandBuffers ;
+      data().subpass_flags = vk::SubpassContents::eSecondaryCommandBuffers ;
       
       for( auto& fence : data().fences )
       {
@@ -210,7 +241,7 @@ namespace nyx
       }
     }
 
-    void CommandBuffer::initialize( const nyx::vkg::Queue& queue, unsigned count, CommandBuffer::Level level ) 
+    void CommandBuffer::initialize( const nyx::vkg::Queue& queue, unsigned count, CommandBuffer::Level level, bool multi_pass ) 
     {
       vk::CommandBufferAllocateInfo info       ;
       vk::CommandBufferLevel        cmd_level  ;
@@ -236,9 +267,15 @@ namespace nyx
       info.setLevel             ( cmd_level ) ;
       info.setCommandPool       ( pool      ) ;
       
-      data().cmd_buffers.resize( count ) ;
-      data().fences     .resize( count ) ;
-      
+      data().cmd_buffers        .resize( count ) ;
+      data().fences             .resize( count ) ;
+      data().started_render_pass.resize( count ) ;
+      data().is_signaled        .resize( count ) ;
+
+      data().subpass_flags = multi_pass ? vk::SubpassContents::eSecondaryCommandBuffers : vk::SubpassContents::eInline ;
+
+      std::fill( data().started_render_pass.begin(), data().started_render_pass.end(), false ) ;
+      std::fill( data().is_signaled        .begin(), data().is_signaled        .end(), true  ) ;
       vkg::Vulkan::add( device.allocateCommandBuffers( &info, data().cmd_buffers.data() ) ) ;
       
       for( auto& fence : data().fences )
@@ -254,18 +291,25 @@ namespace nyx
       return !data().cmd_buffers.empty() ;
     }
 
+    void CommandBuffer::nextSubpass()
+    {
+      if( data().level == Level::Primary )
+      {
+        if( data().started_render_pass[ data().current ] ) data().cmd_buffers[ data().current ].nextSubpass( data().subpass_flags ) ;
+      }
+    }
+    
     void CommandBuffer::combine( const CommandBuffer& cmd )
     {
-      if( data().level == Level::Primary && cmd.data().level == Level::Secondary )
+      if( data().level == Level::Primary && cmd.data().level == Level::Secondary && data().subpass_flags == vk::SubpassContents::eSecondaryCommandBuffers )
       {
-        data().cmd_buffers[ data().current ].executeCommands( 1, &cmd.buffer() ) ;
-        
-        if( data().started_render_pass ) data().cmd_buffers[ data().current ].nextSubpass( data().subpass_flags ) ;
+        data().cmd_buffers[ data().current ].executeCommands( 1, &cmd.data().cmd_buffers[ cmd.data().current ] ) ;
       }
     }
     
     vk::Fence CommandBuffer::fence() const
     {
+      data().is_signaled[ data().current ] = true ;
       return data().fences[ data().current ] ;
     }
     
@@ -350,29 +394,34 @@ namespace nyx
       info.setRenderPass     ( render_pass.pass()        ) ;
       info.setFramebuffer    ( render_pass.current()     ) ;
       
-      
       fence = data().fences[ data().current ] ;
       
       if( data().level == Level::Primary )
       {
-        vkg::Vulkan::add( data().device.waitForFences( 1, &fence, true, UINT64_MAX ) ) ;
-        vkg::Vulkan::add( data().device.resetFences( 1, &fence )                     ) ;
+        if( data().is_signaled[ data().current ] )
+        {
+          vkg::Vulkan::add( data().device.waitForFences( 1, &fence, true, UINT64_MAX ) ) ;
+          vkg::Vulkan::add( data().device.resetFences( 1, &fence )                     ) ;
+          data().is_signaled[ data().current ] = false ;
+        }
         
         vkg::Vulkan::add( data().cmd_buffers[ data().current ].begin          ( &data().begin_info )        ) ;
                           data().cmd_buffers[ data().current ].beginRenderPass( &info, data().subpass_flags ) ;
   
-        data().recording           = true ;
-        data().started_render_pass = true ;
+        data().recording                             = true ;
+        data().started_render_pass[ data().current ] = true ;
       }
       else
       {
-        data().inheritance.setFramebuffer    ( render_pass.current() ) ;
-        data().inheritance.setSubpass        ( index                 ) ;
-        data().inheritance.setRenderPass     ( render_pass.pass()    ) ;
-        data().begin_info.setPInheritanceInfo( &data().inheritance   ) ;
-        
-        
+//        data().inheritance.setFramebuffer    ( render_pass.current()                               ) ;
+        data().inheritance.setSubpass        ( index                                               ) ;
+        data().inheritance.setRenderPass     ( render_pass.pass()                                  ) ;
+        data().begin_info.setPInheritanceInfo( &data().inheritance                                 ) ;
+        data().begin_info.setFlags           ( vk::CommandBufferUsageFlagBits::eRenderPassContinue ) ;
+
         vkg::Vulkan::add( data().cmd_buffers[ data().current ].begin( &data().begin_info ) ) ;
+        
+        data().recording = true ;
       }
     }
 
@@ -391,14 +440,18 @@ namespace nyx
       
       if( data().level == Level::Primary )
       {
-        vkg::Vulkan::add( data().device.waitForFences( 1, &fence, true, UINT64_MAX ) ) ;
-        vkg::Vulkan::add( data().device.resetFences( 1, &fence )                     ) ;
+        if( data().is_signaled[ data().current ] )
+        {
+          vkg::Vulkan::add( data().device.waitForFences( 1, &fence, true, UINT64_MAX ) ) ;
+          vkg::Vulkan::add( data().device.resetFences( 1, &fence )                     ) ;
+          data().is_signaled[ data().current ] = false ;
+        }
   
         vkg::Vulkan::add( data().cmd_buffers[ data().current ].begin          ( &data().begin_info )        ) ;
                           data().cmd_buffers[ data().current ].beginRenderPass( &info, data().subpass_flags ) ;
         
-        data().recording           = true ;
-        data().started_render_pass = true ;
+        data().recording                             = true ;
+        data().started_render_pass[ data().current ] = true ;
       }
     }
 
@@ -406,11 +459,20 @@ namespace nyx
     {
       vk::Fence fence = data().fences[ data().current ] ;
       
-      vkg::Vulkan::add( data().device.waitForFences( 1, &fence, true, UINT64_MAX ) ) ;
-      vkg::Vulkan::add( data().device.resetFences( 1, &fence )                     ) ;
+      if( data().is_signaled[ data().current ] )
+      {
+        vkg::Vulkan::add( data().device.waitForFences( 1, &fence, true, UINT64_MAX ) ) ;
+        vkg::Vulkan::add( data().device.resetFences( 1, &fence )                     ) ;
+        data().is_signaled[ data().current ] = false ;
+      }
 
       vkg::Vulkan::add( data().cmd_buffers[ data().current ].begin( &data().begin_info ) ) ;
       data().recording = true ;
+    }
+    
+    void CommandBuffer::setActive( unsigned index )
+    {
+      data().current = index < data().cmd_buffers.size() ? index : data().current ;
     }
 
     void CommandBuffer::stop()
@@ -418,13 +480,13 @@ namespace nyx
       data().recording = false ;
       vk::CommandBuffer cmd_buff = data().cmd_buffers[ data().current ] ;
       
-      if( data().started_render_pass )
+      if( data().started_render_pass[ data().current ] )
       {
         cmd_buff.endRenderPass() ;
       }
       
       vkg::Vulkan::add( cmd_buff.end() ) ;
-      data().started_render_pass = false ;
+      data().started_render_pass[ data().current ] = false ;
     }
 
     void CommandBuffer::reset()

@@ -115,6 +115,11 @@ namespace nyx
          */
         unsigned numBindedSubpasses() const ;
         
+        /**
+         * @return 
+         */
+        unsigned subpassCount() const ;
+        
         /** Method to reset this object and deallocate all allocated data.
          */
         void reset() ;
@@ -131,6 +136,9 @@ namespace nyx
                          const unsigned* subpass_deps, unsigned num_subpass_deps, 
                          bool depth_enable, float depth_clear ) ;
 
+        /**
+         */
+        void advance() const ;
       private:
 
         friend class vkg::CommandBuffer ;
@@ -141,6 +149,7 @@ namespace nyx
          */
         vk::Framebuffer current() const ;
         
+
         /** Helper method to retrieve the current area of this render pass. 
          * @return The current area of this render pass.
          */

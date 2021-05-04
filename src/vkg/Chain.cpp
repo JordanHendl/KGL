@@ -54,25 +54,29 @@ namespace nyx
     {
       nyx::Array<Vulkan, unsigned char> buffer ;
       std::mutex                        mutex  ;
-
+      
       bool lock() ;
       void unlock() ;
     };
     
     struct ChainData
     {
-      vkg::Queue             queue      ;
-      vkg::Chain*            parent     ;
-      vkg::CommandBuffer     cmd        ;
-      const vkg::RenderPass* pass       ;
-      unsigned               current    ;
-      unsigned               subpass_id ;
-      std::mutex             mutex      ;
-
-      ChainData() ;
-      void record( bool use_render_pass = false ) ;
+      vkg::Queue                 queue      ;
+      mutable vkg::CommandBuffer cmd        ;
+      vkg::Chain*                parent     ;
+      const vkg::RenderPass*     pass       ;
+      unsigned                   subpass_id ;
+      std::mutex                 mutex      ;
+      bool                       has_record ;
+      unsigned                   num_cmd    ;
+      mutable unsigned                   current    ;
+      bool                       dirty      ;
       
-      StagingBuffer* findStaging() const ;
+      ChainData() ;
+      
+      inline void record( bool use_render_pass = false ) const ;
+      
+      inline StagingBuffer* findStaging() const ;
     };
     
     using StagingBuffers = std::map<unsigned, StagingBuffer*> ;
@@ -89,7 +93,7 @@ namespace nyx
       this->mutex.unlock() ;
     }
 
-    void ChainData::record( bool use_render_pass )
+    void ChainData::record( bool use_render_pass ) const
     {
       if( !this->cmd.recording() )
       {
@@ -97,18 +101,32 @@ namespace nyx
         {
           if( this->parent != nullptr )
           {
-            this->cmd.record( *this->pass, this->subpass_id ) ;
+            for( unsigned index = 0; index < this->num_cmd; index++ )
+            {
+              this->cmd.record( *this->pass, this->subpass_id ) ;
+              this->cmd.advance() ;
+            }
           }
           else
           {
-            this->cmd.record( *this->pass ) ;
+            for( unsigned index = 0; index < this->num_cmd; index++ )
+            {
+              this->cmd.record( *this->pass ) ;
+              this->cmd.advance() ;
+            }
           }
         }
         else
         {
-          this->cmd.record() ;
+          for( unsigned index = 0; index < this->num_cmd; index++ )
+          {
+            this->cmd.record() ;
+            this->cmd.advance() ;
+          }
         }
       }
+      
+      this->cmd.setActive( this->current ) ;
     }
     
     StagingBuffer* ChainData::findStaging() const
@@ -146,10 +164,13 @@ namespace nyx
 
     ChainData::ChainData()
     {
+      this->has_record = false      ;
       this->subpass_id = UINT32_MAX ;
       this->parent     = nullptr    ;
       this->pass       = nullptr    ;
+      this->num_cmd    = 1          ;
       this->current    = 0          ;
+      this->dirty      = false      ;
     }
 
     Chain::Chain()
@@ -162,10 +183,18 @@ namespace nyx
       delete this->chain_data ;
     }
 
+    void Chain::advance()
+    {
+      data().mutex.lock() ;
+      data().cmd.advance() ;
+      data().mutex.unlock() ;
+    }
+    
     void Chain::initialize( const Chain& parent, unsigned subpass_id )
     {
-      data().pass       = parent.data().pass ;
-      data().subpass_id = subpass_id         ;
+      data().pass       = parent.data().pass            ;
+      data().parent     = const_cast<Chain*>( &parent ) ;
+      data().subpass_id = subpass_id                    ;
 
       data().cmd.initialize( parent.data().cmd ) ;
     }
@@ -193,7 +222,7 @@ namespace nyx
       data().cmd.initialize( data().queue, COMMAND_BUFFER_COUNT ) ;
     }
     
-    void Chain::initialize( const RenderPass& pass, ChainType type )
+    void Chain::initialize( const RenderPass& pass, ChainType type, bool multi_pass )
     {
       const unsigned gpu = pass.device() ;
       this->reset() ;
@@ -206,15 +235,20 @@ namespace nyx
         default : data().queue = Vulkan::computeQueue( gpu ) ;
       }
 
-      data().cmd.initialize( data().queue, COMMAND_BUFFER_COUNT ) ;
+      data().cmd.initialize( data().queue, COMMAND_BUFFER_COUNT, vkg::CommandBuffer::Level::Primary, multi_pass ) ;
     }
     
-    void Chain::initialize( const RenderPass& pass, unsigned window_id )
+    void Chain::initialize( const RenderPass& pass, unsigned window_id, bool multi_pass )
     {
       this->reset() ;
       data().pass  = &pass ;
       data().queue = Vulkan::presentQueue( window_id, pass.device() ) ;
-      this->initialize( pass.device(), window_id ) ;
+      
+      if( Vulkan::hasWindow( window_id ) )
+      {
+        data().queue = Vulkan::presentQueue( window_id, pass.device()                                             ) ;
+        data().cmd.initialize( data().queue, COMMAND_BUFFER_COUNT, vkg::CommandBuffer::Level::Primary, multi_pass ) ;
+      }
     }
     
     bool Chain::initialized() const 
@@ -251,18 +285,32 @@ namespace nyx
       barrier.setImage           ( image.image()                    ) ;
       barrier.setSubresourceRange( range                            ) ;
       
-      dep_flags = vk::DependencyFlagBits::eDeviceGroupKHR  ;
+      dep_flags = vk::DependencyFlags()                    ;
       src       = vk::PipelineStageFlagBits::eTopOfPipe    ;
       dst       = vk::PipelineStageFlagBits::eBottomOfPipe ;
       
-      image.setLayout( layout ) ;
       data().record() ;
+      
       if( new_layout != vk::ImageLayout::eUndefined )
       {
         data().mutex.lock() ;
-        data().cmd.buffer().pipelineBarrier( src, dst, dep_flags, 0, nullptr, 0, nullptr, 1, &barrier ) ;
+        
+        for( unsigned index = 0; index < data().num_cmd; index++ )
+        {
+          data().cmd.buffer().pipelineBarrier( src, dst, dep_flags, 0, nullptr, 0, nullptr, 1, &barrier ) ;
+          data().cmd.advance() ;
+        }
+        
+        data().cmd.setActive( data().current ) ;
         data().mutex.unlock() ;
+        image.setLayout( Vulkan::convert( new_layout )  ) ;
       }
+    }
+
+    void Chain::setMode( nyx::ChainMode mode )
+    {
+      if( mode == nyx::ChainMode::All ) data().num_cmd = COMMAND_BUFFER_COUNT ;
+      else                              data().num_cmd = 1                    ;
     }
 
     void Chain::synchronize()
@@ -272,19 +320,16 @@ namespace nyx
 
     void Chain::submit()
     {
-      if( data().cmd.recording() )
-      {
-        data().mutex.lock() ;
-        data().cmd.stop() ;
-        data().mutex.unlock() ;
-      }
+      this->end() ;
 
-      if( data().parent == nullptr )
+      if( data().parent == nullptr && data().has_record && data().dirty )
       {
         data().mutex.lock() ;
         data().queue.submit( data().cmd ) ;
-        data().cmd.advance() ;
+        data().current = data().cmd.current() ;
         data().mutex.unlock() ;
+        data().dirty = false ;
+        if( data().pass != nullptr ) data().pass->advance() ;
       }
     }
     
@@ -293,7 +338,17 @@ namespace nyx
       data().cmd .reset() ;
       data().pass = nullptr ;
     }
-
+    
+    void Chain::begin()
+    {
+      if( data().parent != nullptr )
+      {
+        data().cmd.advance() ;
+        data().current = data().cmd.current() ;
+      }
+      data().record( data().pass != nullptr ) ;
+    }
+    
     void Chain::copy( const vkg::Image& src, vkg::Image& dst, unsigned amt, unsigned src_offset, unsigned dst_offset )
     {
       const auto src_layout = Vulkan::convert( src.layout() ) ;
@@ -315,7 +370,15 @@ namespace nyx
       
       data().mutex.lock() ;
       data().record() ;
-      data().cmd.buffer().copyImage( src.image(), src_layout, dst.image(), dst_layout, 1, &region ) ;
+      
+      for( unsigned index = 0; index < data().num_cmd; index++ )
+      {
+        data().cmd.buffer().copyImage( src.image(), src_layout, dst.image(), dst_layout, 1, &region ) ;
+        data().cmd.advance() ;
+      }
+      
+      data().cmd.setActive( data().current ) ;
+      data().dirty = true ;
       data().mutex.unlock() ;
     }
     
@@ -333,7 +396,15 @@ namespace nyx
 
       data().mutex.lock() ;
       data().record() ;
-      data().cmd.buffer().copyBuffer( src.buffer(), dst.buffer(), 1, &region ) ;
+      
+      for( unsigned index = 0; index < data().num_cmd; index++ )
+      {
+        data().cmd.buffer().copyBuffer( src.buffer(), dst.buffer(), 1, &region ) ;
+        data().cmd.advance() ;
+      }
+      
+      data().cmd.setActive( data().current ) ;
+      data().dirty = true ;
       data().mutex.unlock() ;
     }
     
@@ -417,7 +488,15 @@ namespace nyx
 
       data().mutex.lock() ;
       data().record() ;
-      data().cmd.buffer().copyImageToBuffer( src.image(), vk::ImageLayout::eTransferSrcOptimal, dst.buffer(), 1, &info ) ;
+      
+      for( unsigned index = 0; index < data().num_cmd; index++ )
+      {
+        data().cmd.buffer().copyImageToBuffer( src.image(), vk::ImageLayout::eTransferSrcOptimal, dst.buffer(), 1, &info ) ;
+        data().cmd.advance() ;
+      }
+      
+      data().cmd.setActive( data().current ) ;
+      data().dirty = true ;
       data().mutex.unlock() ;
     }
     
@@ -446,18 +525,48 @@ namespace nyx
 
       this->transition ( dst, nyx::ImageLayout::TransferDst ) ;
       data().mutex.lock() ;
-      data().cmd.buffer().copyBufferToImage( src.buffer(), dst.image(), vk::ImageLayout::eTransferDstOptimal, 1, &info ) ;
+      
+      for( unsigned index = 0; index < data().num_cmd; index++ )
+      {
+        data().cmd.buffer().copyBufferToImage( src.buffer(), dst.image(), vk::ImageLayout::eTransferDstOptimal, 1, &info ) ;
+        data().cmd.advance() ;
+      }
+      
+      data().cmd.setActive( data().current ) ;
+      data().dirty = true ;
       data().mutex.unlock() ;
       this->transition ( dst, old_layout ) ;
     }
     
     void Chain::combine( const vkg::Chain& chain )
     {
-      if( data().parent == nullptr && chain.data().parent == this ) 
+      unsigned subpass = 0 ;
+
+      if( data().parent == nullptr && chain.data().parent == this && !chain.data().cmd.recording() ) 
       {
         data().mutex.lock() ;
-        data().record( data().pass != nullptr ) ;
-        data().cmd.combine( chain.data().cmd ) ;
+        data().has_record = true ;
+      
+        subpass = 0 ;
+        for( unsigned index = 0; index < data().num_cmd; index++ )
+        {
+          data().cmd.combine( chain.data().cmd ) ;
+          data().cmd.advance() ;
+        }
+        
+        data().cmd.setActive( data().current ) ;
+        subpass++ ;
+        if( subpass < data().pass->subpassCount() )
+        {
+          for( unsigned index = 0; index < data().num_cmd; index++ )
+          {
+            data().cmd.nextSubpass() ;
+            data().cmd.advance() ;
+          }
+        }
+        
+        data().cmd.setActive( data().current ) ;
+        data().dirty = true ;
         data().mutex.unlock() ;
       }
     }
@@ -465,29 +574,103 @@ namespace nyx
     void Chain::drawBase( const vkg::Renderer& renderer, const vkg::Buffer& vertices, unsigned count, unsigned offset )
     {
       data().record( true ) ;
+      data().has_record = true ;
       data().mutex.lock() ;
-      data().cmd.bind    ( renderer.pipeline()     ) ;
-      data().cmd.bind    ( renderer.descriptor()   ) ;
-      data().cmd.drawBase( vertices, count, offset ) ;
+      
+      for( unsigned index = 0; index < data().num_cmd; index++ )
+      {
+        data().cmd.bind    ( renderer.pipeline()     ) ;
+        data().cmd.bind    ( renderer.descriptor()   ) ;
+        data().cmd.drawBase( vertices, count, offset ) ;
+        data().cmd.advance () ;
+      }
+      
+      data().cmd.setActive( data().current ) ;
+      data().dirty = true ;
       data().mutex.unlock() ;
     }
     
     void Chain::drawIndexedBase( const vkg::Renderer& renderer, const vkg::Buffer& indices, unsigned index_count, const vkg::Buffer& vertices, unsigned vertex_count )
     {
       data().record( true ) ;
+      data().has_record = true ;
       data().mutex.lock() ;
-      data().cmd.bind    ( renderer.pipeline()     ) ;
-      data().cmd.bind    ( renderer.descriptor()   ) ;
-      data().cmd.drawIndexedBase( indices, vertices, index_count, vertex_count ) ;
+      
+      for( unsigned index = 0; index < data().num_cmd; index++ )
+      {
+        data().cmd.bind    ( renderer.pipeline()     ) ;
+        data().cmd.bind    ( renderer.descriptor()   ) ;
+        data().cmd.drawIndexedBase( indices, vertices, index_count, vertex_count ) ;
+        data().cmd.advance () ;
+      }
+      data().cmd.setActive( data().current ) ;
+      data().dirty = true ;
       data().mutex.unlock() ;
     }
+    
+    void Chain::end()
+    {
+      if( data().cmd.recording() )
+      {
+        data().mutex.lock() ;
+        
+        for( unsigned index = 0; index < data().num_cmd; index++ )
+        {
+          data().cmd.stop   () ;
+          data().cmd.advance() ;
+        }
+        
+        data().cmd.setActive( data().current ) ;
+        
+        data().has_record = true ;
+        data().mutex.unlock() ;
+      }
+    }
+    
+    void Chain::memoryBarrier( const vkg::Buffer& src, const vkg::Buffer& dst )
+    {
+      data().mutex.lock() ;
+      data().record() ;
 
+      for( unsigned index = 0; index < data().num_cmd; index++ )
+      {
+        data().cmd.barrier( src, dst ) ;
+        data().cmd.advance() ;
+      }
+
+      data().cmd.setActive( data().current ) ;
+      data().mutex.unlock() ;
+    }
+    
+    void Chain::memoryBarrier( const vkg::Buffer& src, const vkg::Image& dst )
+    {
+      data().mutex.lock() ;
+      data().record() ;
+
+      for( unsigned index = 0; index < data().num_cmd; index++ )
+      {
+        data().cmd.barrier( src, dst ) ;
+        data().cmd.advance() ;
+      }
+
+      data().cmd.setActive( data().current ) ;
+      data().mutex.unlock() ;
+    }
+    
     void Chain::pushBase( const Renderer& pipeline, const void* value, unsigned byte_size, unsigned offset )
     {
-      data().record( true ) ;
       data().mutex.lock() ;
-      data().cmd.bind( pipeline.pipeline()                  ) ;
-      data().cmd.pushConstantBase( value, byte_size, offset ) ;
+      data().record( data().pass != nullptr ) ;
+      
+      for( unsigned index = 0; index < data().num_cmd; index++ )
+      {
+        data().cmd.bind( pipeline.pipeline()                  ) ;
+        data().cmd.pushConstantBase( value, byte_size, offset ) ;
+        data().cmd.advance() ;
+      }
+
+      data().cmd.setActive( data().current ) ;
+      data().dirty = true ;
       data().mutex.unlock() ;
     }
 

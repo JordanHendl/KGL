@@ -25,22 +25,33 @@
 #ifndef NYXGLSL_H
 #define NYXGLSL_H
 
-#extension GL_EXT_buffer_reference    : enable 
-#extension GL_EXT_buffer_reference2   : enable 
-#extension GL_EXT_scalar_block_layout : enable 
+#extension GL_EXT_buffer_reference                       : enable 
+#extension GL_EXT_buffer_reference2                      : enable 
+#extension GL_EXT_scalar_block_layout                    : enable 
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable 
 
-#define NyxBuffer layout( buffer_reference, scalar ) buffer
+#define NyxBuffer layout( buffer_reference ) buffer
 #define NyxPushConstant layout( push_constant ) uniform
 #define nyx_seek( iter, pos  ) ( iter.position = pos < iter.position ? pos : iter.position ) ;
-#define nyx_get(  buff, iter ) buff[ iter.position ]
-#define nyx_set(  buff, iter, value ) buff[ iter.position ] = value
+#define nyx_get(  buff, iter ) buff[ uint( iter.position ) ]
+#define nyx_set(  buff, iter, value ) buff[ uint( iter.position ) ] = value
 
 struct NyxIterator
 {
-  uint size         ;
-  uint element_size ;
-  uint position     ;
+  uint64_t size         ;
+  uint64_t element_size ;
+  uint64_t position     ;
 };
 
-#endif /* NYXGLSL_H */
+
+vec3 nyxGetPosition( mat4 transform )
+{
+  float x = transform[3].x ;
+  float y = transform[3].y ;
+  float z = transform[3].z ;
+  
+  return vec3( x, y, z ) ;
+}
+
+#endif
 

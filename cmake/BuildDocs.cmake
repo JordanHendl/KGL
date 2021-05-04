@@ -5,7 +5,7 @@ IF ( ${DOXYGEN_FOUND} )
     SET( DOXYGEN_IN  ${DOXYGEN_DIR}/doxygen.cfg  )
     SET( DOXYGEN_OUT ${DOC_DIR}/doc/doxygen.cfg  )
     
-    SET( DOC_INPUT ${CMAKE_CURRENT_SOURCE_DIR}/ )
+    SET( DOC_INPUT ${CMAKE_CURRENT_SOURCE_DIR}/src )
 
     # request to configure the file
     CONFIGURE_FILE( ${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY )

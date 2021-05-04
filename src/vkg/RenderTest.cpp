@@ -26,6 +26,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
 #include "Vulkan.h"
+#include "Model.h"
 #include "library/Window.h"
 #include "library/RenderPass.h"
 #include "library/Renderer.h"
@@ -67,8 +68,7 @@ static nyx::Renderer   <Framework>            pipeline      ;
 static nyx::Chain      <Framework>            chain         ;
 static nyx::Chain      <Framework>            transfer      ;
 static nyx::Image      <Framework>            image         ;
-static Framework::Array<nyx::NggFile::Vertex> vertices      ;
-static Framework::Array<unsigned            > indices       ;
+static mars::Model     <Framework>            model         ;
 static Framework::Array<Matrices >            matrices      ;
 static Matrices                               mat           ;
 static bool                                   running       ;
@@ -103,32 +103,18 @@ void setupChain()
 
 void setupVertices( const char* path )
 {
-  nyx::NggFile loader ;
-  
-  if( !loader.load( path ) )
+  model.initialize( path, DEVICE_ID ) ;
+
+  if( !model.initialized() )
   {
     std::cout << "Error loading model at " << path << ".\n" ;
     exit( 0 ) ;
   }
- 
-  auto& mesh = loader.mesh( 0 ) ;
-  vertices.initialize( DEVICE_ID, mesh.numVertices(), false, nyx::ArrayFlags::Vertex ) ;
-  indices .initialize( DEVICE_ID, mesh.numIndices (), false, nyx::ArrayFlags::Index  ) ;
-  
-  std::cout << "Copying Vertices to Device" << std::endl ;
-  transfer.copy( mesh.vertices(), vertices ) ;
-  transfer.submit() ;
-  transfer.synchronize() ;
-  
-  std::cout << "Copying Indices to Device" << std::endl ;
-  transfer.copy( mesh.indices (), indices  ) ;
-  transfer.submit()      ;
-  transfer.synchronize() ;
 }
 
 void setupMatrices()
 {
-  mat.view  = glm::lookAt( glm::vec3(0.f, -2.0f, -1.f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f )                ) ;
+  mat.view  = glm::lookAt( glm::vec3( 0.f, -2.0f, -1.f ), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f )                ) ;
   mat.proj  = glm::perspective( glm::radians( 90.0f ), static_cast<float>( WIDTH ) / static_cast<float>( HEIGHT ), 0.1f, 5000.0f ) ;
   
   matrices.initialize( DEVICE_ID, 1 ) ;
@@ -282,8 +268,8 @@ int main( int argc, char** argv )
     auto current_time = std::chrono::high_resolution_clock::now();
     
     // Push the iterator to the matrices & draw.
-    chain.push( pipeline, matrices.iterator()      ) ;
-    chain.drawIndexed( pipeline, indices, vertices ) ;
+    chain.push( pipeline, matrices.iterator() ) ;
+    model.draw( pipeline, chain               ) ;
     chain.submit() ;
     
     if( !paused )

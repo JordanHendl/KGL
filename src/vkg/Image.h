@@ -107,6 +107,7 @@ namespace nyx
         friend class RenderPass     ; ///< Friend class for render pass.
         friend class Swapchain      ; ///< Friend class for swapchain.
         friend class Descriptor     ;
+        friend class CommandBuffer  ;
         friend class Chain          ;
         /** Method to perform a deep copy on the input image.
          * @param src The image to copy from.

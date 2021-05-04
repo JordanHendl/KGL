@@ -31,6 +31,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <xcb/xproto.h>
+#include <cmath>
 
 namespace nyx
 {
@@ -165,6 +166,12 @@ namespace nyx
       nyx::Event event = nyx::makeKeyEvent( Event::Type::KeyDown, keyFromXCB( press->detail ) ) ;
       manager.pushEvent( event ) ;
     }
+    
+    void handleMouseMotion( const xcb_enter_notify_event_t* motion )
+    {
+      manager.updateMouseOffset( manager.mouseX() - static_cast<float>( motion->event_x ), static_cast<float>( motion->event_y ) - manager.mouseY() ) ;
+      manager.updateMouse( motion->event_x, motion->event_y ) ;
+    }
 
     /** Method to handle a XCB key release.
      * @param press The XCB Key Release event to handle.
@@ -265,7 +272,14 @@ namespace nyx
 
     void WindowData::setWindowTitle( const char* value )
     {
+      char*       class_hint  ;
+      size_t      class_len   ;
       std::string str = value ;
+      
+      class_len = strlen( str.c_str() ) + 1 + strlen( str.c_str() ) + 1 ;
+      class_hint = new char[ class_len ] ;
+      strcpy( class_hint, str.c_str() ) ;
+      strcpy( class_hint + strlen( str.c_str() ) + 1, str.c_str() ) ;
       
       xcb_change_property( this->connection, XCB_PROP_MODE_REPLACE,
                            this->window,
@@ -275,7 +289,17 @@ namespace nyx
                            str.size(),
                            str.c_str() ) ;
 
+      xcb_change_property( this->connection, XCB_PROP_MODE_REPLACE,
+                           this->window,
+                           XCB_ATOM_WM_CLASS,
+                           XCB_ATOM_STRING,
+                           8,
+                           class_len,
+                           class_hint ) ;
+     
       xcb_flush( this->connection ) ;
+      
+      delete[] class_hint ;
     }
 
     void WindowData::setWindowWidth( unsigned value )
@@ -312,14 +336,10 @@ namespace nyx
       hints.flags = WM_SIZE_HINT_P_WIN_GRAVITY ;
       hints.win_gravity = XCB_GRAVITY_STATIC ;
       
-//      if ( centerWindow )
-//      hints.win_gravity = XCB_GRAVITY_CENTER;
-//      else
-//      {
-        hints.flags |= WM_SIZE_HINT_P_SIZE;
-        hints.x = value ;
-        hints.y = this->height ;
-//      }
+
+      hints.flags |= WM_SIZE_HINT_P_SIZE;
+      hints.x = value ;
+      hints.y = this->height ;
       
       xcb_change_property(this->connection, XCB_PROP_MODE_REPLACE, this->window,
         XCB_ATOM_WM_NORMAL_HINTS, XCB_ATOM_WM_SIZE_HINTS,
@@ -420,6 +440,8 @@ namespace nyx
       xcb_change_property( this->connection, XCB_PROP_MODE_REPLACE, this->window, XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8, this->title.size(), this->title.c_str() ) ;
       xcb_map_window( this->connection, this->window ) ;
       xcb_flush( this->connection ) ;
+      
+      this->setWindowTitle( this->title.c_str() ) ;
     }
 
     Window::Window()
@@ -527,6 +549,8 @@ namespace nyx
     
     void Window::handleEvents()
     {
+      bool moved_mouse = false ;
+      
       // Prepare notification for window destruction
       xcb_intern_atom_cookie_t  protocols_cookie = xcb_intern_atom( data().connection, 1, 12, "WM_PROTOCOLS" ) ;
       xcb_intern_atom_reply_t  *protocols_reply  = xcb_intern_atom_reply( data().connection, protocols_cookie, 0 ) ;
@@ -573,7 +597,6 @@ namespace nyx
           case XCB_BUTTON_RELEASE :
           {
             handleMouseRelease( reinterpret_cast<xcb_button_release_event_t*>( event ) ) ;
-            
             break ;
           }
           case XCB_ENTER_NOTIFY : // Mouse enters window.
@@ -584,12 +607,32 @@ namespace nyx
           case XCB_LEAVE_NOTIFY: // Mouse leaves window.
           {
             data().has_mouse = false ;
+            
             break ;
           }
           // Mouse is moving on the window.
           case XCB_MOTION_NOTIFY:
           {
-//            auto motion = reinterpret_cast<xcb_enter_notify_event_t*>( event ) ;
+            unsigned mid_x ;
+            unsigned mid_y ;
+            auto tmp = reinterpret_cast<xcb_enter_notify_event_t*>( event ) ;
+            
+            mid_x = data().width  / 2 ;
+            mid_y = data().height / 2 ;
+            
+            moved_mouse = true ;
+            if( manager.mouseX() < static_cast<float>( mid_x - 40 ) || manager.mouseY() < static_cast<float>( mid_y - 20 ) ||
+                manager.mouseX() > static_cast<float>( mid_x + 40 ) || manager.mouseY() > static_cast<float>( mid_y + 20 ) )
+            {
+              manager.updateMouseOffset( manager.mouseX() - static_cast<float>( tmp->event_x ), static_cast<float>( tmp->event_y ) - manager.mouseY() ) ;
+              manager.updateMouse      ( static_cast<float>( mid_x ), static_cast<float>( mid_y ) ) ;
+              xcb_warp_pointer( data().connection, XCB_NONE, data().window, 0, 0, 0, 0, mid_x, mid_y ) ;
+            }
+            else
+            {
+              handleMouseMotion( tmp ) ;
+            }
+            
             break ;
           }
           case XCB_KEY_PRESS:
@@ -603,8 +646,10 @@ namespace nyx
             break ;
           }
         }
+        
         free( event ) ;
       }
+      if( !moved_mouse ) manager.updateMouseOffset( 0.f , 0.f ) ;
     }
     
     void Window::reset()

@@ -114,6 +114,12 @@ namespace nyx
          */
         void set( const char* name, const nyx::vkg::Image& image ) ;
         
+        /** Base method to set a vulkan image to this object.
+         * @param name The name to associate with the variable.
+         * @param image The image to bind.
+         */
+        void set( const char* name, const nyx::vkg::Image* const* images, unsigned count ) ;
+        
       private:
         
         /** Base method to set a vulkan buffer to this object.

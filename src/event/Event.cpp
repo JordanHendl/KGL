@@ -99,6 +99,11 @@ namespace nyx
     CallbackMap     callbacks      ; ///< TODO
     KeyCallbackMap  key_callbacks  ; ///< TODO
     TypeCallbackMap type_callbacks ; ///< TODO
+    
+    float mouse_xpos   = 0.0f ;
+    float mouse_ypos   = 0.0f ;
+    float mouse_xdelta = 0.0f ;
+    float mouse_ydelta = 0.0f ;
   };
   
   struct EventManagerData
@@ -255,6 +260,38 @@ namespace nyx
     if( iter == man_data.key_callbacks.end() ) data().local_key_callbacks.push_back( man_data.key_callbacks.insert( iter, { keysym, tup } ) ) ;
   }
 
+  void EventManager::updateMouse( float x, float y )
+  {
+    man_data.mouse_xpos = x ;
+    man_data.mouse_ypos = y ;
+  }
+  
+  void EventManager::updateMouseOffset( float x, float y )
+  {
+    man_data.mouse_xdelta = x ;
+    man_data.mouse_ydelta = y ;
+  }
+
+  float EventManager::mouseX() const
+  {
+    return man_data.mouse_xpos ;
+  }
+
+  float EventManager::mouseY() const
+  {
+    return man_data.mouse_ypos ;
+  }
+
+  float EventManager::mouseDeltaX() const
+  {
+    return man_data.mouse_xdelta ;
+  }
+
+  float EventManager::mouseDeltaY() const
+  {
+    return man_data.mouse_ydelta ;
+  }
+      
   void EventManager::reset()
   {
     for( auto iter : data().local_callbacks )

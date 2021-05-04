@@ -4,16 +4,18 @@
 #extension GL_EXT_debug_printf            : enable
 #include "Nyx.h"
 
-layout( location = 0 ) in  vec2 frag_coords ;
-layout( location = 0 ) out vec4 out_color   ;
+     layout( location = 0 ) in  vec2  frag_coords ;
+flat layout( location = 1 ) in  uvec2 index       ;
 
-//layout( binding = 0 ) uniform sampler2D mesh_texture ; 
+layout( location = 0 ) out vec4  out_color ;
+
+layout( binding = 0 ) uniform sampler2D mesh_texture[ 1024 ] ; 
 
 void main()
 {  
-  vec4 color = vec4( 0, 1, 0, 1 ) ;
+  vec4 color ;
   
-  //color = texture( mesh_texture, frag_coords ) ;
+  color = texture( mesh_texture[ index.x ], frag_coords ) ;
   if( color.a < 0.1 ) discard ;
   out_color = color ;
 }

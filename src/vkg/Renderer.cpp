@@ -75,16 +75,15 @@ namespace nyx
 
     void RendererImpl::initialize( unsigned device, const vkg::RenderPass& pass, const char* nyx_file_path )
     {
-      nyx::vkg::NyxShader shader ;
+      
       data().device = device ;
       data().pass   = &pass  ;
 
-      shader         .initialize( device, nyx_file_path ) ;
-      data().pipeline.initialize( pass  , nyx_file_path ) ;
-      data().pool    .initialize( shader, 1             ) ;
+      data().shader  .initialize( device, nyx_file_path ) ;
+      data().pipeline.initialize( pass  , data().shader ) ;
+      data().pool    .initialize( data().shader, 1      ) ;
       
       data().descriptor = data().pool.make() ;
-      shader.reset() ;
     }
 
     void RendererImpl::initialize( unsigned device, const vkg::RenderPass& pass, const unsigned char* nyx_file_bytes, unsigned size )
@@ -93,7 +92,7 @@ namespace nyx
       data().pass   = &pass  ;
 
       data().shader  .initialize( device, nyx_file_bytes, size ) ;
-      data().pipeline.initialize( pass  , nyx_file_bytes, size ) ;
+      data().pipeline.initialize( pass  , data().shader        ) ;
       data().pool    .initialize( data().pipeline.shader(), 1  ) ;
       
       data().descriptor = data().pool.make() ;
@@ -200,6 +199,13 @@ namespace nyx
     void Renderer::bind( const char* name, const vkg::Image& image )
     {
       this->impl.bind( name, image ) ;
+    }
+    
+    void Renderer::bind( const char* name, const vkg::Image* const* images, unsigned count )
+    {
+      Vulkan::deviceSynchronize( impl.data().device ) ;
+      
+      impl.data().descriptor.set( name, images, count ) ;
     }
     
     void Renderer::setTestDepth( bool val )

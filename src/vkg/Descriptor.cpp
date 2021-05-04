@@ -65,6 +65,7 @@ namespace nyx
       struct Uniform
       {
         nyx::UniformType type    ;
+        unsigned         size    ;
         unsigned         binding ;
       };
 
@@ -222,7 +223,37 @@ namespace nyx
         data().device.updateDescriptorSets( 1, &write, 0, nullptr ) ;
       }
     }
+    
+    void Descriptor::set( const char* name, const nyx::vkg::Image* const* images, unsigned count )
+    {
+      const auto iter = data().parent_map->find( name ) ;
+      unsigned                             amt   ;
+      std::vector<vk::DescriptorImageInfo> infos ;
+      vk::WriteDescriptorSet               write ;
 
+      if( iter != data().parent_map->end() )
+      {
+        amt = count < iter->second.size ? count : iter->second.size ;
+        
+        infos.resize( count ) ;
+        for( unsigned index = 0; index < count; index++ )
+        {
+          infos[ index ].setImageLayout( vkg::Vulkan::convert( images[ index ]->layout() ) ) ;
+          infos[ index ].setSampler    ( images[ index ]->sampler()                        ) ;
+          infos[ index ].setImageView  ( images[ index ]->view()                           ) ;
+        }
+        
+        write.setDstSet         ( data().set                        ) ;
+        write.setDstBinding     ( iter->second.binding              ) ;
+        write.setDescriptorType ( vkg::convert( iter->second.type ) ) ;
+        write.setDstArrayElement( 0                                 ) ;
+        write.setDescriptorCount( amt                               ) ;
+        write.setPImageInfo     ( infos.data()                      ) ;
+        
+        data().device.updateDescriptorSets( 1, &write, 0, nullptr ) ;
+      }
+    }
+    
     DescriptorData& Descriptor::data()
     {
       return *this->desc_data ;
@@ -255,7 +286,7 @@ namespace nyx
         {
           for( index = 0; index < shader.numUniforms(); index++ )
           {
-            data().map[ shader.uniformName( index ) ] = { shader.uniformType( index ), shader.uniformBinding( index ) } ;
+            data().map[ shader.uniformName( index ) ] = { shader.uniformType( index ), shader.uniformSize( index ), shader.uniformBinding( index ) } ;
           }
         }
       
@@ -299,12 +330,12 @@ namespace nyx
     
     void DescriptorPool::addArrayInput( const char* name, unsigned binding, const nyx::ArrayFlags& type )
     {
-      data().map[ name ] = { nyx::vkg::convert( type ), binding } ;
+      data().map[ name ] = { nyx::vkg::convert( type ), 1, binding } ;
     }
 
     void DescriptorPool::addImageInput( const char* name, unsigned binding, nyx::ImageUsage usage )
     {
-      data().map[ name ] = { nyx::vkg::convert( usage ), binding } ;
+      data().map[ name ] = { nyx::vkg::convert( usage ), 1, binding } ;
     }
 
     void DescriptorPool::setLayout( const vk::DescriptorSetLayout& layout )
