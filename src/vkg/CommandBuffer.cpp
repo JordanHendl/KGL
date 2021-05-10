@@ -373,10 +373,24 @@ namespace nyx
       data().cmd_buffers[ data().current ].drawIndexed      ( index_count, 1, 0, 0, 0            ) ;
     }
 
-//    void CommandBuffer::drawInstanced( const nyx::vkg::Buffer& buffer, unsigned instance_count, unsigned offset, unsigned first )
-//    {
-//    
-//    }
+    void CommandBuffer::drawInstanced( const nyx::vkg::Buffer& vertices, unsigned vert_count, unsigned instance_count, unsigned offset, unsigned first )
+    {
+      const vk::DeviceSize device_size = offset ;
+      
+      data().cmd_buffers[ data().current ].bindVertexBuffers( 0, 1, &vertices.buffer(), &device_size ) ;
+      data().cmd_buffers[ data().current ].draw( vert_count, instance_count, offset, first ) ;
+    }
+    
+    void CommandBuffer::drawInstanced( const nyx::vkg::Buffer& indices, unsigned index_count, const nyx::vkg::Buffer& vertices, unsigned vert_count, unsigned instance_count, unsigned offset, unsigned first )
+    {
+      const vk::DeviceSize device_size = offset                 ;
+      const vk::IndexType  type        = vk::IndexType::eUint32 ;
+
+      vert_count = vert_count ;
+      data().cmd_buffers[ data().current ].bindVertexBuffers( 0, 1, &vertices.buffer(), &device_size        ) ;
+      data().cmd_buffers[ data().current ].bindIndexBuffer  ( indices.buffer(), 0, type                     ) ;
+      data().cmd_buffers[ data().current ].drawIndexed      ( index_count, instance_count, offset, 0, first ) ;
+    }
     
     bool CommandBuffer::recording() const
     {

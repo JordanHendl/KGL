@@ -61,6 +61,9 @@ namespace nyx
     
     struct ChainData
     {
+      std::unordered_map<unsigned, vk::ImageMemoryBarrier > image_barriers  ;
+      std::unordered_map<unsigned, vk::BufferMemoryBarrier> buffer_barriers ;
+      
       vkg::Queue                 queue      ;
       mutable vkg::CommandBuffer cmd        ;
       vkg::Chain*                parent     ;
@@ -69,7 +72,7 @@ namespace nyx
       std::mutex                 mutex      ;
       bool                       has_record ;
       unsigned                   num_cmd    ;
-      mutable unsigned                   current    ;
+      mutable unsigned           current    ;
       bool                       dirty      ;
       
       ChainData() ;
@@ -242,8 +245,6 @@ namespace nyx
     {
       this->reset() ;
       data().pass  = &pass ;
-      data().queue = Vulkan::presentQueue( window_id, pass.device() ) ;
-      
       if( Vulkan::hasWindow( window_id ) )
       {
         data().queue = Vulkan::presentQueue( window_id, pass.device()                                             ) ;
@@ -280,14 +281,19 @@ namespace nyx
       range.setLayerCount    ( image.layers()                  ) ;
       range.setAspectMask    ( vk::ImageAspectFlagBits::eColor ) ;
       
-      barrier.setOldLayout       ( old_layout                       ) ;
-      barrier.setNewLayout       ( new_layout                       ) ;
-      barrier.setImage           ( image.image()                    ) ;
-      barrier.setSubresourceRange( range                            ) ;
+      barrier.setOldLayout          ( old_layout                       ) ;
+      barrier.setNewLayout          ( new_layout                       ) ;
+      barrier.setImage              ( image.image()                    ) ;
+      barrier.setSubresourceRange   ( range                            ) ;
+      barrier.setSrcQueueFamilyIndex( VK_QUEUE_FAMILY_IGNORED          ) ;
+      barrier.setDstQueueFamilyIndex( VK_QUEUE_FAMILY_IGNORED          ) ;
       
       dep_flags = vk::DependencyFlags()                    ;
       src       = vk::PipelineStageFlagBits::eTopOfPipe    ;
       dst       = vk::PipelineStageFlagBits::eBottomOfPipe ;
+      
+      auto iter = data().image_barriers.end() ;
+           iter = data().image_barriers.insert( iter, { data().image_barriers.size(), barrier } ) ;
       
       data().record() ;
       
@@ -297,10 +303,11 @@ namespace nyx
         
         for( unsigned index = 0; index < data().num_cmd; index++ )
         {
-          data().cmd.buffer().pipelineBarrier( src, dst, dep_flags, 0, nullptr, 0, nullptr, 1, &barrier ) ;
+          data().cmd.buffer().pipelineBarrier( src, dst, dep_flags, 0, nullptr, 0, nullptr, 1, &iter->second ) ;
           data().cmd.advance() ;
         }
         
+        data().dirty = true ;
         data().cmd.setActive( data().current ) ;
         data().mutex.unlock() ;
         image.setLayout( Vulkan::convert( new_layout )  ) ;
@@ -331,6 +338,9 @@ namespace nyx
         data().dirty = false ;
         if( data().pass != nullptr ) data().pass->advance() ;
       }
+      
+      data().image_barriers .clear() ;
+      data().buffer_barriers.clear() ;
     }
     
     void Chain::reset()
@@ -608,6 +618,43 @@ namespace nyx
       data().mutex.unlock() ;
     }
     
+            
+    void Chain::drawInstancedBase( unsigned instance_count, const vkg::Renderer& renderer, const vkg::Buffer& indices, unsigned index_count, const vkg::Buffer& vertices, unsigned vertex_count )
+    {
+      data().record( true ) ;
+      data().has_record = true ;
+      data().mutex.lock() ;
+      
+      for( unsigned index = 0; index < data().num_cmd; index++ )
+      {
+        data().cmd.bind    ( renderer.pipeline()     ) ;
+        data().cmd.bind    ( renderer.descriptor()   ) ;
+        data().cmd.drawInstanced( indices, index_count, vertices, vertex_count, instance_count ) ;
+        data().cmd.advance () ;
+      }
+      data().cmd.setActive( data().current ) ;
+      data().dirty = true ;
+      data().mutex.unlock() ;
+    }
+    
+    void Chain::drawInstancedBase( unsigned instanced_count, const vkg::Renderer& renderer, const vkg::Buffer& vertices, unsigned vertex_count )
+    {
+      data().record( true ) ;
+      data().has_record = true ;
+      data().mutex.lock() ;
+      
+      for( unsigned index = 0; index < data().num_cmd; index++ )
+      {
+        data().cmd.bind    ( renderer.pipeline()     ) ;
+        data().cmd.bind    ( renderer.descriptor()   ) ;
+        data().cmd.drawInstanced( vertices, vertex_count, instanced_count ) ;
+        data().cmd.advance () ;
+      }
+      data().cmd.setActive( data().current ) ;
+      data().dirty = true ;
+      data().mutex.unlock() ;
+    }
+
     void Chain::end()
     {
       if( data().cmd.recording() )
@@ -629,15 +676,49 @@ namespace nyx
     
     void Chain::memoryBarrier( const vkg::Buffer& src, const vkg::Buffer& dst )
     {
+      const auto src_flag  = vk::PipelineStageFlagBits::eAllCommands ;
+      const auto dst_flag  = vk::PipelineStageFlagBits::eAllCommands ;
+      const auto dep_flags = vk::DependencyFlags()                   ;
+      
+      vk::BufferMemoryBarrier barrier ;
+      
+      dst.buffer() ;
+      barrier.setBuffer       ( src.buffer()                     ) ;
+      barrier.setSize         ( VK_WHOLE_SIZE                    ) ;
+      barrier.setSrcAccessMask( vk::AccessFlagBits::eMemoryWrite ) ;
+      barrier.setDstAccessMask( vk::AccessFlagBits::eMemoryRead  ) ;
+      
       data().mutex.lock() ;
       data().record() ;
+      
+      auto iter = data().buffer_barriers.end()                                                      ;
+           iter = data().buffer_barriers.insert( iter, { data().buffer_barriers.size(), barrier } ) ;
 
       for( unsigned index = 0; index < data().num_cmd; index++ )
       {
-        data().cmd.barrier( src, dst ) ;
+        data().cmd.buffer().pipelineBarrier( src_flag, dst_flag, dep_flags, 0, nullptr, 1, &iter->second, 0, nullptr ) ;
         data().cmd.advance() ;
       }
 
+      data().dirty = true ;
+      data().cmd.setActive( data().current ) ;
+      data().mutex.unlock() ;
+    }
+    
+    void Chain::pipelineBarrier( nyx::GPUStages src, nyx::GPUStages dst )
+    {
+      auto m_src = Vulkan::convert( src ) ;
+      auto m_dst = Vulkan::convert( dst ) ;
+
+      const auto dep_flags = vk::DependencyFlags() ;
+      data().mutex.lock() ;
+      for( unsigned index = 0; index < data().num_cmd; index++ )
+      {
+        data().cmd.buffer().pipelineBarrier( m_src, m_dst, dep_flags, 0, nullptr, 0, nullptr, 0, nullptr ) ;
+        data().cmd.advance() ;
+      }
+
+      data().dirty = true ;
       data().cmd.setActive( data().current ) ;
       data().mutex.unlock() ;
     }
@@ -652,7 +733,8 @@ namespace nyx
         data().cmd.barrier( src, dst ) ;
         data().cmd.advance() ;
       }
-
+      
+      data().dirty = true ;
       data().cmd.setActive( data().current ) ;
       data().mutex.unlock() ;
     }

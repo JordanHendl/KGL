@@ -1,9 +1,12 @@
 # Find Vulkan
 
-FIND_PACKAGE( Vulkan 1.2 REQUIRED )
+FIND_PACKAGE( Vulkan              )
+FIND_PACKAGE( SDL2       REQUIRED )
 
 # Only build if we found vulkan.
 IF( ${Vulkan_FOUND} )
+    GET_TARGET_PROPERTY( SDL_IMPORT_LIB      SDL2::SDL2 IMPORTED_LOCATION_NOCONFIG ) 
+    GET_TARGET_PROPERTY( SDL_IMPORT_LIB_NAME SDL2::SDL2 IMPORTED_SONAME_NOCONFIG   ) 
 
     GET_FILENAME_COMPONENT( VULKAN_LOADER_PATH ${Vulkan_LIBRARIES} DIRECTORY )
     INSTALL( FILES  ${VULKAN_LOADER_PATH}/libvulkan.so   DESTINATION ${EXPORT_LIB_DIR} )
@@ -54,17 +57,12 @@ IF( ${Vulkan_FOUND} )
 
     SET( NYX_VULKAN_LIBRARIES
          ${Vulkan_LIBRARIES}
+         ${SDL_IMPORT_LIB}
          nyx_library
          nyx_loaders 
+         nyx_window
         )
     
-    # Add the appropriate OS library to link depending on platform being built.
-    IF( UNIX AND NOT APPLE )
-      SET( NYX_VULKAN_LIBRARIES ${NYX_VULKAN_LIBRARIES} nyx_linux )
-    ELSEIF( WIN32 )
-      SET( NYX_VULKAN_LIBRARIES ${NYX_VULKAN_LIBRARIES} nyx_win32 )
-    ENDIF()
-
     # Make NYX::VKG library.
     ADD_LIBRARY               ( nyx_vkg SHARED  ${NYX_VULKAN_SOURCES} ${NYX_VULKAN_HEADERS} )
     TARGET_LINK_LIBRARIES     ( nyx_vkg PUBLIC  ${NYX_VULKAN_LIBRARIES}                     )

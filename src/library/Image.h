@@ -90,7 +90,7 @@ namespace nyx
       
       /** Default constructor.
        */
-      Image() = default ;
+      Image() { static_assert( sizeof( this ) == sizeof( typename Impl::Image ) ) ; } ;
       
       /** Copy constructor. Copies the input image.
        */

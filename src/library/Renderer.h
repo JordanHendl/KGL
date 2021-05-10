@@ -125,7 +125,7 @@ namespace nyx
     public:
       /** Default constructor.
        */
-      Renderer() = default ;
+      Renderer() { static_assert( sizeof( this ) == sizeof( typename Framework::Renderer ) ) ; } ;
       
       /** Default deconstructor.
        */

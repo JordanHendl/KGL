@@ -397,27 +397,28 @@ athena::Result test_renderer_draw()
 {
   nyx::Renderer<Impl> renderer ;
   Impl::Array<float>  vertices ;
-  Impl::Image         uniform  ;
+  Impl::Image         image  ;
   nyx::Viewport       viewport ;
   nyx::Chain<Impl>    chain    ;
   
   viewport.setWidth ( 1280 ) ;
   viewport.setHeight( 1024 ) ;
   if( !Impl::initialized() ) return athena::Result::Skip ;
-  chain   .initialize ( device, nyx::ChainType::Graphics            ) ;
-  uniform .initialize ( nyx::ImageFormat::RGBA8, device, 1280, 1024 ) ;
-  renderer.addViewport( viewport                                    ) ;
+  chain   .initialize ( device, nyx::ChainType::Graphics               ) ;
+  image   .initialize ( nyx::ImageFormat::RGBA8, device, 1280, 1024, 1 ) ;
+  renderer.addViewport( viewport                                       ) ;
   
-  chain.transition( uniform, nyx::ImageLayout::ShaderRead ) ;
+  chain.transition( image, nyx::ImageLayout::ShaderRead      ) ;
   chain.submit() ;
   chain.synchronize() ;
-  
+
+  chain.reset() ;
   chain.initialize( render_pass, WINDOW_ID ) ;
   vertices.initialize( device, 9, false, nyx::ArrayFlags::Vertex ) ;
   renderer.initialize( device, render_pass, nyx::bytes::draw, sizeof( nyx::bytes::draw ) ) ;
-  renderer.bind( "framebuffer", uniform ) ;
+  renderer.bind( "framebuffer", image ) ;
   
-  for( unsigned i = 0; i < 1 ; i++ )
+  for( unsigned i = 0; i < 20 ; i++ )
   {
     chain.draw( renderer, vertices ) ;
   }

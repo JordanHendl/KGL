@@ -90,7 +90,7 @@ bool getExit()
 
 bool testWindowCreation()
 {
-  nyx::lx::Window window ;
+  nyx::sdl::Window window ;
   
   window.initialize( "Test", 1024, 720 ) ;
   

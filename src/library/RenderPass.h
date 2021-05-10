@@ -138,7 +138,7 @@ namespace nyx
     public:
       /** Default constructor.
        */
-      RenderPass() = default ;
+      RenderPass() { static_assert( sizeof( this ) == sizeof( typename Framework::RenderPass ) ) ; } ;
       
       /** Default deconstructor.
        */
@@ -190,7 +190,7 @@ namespace nyx
        * @return Const reference to this object's internal framebuffer.
        */
       template<unsigned index = 0>
-      const auto framebuffer() const ;
+      const typename Framework::Image& framebuffer() const ;
       
       void reset() ;
       
@@ -257,9 +257,9 @@ namespace nyx
 
   template<typename Framework>
   template<unsigned index>
-  const auto RenderPass<Framework>::framebuffer() const
+  const typename Framework::Image& RenderPass<Framework>::framebuffer() const
   {
-    return this->impl.framebuffer() ;
+    return this->impl.framebuffer( index ) ;
   }
  
   template<typename Framework>

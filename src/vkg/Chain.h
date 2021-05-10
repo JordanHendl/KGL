@@ -26,11 +26,8 @@
 
 #include "Buffer.h"
 
-
 namespace nyx
 {
-  enum class ChainMode : unsigned ;
-  enum class ChainType : unsigned ;
   template<typename Framework, typename Type>
   class Array ;
   
@@ -40,9 +37,12 @@ namespace nyx
   template<typename Framework>
   class Renderer ;
   
+  enum class ChainMode     : unsigned ;
+  enum class ChainType     : unsigned ;
+  enum class GPUStages     : unsigned ;
   enum class PipelineStage : unsigned ;
-  enum class ImageLayout : unsigned ;
-
+  enum class ImageLayout   : unsigned ;
+  
   namespace vkg
   {
     class Buffer     ;
@@ -118,6 +118,12 @@ namespace nyx
          * @param write The buffer being written to.
          */
         void memoryBarrier( const vkg::Buffer& read, const vkg::Image& write ) ;
+        
+        /** Method to barrier the GPU pipeline.
+         * @param src The pipeline stage to consume.
+         * @param dst The pipeline stage to output.
+         */
+        void pipelineBarrier( nyx::GPUStages src, nyx::GPUStages dst ) ;
         
         /** Method to record a copy two library arrays to eachother.
          * @param src The array to copy from.
@@ -198,6 +204,20 @@ namespace nyx
         template<typename Type, typename Type2>
         void drawIndexed( const vkg::Renderer& renderer, const Array<Vulkan, Type2>& indices, const Array<Vulkan, Type>& vertices ) ;
         
+        /** Method to append a draw command to this object using indices.
+         * @param indices The index array describing the render order of the vertex array.
+         * @param vertices The array of vertices used for drawing.
+         */
+        template<typename Type, typename Type2>
+        void drawInstanced( unsigned instance_count, const vkg::Renderer& renderer, const Array<Vulkan, Type2>& indices, const Array<Vulkan, Type>& vertices ) ;
+        
+        /** Method to append a draw command to this object using indices.
+         * @param indices The index array describing the render order of the vertex array.
+         * @param vertices The array of vertices used for drawing.
+         */
+        template<typename Type>
+        void drawInstanced( unsigned instance_count, const vkg::Renderer& renderer, const Array<Vulkan, Type>& vertices ) ;
+        
         /** Method to explicitly end recording of this object.
           * @note The submit method implicitly ends this chain's record as well.
           */
@@ -244,6 +264,10 @@ namespace nyx
         void drawBase( const vkg::Renderer& renderer, const vkg::Buffer& vertices, unsigned count, unsigned offset ) ;
 
         void drawIndexedBase( const vkg::Renderer& renderer, const vkg::Buffer& indices, unsigned index_count, const vkg::Buffer& vertices, unsigned vertex_count ) ;
+        
+        void drawInstancedBase( unsigned instance_count, const vkg::Renderer& renderer, const vkg::Buffer& indices, unsigned index_count, const vkg::Buffer& vertices, unsigned vertex_count ) ;
+        
+        void drawInstancedBase( unsigned instanced_count, const vkg::Renderer& renderer, const vkg::Buffer& vertices, unsigned vertex_count ) ;
         
         void copy( const vkg::Buffer& src, vkg::Buffer& dst, unsigned copy_amt, unsigned element_size, unsigned src_offset, unsigned dst_offset ) ;
 
@@ -310,6 +334,18 @@ namespace nyx
     void Chain::drawIndexed( const vkg::Renderer& renderer, const Array<Vulkan, Type2>& indices, const Array<Vulkan, Type>& vertices )
     {
       this->drawIndexedBase( renderer, indices, indices.size(), vertices, vertices.size() ) ;
+    }
+    
+    template<typename Type, typename Type2>
+    void Chain::drawInstanced( unsigned amt, const vkg::Renderer& renderer, const Array<Vulkan, Type2>& indices, const Array<Vulkan, Type>& vertices )
+    {
+      this->drawInstancedBase( amt, renderer, indices, indices.size(), vertices, vertices.size() ) ;
+    }
+    
+    template<typename Type>
+    void Chain::drawInstanced( unsigned amt, const vkg::Renderer& renderer, const Array<Vulkan, Type>& vertices )
+    {
+      this->drawInstancedBase( amt, renderer, vertices, vertices.size() ) ;
     }
     
     template<typename Type>

@@ -241,6 +241,22 @@ namespace nyx
          */
         void drawIndexedBase( const nyx::vkg::Buffer& index, const nyx::vkg::Buffer& vert, unsigned index_count, unsigned vert_count, unsigned offset = 0 ) ;
         
+        /** Base method to use a buffer as vertices to draw.
+         * @param buffer The buffer to use for vertices.
+         * @param count The amount of vertices in the buffer.
+         * @param offset The offset of the buffer to start at.
+         */
+        void drawInstanced( const nyx::vkg::Buffer& vertices, unsigned vert_count, unsigned instance_count, unsigned offset = 0, unsigned first = 0 ) ;
+    
+        /** Base method to use a buffer as vertices to draw.
+         * @param index The buffer to use for indices.
+         * @param vert The buffer to use for vertices.
+         * @param index_count The amount of indices in the buffer.
+         * @param vert_count The amount of vertices in the buffer.
+         * @param offset The offset of the buffer to start at.
+         */
+        void drawInstanced( const nyx::vkg::Buffer& indices, unsigned index_count, const nyx::vkg::Buffer& vertices, unsigned vert_count, unsigned instance_count, unsigned offset = 0, unsigned first = 0 ) ;
+        
         /** Private method for pushing a value as a push-constant to this command buffer.
          * @param value The pointer value to push onto the Device.
          * @param byte_size The size in bytes of the object being pushed.

@@ -30,6 +30,33 @@
 
 namespace nyx
 {
+  enum class GPUStages : unsigned
+  {
+    AccelerationStructureBuild,
+    AllGraphics,
+    AllCommands,
+    BottomOfPipe,
+    ColorAttachmentOutput,
+    ComputeShader,
+    CommandPreprocess,
+    DrawIndirect,
+    EarlyFragmentTests,
+    FragmentShader,
+    GeometryShader,
+    Host,
+    LateFragmentTests,
+    MeshShader,
+    RayTracing,
+    ShadingRateImage,
+    Top,
+    TaskShader,
+    Transfer,
+    TessellationControlShader,
+    TessellationEvaluationShader,
+    VertexInput,
+    VertexShader,
+  };
+  
   enum class ChainType : unsigned
   {
     Graphics, ///< Graphics GPU queue's are used.
@@ -64,9 +91,11 @@ namespace nyx
   {
     public:
       
+      
+      
       /** Default constructor.
        */
-      Chain()  = default ;
+      Chain() { static_assert( sizeof( this ) == sizeof( typename Framework::Chain ) ) ; } ;
       
       /** Default deconstructor.
        */
@@ -173,6 +202,20 @@ namespace nyx
       template<typename Type, typename Type2>
       inline void drawIndexed( const nyx::Renderer<Framework>& renderer, const Array<Framework, Type2>& indices, const Array<Framework, Type>& vertices ) ;
       
+      /** Method to append a draw command to this object using indices.
+       * @param indices The index array describing the render order of the vertex array.
+       * @param vertices The array of vertices used for drawing.
+       */
+      template<typename Type, typename Type2>
+      inline void drawInstanced( unsigned instance_count, const nyx::Renderer<Framework>& renderer, const Array<Framework, Type2>& indices, const Array<Framework, Type>& vertices ) ;
+
+      /** Method to append a draw command to this object using indices.
+       * @param indices The index array describing the render order of the vertex array.
+       * @param vertices The array of vertices used for drawing.
+       */
+      template<typename Type>
+      inline void drawInstanced( unsigned instance_count, const nyx::Renderer<Framework>& renderer, const Array<Framework, Type>& vertices ) ;
+
       /** Method to explicitly end recording of this object.
        * @note The submit method implicitly ends this chain's record as well.
        */
@@ -253,6 +296,12 @@ namespace nyx
        */
       template<typename Type>
       inline void memoryBarrier( const nyx::Array<Framework, Type>& read, const nyx::Image<Framework>& write ) ;
+      
+      /** Method to barrier the GPU pipeline.
+       * @param src The pipeline stage to consume.
+       * @param dst The pipeline stage to output.
+       */
+      inline void pipelineBarrier( GPUStages src, GPUStages dst ) ;
       
       /** Method to reset this object's data.
        */
@@ -348,6 +397,20 @@ namespace nyx
   }
   
   template<typename Framework>
+  template<typename Type, typename Type2>
+  void Chain<Framework>::drawInstanced( unsigned instance_count, const nyx::Renderer<Framework>& renderer, const Array<Framework, Type2>& indices, const Array<Framework, Type>& vertices )
+  {
+    this->impl.drawInstanced( instance_count, renderer, indices, vertices ) ;
+  }
+
+  template<typename Framework>
+  template<typename Type>
+  void Chain<Framework>::drawInstanced( unsigned instance_count, const nyx::Renderer<Framework>& renderer, const Array<Framework, Type>& vertices )
+  {
+    this->impl.drawInstanced( instance_count, renderer, vertices ) ;
+  }
+      
+  template<typename Framework>
   template<typename Type>
   void Chain<Framework>::draw( const nyx::Renderer<Framework>& renderer, const Array<Framework,Type>& array, unsigned offset )
   {
@@ -425,6 +488,12 @@ namespace nyx
   void Chain<Framework>::memoryBarrier( const nyx::Array<Framework, Type>& read, const nyx::Array<Framework, Type>& write )
   {
     this->impl.memoryBarrier( read, write ) ; 
+  }
+  
+  template<typename Framework>
+  void Chain<Framework>::pipelineBarrier( nyx::GPUStages src, nyx::GPUStages dst )
+  {
+    this->impl.pipelineBarrier( src, dst ) ; 
   }
   
   template<typename Framework>

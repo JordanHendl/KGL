@@ -17,10 +17,9 @@
 
 
 ADD_SUBDIRECTORY( library    )
-ADD_SUBDIRECTORY( linux      )
 ADD_SUBDIRECTORY( event      )
 ADD_SUBDIRECTORY( cg         )
 ADD_SUBDIRECTORY( vkg        )
-ADD_SUBDIRECTORY( win32      )
+ADD_SUBDIRECTORY( sdl        )
 ADD_SUBDIRECTORY( loaders    )
 ADD_SUBDIRECTORY( shaders    )
