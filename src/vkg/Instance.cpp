@@ -2,6 +2,9 @@
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NO_EXCEPTIONS
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#define VULKAN_HPP_STORAGE_SHARED_EXPORT
+#define VULKAN_HPP_STORAGE_SHARED
 
 #include "Instance.h"
 #include "Vulkan.h"
@@ -10,10 +13,7 @@
 #include <vector>
 #include <iostream>
 
-#define NYX_MAJOR_VERSION 0 
-#define NYX_MINOR_VERSION 2 
-#define NYX_REVISION      0
-
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 namespace nyx
 {
   namespace vkg
@@ -147,9 +147,10 @@ namespace nyx
     InstanceData::InstanceData()
     {
       app_version = { 0, 0, 1 }        ;
-      api_version = { 1, 2, 2 }        ;
+      api_version = { 1, 1, 0 }        ;
       app_name    = "NYX_DEFAULT_NAME" ;
       debug       = true               ;
+      this->ext_list = { "VK_KHR_surface", "VK_KHR_surface" } ;
     }
     
     vk::DebugUtilsMessageSeverityFlagsEXT toFlags( Instance::DebugSeverity level )
@@ -178,7 +179,7 @@ namespace nyx
     {
       ::vk::ApplicationInfo info ;
       
-      constexpr auto engine_version = VK_MAKE_VERSION( NYX_MAJOR_VERSION, NYX_MINOR_VERSION, NYX_REVISION                           ) ;
+      constexpr auto engine_version = VK_MAKE_VERSION( 0, 0, 0                                                                      ) ;
       auto           app_version    = VK_MAKE_VERSION( this->app_version.major, this->app_version.minor, this->app_version.revision ) ;
       auto           api_version    = VK_MAKE_VERSION( this->api_version.major, this->api_version.minor, this->api_version.revision ) ;
 
@@ -340,13 +341,20 @@ namespace nyx
 
     void Instance::initialize()
     {
-      ::vk::InstanceCreateInfo               info            ;
-      ::vk::ApplicationInfo                  app_info        ;
-      ::vk::DebugUtilsMessengerCreateInfoEXT debug_info      ;
-      InstanceData::List                     ext_list        ;
-      InstanceData::List                     layer_list      ;
-      InstanceData::CharList                 ext_list_char   ;
-      InstanceData::CharList                 layer_list_char ;
+      vk::DynamicLoader                    loader                ;
+      vk::InstanceCreateInfo               info                  ;
+      vk::ApplicationInfo                  app_info              ;
+      vk::DebugUtilsMessengerCreateInfoEXT debug_info            ;
+      InstanceData::List                   ext_list              ;
+      InstanceData::List                   layer_list            ;
+      InstanceData::CharList               ext_list_char         ;
+      InstanceData::CharList               layer_list_char       ;
+      PFN_vkGetInstanceProcAddr            vkGetInstanceProcAddr ;
+      
+      vkGetInstanceProcAddr = loader.getProcAddress<PFN_vkGetInstanceProcAddr>( "vkGetInstanceProcAddr" ) ;
+      VULKAN_HPP_DEFAULT_DISPATCHER.init( vkGetInstanceProcAddr ) ;
+      auto instance = vk::createInstance( {}, nullptr ) ;
+      VULKAN_HPP_DEFAULT_DISPATCHER.init( instance.value ) ;
       
       app_info   = data().makeAppInfo()            ;
       debug_info = data().makeDebugInfo()          ;
@@ -373,6 +381,7 @@ namespace nyx
       vkg::Vulkan::add( result.result ) ;
       data().instance = result.value ;
       
+      VULKAN_HPP_DEFAULT_DISPATCHER.init( result.value ) ;
       auto result2 = data().instance.enumeratePhysicalDevices() ;
       vkg::Vulkan::add( result2.result ) ;
       data().physical_dev = result2.value ;

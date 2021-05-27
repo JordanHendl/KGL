@@ -24,13 +24,7 @@
 
 #pragma once
 
-#ifdef _WIN32
-  #include "../win32/Win32.h"
-  #include "../win32/Window.h"
-#elif __linux__ 
-  #include "../linux/Linux.h"
-  #include "../linux/Window.h"
-#endif
+#include <window/Window.h>
 
 namespace nyx
 {
@@ -142,7 +136,7 @@ namespace nyx
        */
       const typename Framework::Context& context() const ;
     private:
-      typename OS::Window   os_window   ;
+      typename OS::Window         os_window   ;
       typename Framework::Context api_context ;
   };
   
@@ -262,12 +256,7 @@ namespace nyx
     this->os_window.handleEvents() ;
   }
 
-  #ifdef WIN32
     template<typename Framework>
-    using Window = nyx::BaseWindow<nyx::win32::Win32, Framework> ;
-  #elif __linux__ 
-    template<typename Framework>
-    using Window = nyx::BaseWindow<nyx::lx::Linux, Framework> ;
-  #endif
+    using Window = nyx::BaseWindow<nyx::sdl::Window, Framework> ;
 }
 

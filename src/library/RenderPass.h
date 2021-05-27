@@ -138,7 +138,7 @@ namespace nyx
     public:
       /** Default constructor.
        */
-      RenderPass() = default ;
+      RenderPass() { static_assert( sizeof( this ) == sizeof( typename Framework::RenderPass ) ) ; } ;
       
       /** Default deconstructor.
        */
@@ -185,14 +185,11 @@ namespace nyx
        */
       unsigned device() const ;
       
-      void setClearColor( float red, float green, float blue, float alpha ) ;
-      
       /** Method to retrieve a framebuffer from this object.
        * @param index The index of framebuffer to retrieve. See @count for the amount.
        * @return Const reference to this object's internal framebuffer.
        */
-      template<unsigned index = 0>
-      const auto framebuffer() const ;
+      const typename Framework::Image& framebuffer( unsigned index ) const ;
       
       void reset() ;
       
@@ -258,10 +255,9 @@ namespace nyx
   }
 
   template<typename Framework>
-  template<unsigned index>
-  const auto RenderPass<Framework>::framebuffer() const
+  const typename Framework::Image& RenderPass<Framework>::framebuffer( unsigned index ) const
   {
-    return this->impl.framebuffer() ;
+    return this->impl.framebuffer( index ) ;
   }
  
   template<typename Framework>

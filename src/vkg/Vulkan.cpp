@@ -19,10 +19,13 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+
 #include "Vulkan.h"
 #include "Device.h"
 #include "library/Image.h"
 #include "library/Window.h"
+#include "library/Chain.h"
 #include <library/Renderer.h>
 #include <library/Memory.h>
 #include <library/RenderPass.h>
@@ -32,20 +35,16 @@
 #include <vector>
 #include <string>
 #include <map>
-
-#ifdef WIN32
-#define VK_USE_PLATFORM_WIN32_KHR
-#include <win32/Window.h>
-#elif __linux__
-#define VK_USE_PLATFORM_XCB_KHR
-#include <linux/Window.h>
-#endif
 #include <vulkan/vulkan.hpp>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_vulkan.h>
 
 unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
 {
   return first | static_cast<unsigned>( second ) ;
 }
+
+extern bool SDL2_INITIALIZED ;
 
  namespace nyx
  {
@@ -108,6 +107,13 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       VulkanData() ;
     };
      
+    /** The container for a vulkan surface's data.
+     */
+    struct SurfaceData
+    {
+      vk::SurfaceKHR surface ;
+    };
+
     /** Static container for all of the vulkan library's global data.
      */
     static VulkanData data ;
@@ -122,7 +128,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         default : return vkg::COLOR_RED ;
       }
     }
-
+    
     uint32_t memType( uint32_t filter, ::vk::MemoryPropertyFlags flag, ::vk::PhysicalDevice device )
     {
       ::vk::PhysicalDeviceMemoryProperties mem_prop ;
@@ -198,6 +204,43 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       return static_cast<vk::DeviceMemory>( reinterpret_cast<VkDeviceMemory>( this->val ) ) ;
     }
 
+    Surface::Surface()
+    {
+      this->surface_data = new SurfaceData() ;
+    }
+    
+    Surface::Surface( const Surface& surface )
+    {
+      this->surface_data = new SurfaceData() ;
+      *this = surface ;
+    }
+    
+    Surface::~Surface()
+    {
+      delete this->surface_data ;
+    }
+    
+    Surface& Surface::operator=( const Surface& surface )
+    {
+      *this->surface_data = *surface.surface_data ;
+      return *this ;
+    }
+    
+    const vk::SurfaceKHR& Surface::surface() const
+    {
+      return data().surface ;
+    }
+    
+    SurfaceData& Surface::data()
+    {
+      return *this->surface_data ;
+    }
+    
+    const SurfaceData& Surface::data() const
+    {
+      return *this->surface_data ;
+    }
+    
     vkg::Vulkan::Severity::Severity()
     {
       this->sev = Severity::None ;
@@ -273,6 +316,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case Error::OutOfDeviceMemory    : return "Out of device memory: Device memory available has been depleted."                       ;
         case Error::MemoryMapFailed      : return "Memory Map Failure: A Host-GPU memory mapping has failed."                              ;
         case Error::ValidationFailed     : return "Validation Layer Failed."                                                               ;
+        case Error::NativeWindowInUse    : return "A Native window is already in use."                                                     ;
         default : return "Unknown Error" ;
       }
     }
@@ -284,6 +328,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case Error::DeviceNotFound       : return Severity::Warning ;
         case Error::FeatureNotPresent    : return Severity::Warning ;
         case Error::SuboptimalKHR        : return Severity::Warning ;
+        case Error::NativeWindowInUse    : return Severity::Fatal   ;
         case Error::ValidationFailed     : return Severity::Fatal   ;
         case Error::DeviceLost           : return Severity::Fatal   ;
         case Error::OutOfDataKHR         : return Severity::Fatal   ;
@@ -375,6 +420,7 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case vk::Result::eErrorOutOfDeviceMemory    : return Vulkan::Error::OutOfDeviceMemory    ;
         case vk::Result::eErrorMemoryMapFailed      : return Vulkan::Error::MemoryMapFailed      ;
         case vk::Result::eErrorValidationFailedEXT  : return Vulkan::Error::ValidationFailed     ;
+        case vk::Result::eErrorNativeWindowInUseKHR : return Vulkan::Error::NativeWindowInUse    ;
         default : return Vulkan::Error::Unknown ;
       }
     }
@@ -388,6 +434,37 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
         case nyx::PipelineStage::Compute  : return vk::ShaderStageFlagBits::eCompute             ;
         case nyx::PipelineStage::TessC    : return vk::ShaderStageFlagBits::eTessellationControl ;
         default : return vk::ShaderStageFlagBits::eVertex ;
+      }
+    }
+    
+    vk::PipelineStageFlags Vulkan::convert( nyx::GPUStages stage )
+    {
+      switch( stage )
+      {
+         case nyx::GPUStages::Top                              : return vk::PipelineStageFlagBits::eTopOfPipe                        ;                           
+         case nyx::GPUStages::DrawIndirect                     : return vk::PipelineStageFlagBits::eDrawIndirect                     ;                              
+         case nyx::GPUStages::VertexInput                      : return vk::PipelineStageFlagBits::eVertexInput                      ;                             
+         case nyx::GPUStages::VertexShader                     : return vk::PipelineStageFlagBits::eVertexShader                     ;                              
+         case nyx::GPUStages::TessellationControlShader        : return vk::PipelineStageFlagBits::eTessellationControlShader        ;                                           
+         case nyx::GPUStages::TessellationEvaluationShader     : return vk::PipelineStageFlagBits::eTessellationEvaluationShader     ;                                              
+         case nyx::GPUStages::GeometryShader                   : return vk::PipelineStageFlagBits::eGeometryShader                   ;                                
+         case nyx::GPUStages::FragmentShader                   : return vk::PipelineStageFlagBits::eFragmentShader                   ;                                
+         case nyx::GPUStages::EarlyFragmentTests               : return vk::PipelineStageFlagBits::eEarlyFragmentTests               ;                                                                                   
+         case nyx::GPUStages::LateFragmentTests                : return vk::PipelineStageFlagBits::eLateFragmentTests                ;                                   
+         case nyx::GPUStages::ColorAttachmentOutput            : return vk::PipelineStageFlagBits::eColorAttachmentOutput            ;                                       
+         case nyx::GPUStages::ComputeShader                    : return vk::PipelineStageFlagBits::eComputeShader                    ;                               
+         case nyx::GPUStages::Transfer                         : return vk::PipelineStageFlagBits::eTransfer                         ;                          
+         case nyx::GPUStages::BottomOfPipe                     : return vk::PipelineStageFlagBits::eBottomOfPipe                     ;                              
+         case nyx::GPUStages::Host                             : return vk::PipelineStageFlagBits::eHost                             ;                                                                     
+         case nyx::GPUStages::AllGraphics                      : return vk::PipelineStageFlagBits::eAllGraphics                      ;                             
+         case nyx::GPUStages::AllCommands                      : return vk::PipelineStageFlagBits::eAllCommands                      ;                             
+         case nyx::GPUStages::ShadingRateImage                 : return vk::PipelineStageFlagBits::eShadingRateImageNV               ;                                                                                                                                  
+         case nyx::GPUStages::TaskShader                       : return vk::PipelineStageFlagBits::eTaskShaderNV                     ;                              
+         case nyx::GPUStages::MeshShader                       : return vk::PipelineStageFlagBits::eMeshShaderNV                     ;                              
+         case nyx::GPUStages::CommandPreprocess                : return vk::PipelineStageFlagBits::eCommandPreprocessNV              ;                                     
+         case nyx::GPUStages::AccelerationStructureBuild       : return vk::PipelineStageFlagBits::eAccelerationStructureBuildNV     ;                                              
+         case nyx::GPUStages::RayTracing                       : return vk::PipelineStageFlagBits::eRayTracingShaderNV               ;                                
+         default : return vk::PipelineStageFlagBits::eAllCommands ;
       }
     }
     
@@ -659,10 +736,13 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
     void Vulkan::free( Vulkan::Memory& mem, unsigned gpu )
     {
       Vulkan::initialize() ;
-      const auto device = Vulkan::device( gpu ).device() ;
-      if( mem && device )
+      if( mem )
       {
-        device.free ( mem ) ;
+        const auto device = Vulkan::device( gpu ).device() ;
+        if( device )
+        {
+          device.free ( mem ) ;
+        }
       }
     }
     
@@ -741,6 +821,27 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       }
     }
     
+    void Vulkan::setWindowResizable( unsigned id, bool value )
+    {
+      auto iter = vkg::data.windows.find( id ) ;
+      
+      if( iter != vkg::data.windows.end() )
+      {
+        iter->second->setResizable( value ) ;
+      }
+    }
+    
+    void Vulkan::setWindowMouseCapture( unsigned id, bool value )
+    {
+      auto iter = vkg::data.windows.find( id ) ;
+      
+      if( iter != vkg::data.windows.end() )
+      {
+        SDL_SetRelativeMouseMode( static_cast<SDL_bool>( value ) ) ;
+        SDL_SetWindowGrab       ( iter->second->window().window(), static_cast<SDL_bool>( value ) ) ;
+      }
+    }
+    
     void Vulkan::setWindowWidth( unsigned id, unsigned width )
     {
       auto iter = vkg::data.windows.find( id ) ;
@@ -771,83 +872,70 @@ unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
       }
     }
     
-    unsigned long long Vulkan::context( unsigned id )
+    vkg::Surface Vulkan::context( unsigned id )
     {
+      static vkg::Surface dummy ;
       auto iter = vkg::data.windows.find( id ) ;
       
       if( iter != vkg::data.windows.end() )
       {
         return iter->second->context() ;
       }
-      
-      return 0ull ;
+
+      return dummy ;
     }
+
+    
     const char* Vulkan::platformSurfaceInstanceExtensions()
     {
-      #ifdef WIN32
-      return VK_KHR_WIN32_SURFACE_EXTENSION_NAME ;
-      #elif __linux__
-      return VK_KHR_XCB_SURFACE_EXTENSION_NAME ;
-      #endif 
-    }
-
-    #ifdef WIN32
-    Vulkan::Context Vulkan::contextFromBaseWindow( const nyx::win32::Window& window )
-    {
-      VkWin32SurfaceCreateInfoKHR info       ;
-      VkSurfaceKHR                surface    ;
-      vk::SurfaceKHR              vk_surface ;
-      vk::Result                  result     ;
-
-      info.sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR ;
-      info.pNext     = nullptr                                         ;
-      info.flags     = 0                                               ;
-      info.hinstance = window.instance()                               ;
-      info.hwnd      = window.handle()                                 ;
-
-      Vulkan::initialize() ;
-      if( data.instance.initialized() )
+      unsigned                 amt ;
+      std::vector<const char*> ext ;
+      if( !SDL2_INITIALIZED )
       {
-        result = static_cast<vk::Result>( vkCreateWin32SurfaceKHR( data.instance.instance(), &info, nullptr, &surface ) ) ;
-        if( result != vk::Result::eSuccess )
-        {
-          std::cout << "Error creating surface: " << vk::to_string( result ) << "\n" ; // TODO convert error.
-        }
-        vk_surface = surface ;
+        SDL_Init( SDL_INIT_VIDEO ) ;
+        SDL2_INITIALIZED = true ;
       }
       
-      return static_cast<unsigned long long>( surface ) ;
+      SDL_Window* dummy ;
+      dummy = SDL_CreateWindow( "", 0, 0, 1280, 720, SDL_WINDOW_HIDDEN | SDL_WINDOW_VULKAN ) ;
+      
+      SDL_Vulkan_GetInstanceExtensions( dummy, &amt, nullptr ) ;
+      ext.resize( amt ) ;
+      SDL_Vulkan_GetInstanceExtensions( dummy, &amt, ext.data() ) ;
+      
+      SDL_DestroyWindow( dummy ) ;
+      
+      for( unsigned i = 0; i != ext.size(); i++ )
+      {
+        if( std::string( ext[ i ] ) != "VK_KHR_surface" ) return ext[ i ] ;
+      }
+      
+      return ext[ 0 ] ;
     }
 
-    #elif __linux__
-    Vulkan::Context Vulkan::contextFromBaseWindow( const nyx::lx::Window& window )
+    Vulkan::Context Vulkan::contextFromBaseWindow( const nyx::sdl::Window& window )
     {
-      VkXcbSurfaceCreateInfoKHR info         ;
-      VkSurfaceKHR              surface      ;
-      vk::SurfaceKHR            vk_surface   ;
-      vk::Result                result       ;
+      vkg::Surface   out          ;
+      VkSurfaceKHR   surface      ;
+      VkInstance     instance     ;
+      vk::SurfaceKHR vk_surface   ;
       
       Vulkan::initialize() ;
-      info.sType      = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR ;
-      info.pNext      = nullptr                                       ;
-      info.flags      = 0                                             ;
-      info.connection = window.connection()                           ;
-      info.window     = window.window()                               ;
       
+      instance = static_cast<VkInstance>( data.instance.instance() ) ;
       if( data.instance.initialized() )
       {
-        result = static_cast<vk::Result>( vkCreateXcbSurfaceKHR( data.instance.instance(), &info, nullptr, &surface ) ) ;
-        
-        if( result != vk::Result::eSuccess )
+        if( !SDL_Vulkan_CreateSurface( window.window(), instance, &surface ) )
         {
-          std::cout << "Error creating surface: " << vk::to_string( result ) << "\n" ; // TODO convert error.
+          std::cout << "Error creating surface.\n" ; // TODO convert error.
+          exit( -1 ) ;
         }
 
         vk_surface = surface ;
       }
       
-      return reinterpret_cast<intptr_t>( surface ) ;
+      out.data().surface = vk_surface ;
+      return out ;
      }
-     #endif  
    }
  }

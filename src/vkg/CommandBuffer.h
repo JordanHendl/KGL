@@ -23,6 +23,9 @@
  */
 #pragma once 
 
+#include "Buffer.h"
+
+
 namespace vk
 {
   class CommandBuffer ;
@@ -76,6 +79,9 @@ namespace nyx
          */
         ~CommandBuffer() ;
         
+        void barrier( const vkg::Buffer& read, const vkg::Buffer& write ) ;
+        void barrier( const vkg::Buffer& read, const vkg::Image& write ) ;
+        
         /** Method to push a value onto the command buffer as a push constant.
          * @param value The value to push.
          * @param stage The stage of the pipeline that the constant is used in.
@@ -110,13 +116,15 @@ namespace nyx
          * @param count The number of command buffers to generate.
          * @param level The command buffer level of this object.
          */
-        void initialize( const nyx::vkg::Queue& queue, unsigned count, CommandBuffer::Level level = CommandBuffer::Level::Primary ) ;
+        void initialize( const nyx::vkg::Queue& queue, unsigned count, CommandBuffer::Level level = CommandBuffer::Level::Primary, bool multi_pass = false ) ;
         
         /** Method to check whether or not this object is initialized.
          * @return Whether or not this object is initialized.
          */
         bool initialized() const ;
 
+        void nextSubpass() ;
+        
         /** Method to combine a secondary command buffer into this object.
          * @param cmd The secondary command buffer to consume into this object.
          */
@@ -197,6 +205,11 @@ namespace nyx
         
         unsigned current() const ;
         
+        /** Method to set the active command buffer of this object.
+         * @param index The index of this object's internal buffers to set as the active one.
+         */
+        void setActive( unsigned index ) ;
+
         /** Method to stop all recording of this object's command buffers. If started a render pass, stops as well.
          */
         void stop() ;
@@ -209,6 +222,7 @@ namespace nyx
         
          friend class RendererImpl ;
          friend class Chain        ;
+         friend class ChainData    ;
          friend class Queue        ;
          
         /** Base method to use a buffer as vertices to draw.
@@ -226,6 +240,22 @@ namespace nyx
          * @param offset The offset of the buffer to start at.
          */
         void drawIndexedBase( const nyx::vkg::Buffer& index, const nyx::vkg::Buffer& vert, unsigned index_count, unsigned vert_count, unsigned offset = 0 ) ;
+        
+        /** Base method to use a buffer as vertices to draw.
+         * @param buffer The buffer to use for vertices.
+         * @param count The amount of vertices in the buffer.
+         * @param offset The offset of the buffer to start at.
+         */
+        void drawInstanced( const nyx::vkg::Buffer& vertices, unsigned vert_count, unsigned instance_count, unsigned offset = 0, unsigned first = 0 ) ;
+    
+        /** Base method to use a buffer as vertices to draw.
+         * @param index The buffer to use for indices.
+         * @param vert The buffer to use for vertices.
+         * @param index_count The amount of indices in the buffer.
+         * @param vert_count The amount of vertices in the buffer.
+         * @param offset The offset of the buffer to start at.
+         */
+        void drawInstanced( const nyx::vkg::Buffer& indices, unsigned index_count, const nyx::vkg::Buffer& vertices, unsigned vert_count, unsigned instance_count, unsigned offset = 0, unsigned first = 0 ) ;
         
         /** Private method for pushing a value as a push-constant to this command buffer.
          * @param value The pointer value to push onto the Device.

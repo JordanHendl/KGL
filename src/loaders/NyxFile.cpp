@@ -296,90 +296,25 @@ namespace nyx
 
   void NyxFile::load( const char* path )
   {
-    std::ifstream              stream      ;
-    std::string                str         ;
-    unsigned                   num_shaders ;
-    unsigned                   num_inputs  ;
-    unsigned                   num_outputs ;
-    unsigned long long         magic       ;
-    nyx::Shader                shader      ;
-    nyx::Uniform               uniform     ;
-    nyx::Attribute             attr        ;
-
-    data().map.clear() ;
-    stream.open( path, std::ios::binary ) ;
-
+    std::ifstream              stream  ;
+    std::vector<unsigned char> tmp     ;
+    
+    stream.open( path ) ;
+    
     if( stream )
     {
-      magic = data().readMagic( stream ) ;        
-      if( magic != ::nyx::MAGIC ) /*TODO: LOG ERROR HERE */ return ;
-
-      data().version = data().readUnsigned( stream ) ;
-      num_shaders    = data().readUnsigned( stream ) ;
-      num_inputs     = data().readUnsigned( stream ) ;
-      num_outputs    = data().readUnsigned( stream ) ;
+      // Copy stream's contents into vector
+      stream.seekg  ( 0, std::ios::end ) ;
+      tmp   .reserve( stream.tellg()   ) ;
+      stream.seekg  ( 0, std::ios::beg ) ;
+        
+      tmp.assign( ( std::istreambuf_iterator<char>( stream ) ), std::istreambuf_iterator<char>() ) ;
       
-      for( unsigned index = 0; index < num_inputs; index++ )
-      {
-        const std::string name     = data().readString  ( stream ) ;
-        const std::string type     = data().readString  ( stream ) ;
-        const unsigned    size     = data().readUnsigned( stream ) ;
-        const unsigned    location = data().readUnsigned( stream ) ;
-        
-        attr.name     = name     ;
-        attr.type     = type     ;
-        attr.size     = size     ;
-        attr.location = location ;
-        
-        data().inputs.push_back( attr ) ;
-      }
-      
-      for( unsigned index = 0; index < num_outputs; index++ )
-      {
-        const std::string name     = data().readString  ( stream ) ;
-        const std::string type     = data().readString  ( stream ) ;
-        const unsigned    size     = data().readUnsigned( stream ) ;
-        const unsigned    location = data().readUnsigned( stream ) ;
-        
-        attr.name     = name     ;
-        attr.type     = type     ;
-        attr.size     = size     ;
-        attr.location = location ;
-        
-        data().outputs.push_back( attr ) ;
-      }
-      
-      for( unsigned it = 0; it < num_shaders; it++ )
-      {
-        const unsigned  spirv_size     = data().readUnsigned( stream             ) ;
-        const unsigned* spirv          = data().readSpirv   ( stream, spirv_size ) ;
-        const unsigned  stage          = data().readUnsigned( stream             ) ;
-        const unsigned  num_uniforms   = data().readUnsigned( stream             ) ;
-
-        shader.spirv   .clear() ;
-        shader.uniforms.clear() ;
-
-        shader.spirv     .assign( spirv, spirv + spirv_size ) ;
-        shader.uniforms  .resize( num_uniforms              ) ;
-
-        shader.stage = static_cast<::nyx::ShaderStage>( stage ) ;
-        for( unsigned index = 0; index < num_uniforms; index++ )
-        {
-           const std::string name         = data().readString  ( stream ) ;
-           const unsigned uniform_type    = data().readUnsigned( stream ) ;
-           const unsigned uniform_binding = data().readUnsigned( stream ) ;
-           const unsigned uniform_size    = data().readUnsigned( stream ) ;
-
-           uniform.name    = name                                            ;
-           uniform.type    = static_cast<::nyx::UniformType>( uniform_type ) ;
-           uniform.binding = uniform_binding                                 ;
-           uniform.size    = uniform_size                                    ;
-
-           shader.uniforms[ index ] = uniform ;
-        }
-        data().map.insert( { shader.stage, shader } ) ;
-      }
+      // Call other load function to load.
+      this->load( tmp.data(), tmp.size() ) ;
     }
+    
+    stream.close() ;
   }
   
   void NyxFile::load( const unsigned char* bytes, unsigned size )

@@ -19,6 +19,8 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+
 #include "Buffer.h"
 #include "Vulkan.h"
 #include "Device.h"
@@ -69,7 +71,7 @@ namespace nyx
     
     void BufferData::makeDeviceAddress()
     {
-      vk::BufferDeviceAddressInfo info ;
+      vk::BufferDeviceAddressInfoKHR info ;
       
       info.setBuffer( this->buffer ) ;
       

@@ -34,7 +34,8 @@ namespace nyx
 {
   namespace vkg
   {
-    class Queue ;
+    class Queue   ;
+    class Surface ;
     class Device 
     {
       public:
@@ -171,7 +172,7 @@ namespace nyx
         /** Method to retrieve a present queue from the device, if available.
          * @return A const reference to the created present queue.
          */
-        const nyx::vkg::Queue& presentQueue( unsigned long long surface ) const ;
+        const nyx::vkg::Queue& presentQueue( const vkg::Surface& surface ) const ;
         
         /** Method to retrieve a compute queue from the device, if available.
          * @return A const reference to the created present queue.

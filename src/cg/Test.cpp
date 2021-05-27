@@ -29,7 +29,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <iostream>
-#include <athena/Manager.h>
+#include <Athena/Manager.h>
 
 using Impl = ::nyx::cg::Cuda ;
 const unsigned device = 0 ;

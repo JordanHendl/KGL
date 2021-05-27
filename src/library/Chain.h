@@ -30,11 +30,44 @@
 
 namespace nyx
 {
+  enum class GPUStages : unsigned
+  {
+    AccelerationStructureBuild,
+    AllGraphics,
+    AllCommands,
+    BottomOfPipe,
+    ColorAttachmentOutput,
+    ComputeShader,
+    CommandPreprocess,
+    DrawIndirect,
+    EarlyFragmentTests,
+    FragmentShader,
+    GeometryShader,
+    Host,
+    LateFragmentTests,
+    MeshShader,
+    RayTracing,
+    ShadingRateImage,
+    Top,
+    TaskShader,
+    Transfer,
+    TessellationControlShader,
+    TessellationEvaluationShader,
+    VertexInput,
+    VertexShader,
+  };
+  
   enum class ChainType : unsigned
   {
-    Graphics,
-    Compute,
-    Transfer
+    Graphics, ///< Graphics GPU queue's are used.
+    Compute,  ///< Compute GPU queue's are used.
+    Transfer  ///< Transfer GPU queue's are used.
+  };
+  
+  enum class ChainMode : unsigned 
+  {
+    Sequential, ///< Chain operates all commands sequentially to all internal command records.
+    All         ///< Chain operates all commands to all internal command buffers at once.
   };
   
   enum class PipelineStage : unsigned ;
@@ -58,13 +91,32 @@ namespace nyx
   {
     public:
       
+      
+      
       /** Default constructor.
        */
-      Chain()  = default ;
+      Chain() { static_assert( sizeof( this ) == sizeof( typename Framework::Chain ) ) ; } ;
       
       /** Default deconstructor.
        */
       ~Chain() = default ;
+      
+      /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
+       */
+      inline operator const typename Framework::Chain&() const ;
+
+      /** Conversion operator for the implementation-specific version of this object, so this object can be used in the place of that as well.
+       */
+      inline operator typename Framework::Chain&() ;
+      
+      /** Method to force advance this chain to the next buffering.
+       */
+      inline void advance() ;
+      
+      /** Method to explicitly begin recording of this chain. Note: All operations on this object implicitly begin it's operation. There may be times though,
+       *  where explicitly beginning it might be the preferred solution
+       */
+      inline void begin() ;
       
       /** Method to record a copy two library arrays to eachother.
        * @param src The array to copy from.
@@ -135,6 +187,7 @@ namespace nyx
        * @param child
        */
       inline void combine( const nyx::Chain<Framework>& child ) ;
+      
       /** Method to append a draw command to this renderer.
        * @param array The array of vertices to draw.
        * @param offset The offset into the vertex array to start drawing at.
@@ -148,6 +201,25 @@ namespace nyx
        */
       template<typename Type, typename Type2>
       inline void drawIndexed( const nyx::Renderer<Framework>& renderer, const Array<Framework, Type2>& indices, const Array<Framework, Type>& vertices ) ;
+      
+      /** Method to append a draw command to this object using indices.
+       * @param indices The index array describing the render order of the vertex array.
+       * @param vertices The array of vertices used for drawing.
+       */
+      template<typename Type, typename Type2>
+      inline void drawInstanced( unsigned instance_count, const nyx::Renderer<Framework>& renderer, const Array<Framework, Type2>& indices, const Array<Framework, Type>& vertices ) ;
+
+      /** Method to append a draw command to this object using indices.
+       * @param indices The index array describing the render order of the vertex array.
+       * @param vertices The array of vertices used for drawing.
+       */
+      template<typename Type>
+      inline void drawInstanced( unsigned instance_count, const nyx::Renderer<Framework>& renderer, const Array<Framework, Type>& vertices ) ;
+
+      /** Method to explicitly end recording of this object.
+       * @note The submit method implicitly ends this chain's record as well.
+       */
+      inline void end() ;
 
       /** Method to record an image transition operation.
        * @param image The image to transition.
@@ -177,13 +249,13 @@ namespace nyx
        * @param pass The render pass to use for this object's commands.
        * @param type The type of queue to use for this chain.
        */
-      inline void initialize( const nyx::RenderPass<Framework>& render_pass, ChainType type ) ;
+      inline void initialize( const nyx::RenderPass<Framework>& render_pass, ChainType type, bool multi_pass = false ) ;
       
       /** Method to initialize this object with the given parameters.
        * @param pass The render pass to use for this object's commands.
        * @param window_id The id associated with the window to use for this object.
        */
-      inline void initialize( const nyx::RenderPass<Framework>& render_pass, unsigned window_id ) ;
+      inline void initialize( const nyx::RenderPass<Framework>& render_pass, unsigned window_id, bool multi_pass = false ) ;
       
       /** Method to check whether or not this object is initialized.
        * @return Whether or not this object is initialized.
@@ -198,6 +270,11 @@ namespace nyx
       template<typename Type>
       inline void push( const nyx::Renderer<Framework>& pipeline, const Type& data, unsigned offset = 0 ) ;
       
+      /** Method to set the mode of this chain.
+       * @param mode The mode of this chain to operate on.
+       */
+      inline void setMode( nyx::ChainMode mode ) ;
+
       /** Method to synchronize this object's operations with the device.
        */
       inline void synchronize() ;
@@ -206,6 +283,26 @@ namespace nyx
        */
       inline void submit() ;
 
+      /** Method to generate a memory barrier between the two inputs.
+       * @param read The array being read from.
+       * @param write The array being written to.
+       */
+      template<typename Type>
+      inline void memoryBarrier( const nyx::Array<Framework, Type>& read, const nyx::Array<Framework, Type>& write ) ;
+      
+      /** Method to generate a memory barrier between the two inputs.
+       * @param read The array being read from.
+       * @param write The image being written to.
+       */
+      template<typename Type>
+      inline void memoryBarrier( const nyx::Array<Framework, Type>& read, const nyx::Image<Framework>& write ) ;
+      
+      /** Method to barrier the GPU pipeline.
+       * @param src The pipeline stage to consume.
+       * @param dst The pipeline stage to output.
+       */
+      inline void pipelineBarrier( GPUStages src, GPUStages dst ) ;
+      
       /** Method to reset this object's data.
        */
       inline void reset() ;
@@ -214,6 +311,31 @@ namespace nyx
       typename Framework::Chain impl ;
   };
   
+  
+  template<typename Framework>
+  Chain<Framework>::operator const typename Framework::Chain&() const
+  {
+    return this->impl ;
+  }
+
+  template<typename Framework>
+  Chain<Framework>::operator typename Framework::Chain&()
+  {
+    return this->impl ;
+  }
+  
+  template<typename Framework>
+  void Chain<Framework>::advance()
+  {
+    this->impl.advance() ;
+  }
+  
+  template<typename Framework>
+  void Chain<Framework>::begin()
+  {
+    this->impl.begin() ;
+  }
+
   template<typename Framework>
   template<typename Type>
   void Chain<Framework>::copy( const nyx::Array<Framework, Type>& src, Array<Framework, Type>& dst, unsigned amt, unsigned src_offset, unsigned dst_offset )
@@ -262,6 +384,12 @@ namespace nyx
   }
 
   template<typename Framework>
+  void Chain<Framework>::combine( const nyx::Chain<Framework>& child )
+  {
+    this->impl.combine( child ) ;
+  }
+  
+  template<typename Framework>
   template<typename Type, typename Type2>
   void Chain<Framework>::drawIndexed( const nyx::Renderer<Framework>& renderer, const Array<Framework, Type2>& indices, const Array<Framework, Type>& vertices )
   {
@@ -269,10 +397,30 @@ namespace nyx
   }
   
   template<typename Framework>
+  template<typename Type, typename Type2>
+  void Chain<Framework>::drawInstanced( unsigned instance_count, const nyx::Renderer<Framework>& renderer, const Array<Framework, Type2>& indices, const Array<Framework, Type>& vertices )
+  {
+    this->impl.drawInstanced( instance_count, renderer, indices, vertices ) ;
+  }
+
+  template<typename Framework>
+  template<typename Type>
+  void Chain<Framework>::drawInstanced( unsigned instance_count, const nyx::Renderer<Framework>& renderer, const Array<Framework, Type>& vertices )
+  {
+    this->impl.drawInstanced( instance_count, renderer, vertices ) ;
+  }
+      
+  template<typename Framework>
   template<typename Type>
   void Chain<Framework>::draw( const nyx::Renderer<Framework>& renderer, const Array<Framework,Type>& array, unsigned offset )
   {
     this->impl.draw( renderer, array, offset ) ;
+  }
+  
+  template<typename Framework>
+  void Chain<Framework>::end()
+  {
+    this->impl.end() ;
   }
   
   template<typename Framework>
@@ -293,6 +441,12 @@ namespace nyx
     this->impl.synchronize() ;
   }
  
+  template<typename Framework>
+  void Chain<Framework>::setMode( nyx::ChainMode mode )
+  {
+    this->impl.setMode( mode ) ;
+  }
+
   template<typename Framework>
   bool Chain<Framework>::initialized() const
   {
@@ -318,15 +472,35 @@ namespace nyx
   }
   
   template<typename Framework>
-  void Chain<Framework>::initialize( const nyx::RenderPass<Framework>& render_pass, ChainType type )
+  void Chain<Framework>::initialize( const nyx::RenderPass<Framework>& render_pass, ChainType type, bool multi_pass )
   {
-    this->impl.initialize( render_pass, type ) ;
+    this->impl.initialize( render_pass, type, multi_pass ) ;
   }
   
   template<typename Framework>
-  void Chain<Framework>::initialize( const nyx::RenderPass<Framework>& render_pass, unsigned window_id )
+  void Chain<Framework>::initialize( const nyx::RenderPass<Framework>& render_pass, unsigned window_id, bool multi_pass )
   {
-    this->impl.initialize( render_pass, window_id ) ;
+    this->impl.initialize( render_pass, window_id, multi_pass ) ;
+  }
+  
+  template<typename Framework>
+  template<typename Type>
+  void Chain<Framework>::memoryBarrier( const nyx::Array<Framework, Type>& read, const nyx::Array<Framework, Type>& write )
+  {
+    this->impl.memoryBarrier( read, write ) ; 
+  }
+  
+  template<typename Framework>
+  void Chain<Framework>::pipelineBarrier( nyx::GPUStages src, nyx::GPUStages dst )
+  {
+    this->impl.pipelineBarrier( src, dst ) ; 
+  }
+  
+  template<typename Framework>
+  template<typename Type>
+  void Chain<Framework>::memoryBarrier( const nyx::Array<Framework, Type>& read, const nyx::Image<Framework>& write )
+  {
+    this->impl.memoryBarrier( read, write ) ; 
   }
   
   template<typename Framework>

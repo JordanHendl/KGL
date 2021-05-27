@@ -40,7 +40,7 @@ namespace nyx
     class Synchronization ;
     class Image           ;
     class RenderPass      ;
-
+    class Surface         ;
     /** Class for managing a Vulkan Swapchain.
      */
     class Swapchain
@@ -86,7 +86,7 @@ namespace nyx
          * @param present_queue The present queue to use for this object's initialization.
          * @param surface The Vulkan Surface for the window to create a swapchain of.
          */
-        void initialize( const nyx::vkg::Queue& present_queue, unsigned long long surface ) ;
+        void initialize( const nyx::vkg::Queue& present_queue, const vkg::Surface& surface ) ;
         
         /** Method to check if this object has been initialized or not.
          * @return Whether or not this object is initialized.

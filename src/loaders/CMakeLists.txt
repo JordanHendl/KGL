@@ -1,12 +1,16 @@
 SET( NYX_LOADERS_SOURCES 
      NyxFile.cpp
      NggFile.cpp
+     NssFile.cpp
+     NttFile.cpp
      NgtFile.cpp
    )
      
 SET( NYX_LOADERS_HEADERS
      NyxFile.h
      NggFile.h
+     NssFile.h
+     NttFile.h
      NgtFile.h
    )
 

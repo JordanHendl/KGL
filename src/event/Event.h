@@ -316,6 +316,23 @@ namespace nyx
       template<class Object>
       void enroll( Object* obj, void (Object::*callback)( const Event& ), nyx::Key keysym, const char* key ) ;
       
+      /** Method to set the current mouse's position.
+       * @param x The x-cooordinate on the screen.
+       * @param y The y-cooordinate on the screen.
+       */
+      void updateMouse( float x, float y ) ;
+      
+      /** Method to set the current mouse's position.
+       * @param x The x-cooordinate on the screen.
+       * @param y The y-cooordinate on the screen.
+       */
+      void updateMouseOffset( float x, float y ) ;
+      
+      float mouseX() const ;
+      float mouseY() const ;
+      float mouseDeltaX() const ;
+      float mouseDeltaY() const ;
+      
       /** Method to remove all callbacks from this object.
        */
       void reset() ;

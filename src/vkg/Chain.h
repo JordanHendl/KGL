@@ -24,9 +24,10 @@
 
 #pragma once
 
+#include "Buffer.h"
+
 namespace nyx
 {
-  enum class ChainType : unsigned ;
   template<typename Framework, typename Type>
   class Array ;
   
@@ -36,9 +37,12 @@ namespace nyx
   template<typename Framework>
   class Renderer ;
   
+  enum class ChainMode     : unsigned ;
+  enum class ChainType     : unsigned ;
+  enum class GPUStages     : unsigned ;
   enum class PipelineStage : unsigned ;
-  enum class ImageLayout : unsigned ;
-
+  enum class ImageLayout   : unsigned ;
+  
   namespace vkg
   {
     class Buffer     ;
@@ -60,6 +64,10 @@ namespace nyx
          */
         ~Chain() ;
         
+        /** Method to force advance this chain to the next buffering.
+         */
+        void advance() ;
+
         /** Method to initialize this chain as a child of the input.
          * @param parent The chain to initialize this object off of.
          */
@@ -81,19 +89,42 @@ namespace nyx
          * @param pass The render pass to use for this object's commands.
          * @param type The type of queue to use for this chain.
          */
-        void initialize( const RenderPass& pass, ChainType type ) ;
+        void initialize( const RenderPass& pass, ChainType type, bool multi_pass ) ;
         
         /** Method to initialize this object with the given parameters.
          * @param pass The render pass to use for this object's commands.
          * @param window_id The id associated with the window to use for this object.
          */
-        void initialize( const RenderPass& pass, unsigned window_id ) ;
+        void initialize( const RenderPass& pass, unsigned window_id, bool multi_pass ) ;
         
         /** Method to check whether or not this object is initialized.
          * @return Whether or not this object is initialized.
          */
         bool initialized() const ;
 
+        /** Method to explicitly begin recording of this chain. Note: All operations on this object implicitly begin it's operation. There may be times though,
+         *  where explicitly beginning it might be the preferred solution
+         */
+        void begin() ;
+        
+        /** Method to generate a memory barrier between the two inputs.
+         * @param read The buffer being read from.
+         * @param write The buffer being written to.
+         */
+        void memoryBarrier( const vkg::Buffer& read, const vkg::Buffer& write ) ;
+        
+        /** Method to generate a memory barrier between the two inputs.
+         * @param read The buffer being read from.
+         * @param write The buffer being written to.
+         */
+        void memoryBarrier( const vkg::Buffer& read, const vkg::Image& write ) ;
+        
+        /** Method to barrier the GPU pipeline.
+         * @param src The pipeline stage to consume.
+         * @param dst The pipeline stage to output.
+         */
+        void pipelineBarrier( nyx::GPUStages src, nyx::GPUStages dst ) ;
+        
         /** Method to record a copy two library arrays to eachother.
          * @param src The array to copy from.
          * @param dst The array to copy to.
@@ -153,6 +184,12 @@ namespace nyx
          */
         void copy( const vkg::Image& src, vkg::Image& dst, unsigned amt = 0, unsigned src_offset = 0, unsigned dst_offset = 0 ) ;
         
+        /** Method to combine the child chain's recorded data to this object's. 
+         * If this object is part of rendering, this command causes the next subpass to push.
+         * @param chain
+         */
+        void combine( const vkg::Chain& chain ) ;
+
         /** Method to append a draw command to this object.
          * @param array The array of vertices to draw.
          * @param offset The offset into the vertex array to start drawing at.
@@ -166,6 +203,25 @@ namespace nyx
          */
         template<typename Type, typename Type2>
         void drawIndexed( const vkg::Renderer& renderer, const Array<Vulkan, Type2>& indices, const Array<Vulkan, Type>& vertices ) ;
+        
+        /** Method to append a draw command to this object using indices.
+         * @param indices The index array describing the render order of the vertex array.
+         * @param vertices The array of vertices used for drawing.
+         */
+        template<typename Type, typename Type2>
+        void drawInstanced( unsigned instance_count, const vkg::Renderer& renderer, const Array<Vulkan, Type2>& indices, const Array<Vulkan, Type>& vertices ) ;
+        
+        /** Method to append a draw command to this object using indices.
+         * @param indices The index array describing the render order of the vertex array.
+         * @param vertices The array of vertices used for drawing.
+         */
+        template<typename Type>
+        void drawInstanced( unsigned instance_count, const vkg::Renderer& renderer, const Array<Vulkan, Type>& vertices ) ;
+        
+        /** Method to explicitly end recording of this object.
+          * @note The submit method implicitly ends this chain's record as well.
+          */
+        void end() ;
 
         /** Method to push a variable onto the input pipeline.
          * @param pipeline The pipeline to push the data to.
@@ -186,6 +242,11 @@ namespace nyx
          */
         unsigned device() const ;
         
+        /** Method to set the mode for this chain's operation.
+         * @param mode The mode for this chain's operation.
+         */
+        void setMode( nyx::ChainMode mode ) ;
+
         /** Method to synchronize this object's operations with the device.
          */
         void synchronize() ;
@@ -204,6 +265,10 @@ namespace nyx
 
         void drawIndexedBase( const vkg::Renderer& renderer, const vkg::Buffer& indices, unsigned index_count, const vkg::Buffer& vertices, unsigned vertex_count ) ;
         
+        void drawInstancedBase( unsigned instance_count, const vkg::Renderer& renderer, const vkg::Buffer& indices, unsigned index_count, const vkg::Buffer& vertices, unsigned vertex_count ) ;
+        
+        void drawInstancedBase( unsigned instanced_count, const vkg::Renderer& renderer, const vkg::Buffer& vertices, unsigned vertex_count ) ;
+        
         void copy( const vkg::Buffer& src, vkg::Buffer& dst, unsigned copy_amt, unsigned element_size, unsigned src_offset, unsigned dst_offset ) ;
 
         void copy( const void* src, vkg::Buffer& dst, unsigned copy_amt, unsigned element_size, unsigned src_offset, unsigned dst_offset ) ;
@@ -221,6 +286,8 @@ namespace nyx
         void pushBase( const Renderer& pipeline, const void* value, unsigned byte_size, unsigned offset ) ;
         
         struct ChainData* chain_data ;
+        
+        friend struct ChainData ;
         
         const ChainData& data() const ;
 
@@ -267,6 +334,18 @@ namespace nyx
     void Chain::drawIndexed( const vkg::Renderer& renderer, const Array<Vulkan, Type2>& indices, const Array<Vulkan, Type>& vertices )
     {
       this->drawIndexedBase( renderer, indices, indices.size(), vertices, vertices.size() ) ;
+    }
+    
+    template<typename Type, typename Type2>
+    void Chain::drawInstanced( unsigned amt, const vkg::Renderer& renderer, const Array<Vulkan, Type2>& indices, const Array<Vulkan, Type>& vertices )
+    {
+      this->drawInstancedBase( amt, renderer, indices, indices.size(), vertices, vertices.size() ) ;
+    }
+    
+    template<typename Type>
+    void Chain::drawInstanced( unsigned amt, const vkg::Renderer& renderer, const Array<Vulkan, Type>& vertices )
+    {
+      this->drawInstancedBase( amt, renderer, vertices, vertices.size() ) ;
     }
     
     template<typename Type>

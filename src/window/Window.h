@@ -24,11 +24,10 @@
 
 #pragma once
 
-typedef struct xcb_connection_t xcb_connection_t ; 
-typedef        unsigned         xcb_window_t     ;
+typedef struct SDL_Window SDL_Window ; 
 namespace nyx
 {
-  namespace lx
+  namespace sdl
   {
     class Window
     {
@@ -127,15 +126,10 @@ namespace nyx
          */
         unsigned height() const ;
 
-        /** Method to retrieve the implementation-specific connection object.
-         * @return The implementation-specific connection object.
-         */
-        xcb_connection_t* connection() const ;
-        
         /** Method to retrieve the implementation-specific window object.
          * @return The implementation-specific window object.
          */
-        xcb_window_t window() const ; 
+        SDL_Window* window() const ; 
 
       private:
         

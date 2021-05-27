@@ -58,8 +58,6 @@ namespace nyx
 
   namespace vkg
   {
-    using Surface = vk::SurfaceKHR ;
-
     class Vulkan     ;
     class Buffer     ;
     class Image      ;
@@ -247,6 +245,12 @@ namespace nyx
          * @param image The GPU image to bind to the pipeline variable.
          */
         void bind( const char* name, const vkg::Image& image ) ;
+        
+        /** Method to bind an image to one of this object's values on the GPU.
+         * @param name The name associated with the value in the inputted pipeline.
+         * @param image The GPU image to bind to the pipeline variable.
+         */
+        void bind( const char* name, const vkg::Image* const* images, unsigned count ) ;
         
         /** Method to retrieve the device used by this renderer.
          * @return Const reference to the device used for this renderer.

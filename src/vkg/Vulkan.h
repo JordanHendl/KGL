@@ -32,9 +32,10 @@
 #include "Renderer.h"
 #include "Chain.h"
 
-typedef unsigned VkFlags            ;
-typedef VkFlags  VkImageUsageFlags  ;
-typedef VkFlags  VkShaderStageFlags ;
+typedef unsigned VkFlags              ;
+typedef VkFlags  VkImageUsageFlags    ;
+typedef VkFlags  VkShaderStageFlags   ;
+typedef VkFlags  VkPipelineStageFlags ;
 
 /** Forward declared vulkan-specific objects.
  */
@@ -43,20 +44,22 @@ namespace vk
        template <typename BitType>
        class Flags ;
        
-       class SurfaceKHR                                  ;
-       class DeviceMemory                                ;
-       class Instance                                    ;
-       class AttachmentDescription                       ;
-  enum class ImageLayout                                 ;
-  enum class MemoryPropertyFlagBits : VkFlags            ;
-  enum class ImageUsageFlagBits     : VkImageUsageFlags  ;
-  enum class ShaderStageFlagBits    : VkShaderStageFlags ;
-  enum class ImageType                                   ;
-  enum class Format                                      ;
-  enum class Result                                      ;
+       class SurfaceKHR                                    ;
+       class DeviceMemory                                  ;
+       class Instance                                      ;
+       class AttachmentDescription                         ;
+  enum class ImageLayout                                   ;
+  enum class MemoryPropertyFlagBits : VkFlags              ;
+  enum class ImageUsageFlagBits     : VkImageUsageFlags    ;
+  enum class ShaderStageFlagBits    : VkShaderStageFlags   ;
+  enum class PipelineStageFlagBits  : VkPipelineStageFlags ;
+  enum class ImageType                                     ;
+  enum class Format                                        ;
+  enum class Result                                        ;
   
-  using ImageUsageFlags  = Flags<ImageUsageFlagBits > ;
-  using ShaderStageFlags = Flags<ShaderStageFlagBits> ;
+  using ImageUsageFlags    = Flags<ImageUsageFlagBits >   ;
+  using ShaderStageFlags   = Flags<ShaderStageFlagBits>   ;
+  using PipelineStageFlags = Flags<PipelineStageFlagBits> ;
 }
 
 /** Operator definition for OR'ing a memory property flag bit and an unsigned integer.
@@ -101,16 +104,9 @@ namespace nyx
   template<typename OS, typename Framework>
   class BaseWindow ;
 
-  /** Forward declared Linux window
+  /** Forward declared SDL window
    */
-  namespace lx
-  {
-    class Window ;
-  }
-  
-  /** Forward declared Win32 window.
-   */
-  namespace win32
+  namespace sdl
   {
     class Window ;
   }
@@ -181,7 +177,22 @@ namespace nyx
          */
         void* val ;
     };
-
+    
+    class Surface
+    {
+      public:
+        Surface() ;
+        Surface( const Surface& surface ) ;
+        ~Surface() ;
+        Surface& operator=( const Surface& surface ) ;
+        const vk::SurfaceKHR& surface() const ;
+      private: 
+        friend class vkg::Vulkan ;
+        struct SurfaceData* surface_data ;
+        SurfaceData& data() ;
+        const SurfaceData& data() const ;
+    };
+    
     /** Class that implements Vulkan functionality.
      */
     class Vulkan
@@ -189,7 +200,7 @@ namespace nyx
       public:
         using Buffer          = nyx::vkg::Buffer             ; ///< The object to handle vulkan buffer creation.
         using CommandRecord   = nyx::vkg::CommandBuffer      ; ///< The object to handle recording of vulkan commands.
-        using Context         = unsigned long long           ; ///< The object to handle a window's context.
+        using Context         = nyx::vkg::Surface            ; ///< The object to handle a window's context.
         using Descriptor      = nyx::vkg::Descriptor         ; ///< The object to manage data access in shaders.
         using DescriptorPool  = nyx::vkg::DescriptorPool     ; ///< The object to manage creating Descriptors.
         using Device          = nyx::vkg::Device             ; ///< The object to manage a hardware-accelerated device.
@@ -467,6 +478,18 @@ namespace nyx
          */
         static void setWindowTitle( unsigned id, const char* title ) ;
         
+        /** Method to set whether a window is resizable or not.
+         * @param id The id of the window to set.
+         * @param value Whether it is resizable or not.
+         */
+        static void setWindowResizable( unsigned id, bool value ) ;
+
+        /** Method to set whether to capture the mouse on the window.
+         * @param id The window id.
+         * @param value Whether or not to capture the mouse.
+         */
+        static void setWindowMouseCapture( unsigned id, bool value ) ;
+
         /** Method to set the width of a window.
          * @param id The id associated with the window.
          * @param width The width of the window in pixels.
@@ -491,7 +514,7 @@ namespace nyx
          * @param id The id of window to retrieve the context of.
          * @return The vulkan surface handle for the given window.
          */
-        static unsigned long long context( unsigned id ) ;
+        static vkg::Surface context( unsigned id ) ;
 
         /** Typedef to avoid using void* directly.
          */
@@ -509,6 +532,7 @@ namespace nyx
         friend class nyx::vkg::Descriptor        ;
         friend class nyx::vkg::DescriptorPool    ;
         friend class nyx::vkg::Device            ;
+        friend class nyx::vkg::DeviceData        ;
         friend class nyx::vkg::RenderPass        ;
         friend class nyx::vkg::RenderPassData    ;
         friend class nyx::vkg::Instance          ;
@@ -530,23 +554,23 @@ namespace nyx
          */
         ~Vulkan() = default ;
 
-        /** Static method for retrieving a vulkan surface from a window's window.
-         * @param window The Win32 window to get a surface from.
+        /** Static method for retrieving a vulkan surface from a sdl window.
+         * @param window The SDL window to get a surface from.
          * @return A Valid vulkan surface.
          */
-        static Vulkan::Context contextFromBaseWindow( const nyx::win32::Window& window ) ;
-        
-        /** Static method for retrieving a vulkan surface from a linux window.
-         * @param window The Linux window to get a surface from.
-         * @return A Valid vulkan surface.
-         */
-        static Vulkan::Context contextFromBaseWindow( const nyx::lx::Window& window ) ;
+        static Vulkan::Context contextFromBaseWindow( const nyx::sdl::Window& window ) ;
 
         /** Static method to convert a library format to the implementation-specific format.
          * @param stage The library stage to convert.
          * @return The vulkan-library specific version.
          */
         static vk::ShaderStageFlags convert( nyx::PipelineStage stage ) ;
+        
+        /** Static method to convert a library format to the implementation-specific format.
+         * @param stage The library stage to convert.
+         * @return The vulkan-library specific version.
+         */
+        static vk::PipelineStageFlags convert( nyx::GPUStages stage ) ;
         
         /** Static method to convert a library attachment to a vulkan attachment.
          * @param attachment The attachment to convert.

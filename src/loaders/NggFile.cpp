@@ -69,9 +69,7 @@ namespace nyx
     Mesh        mesh ;
     std::string tmp  ;
     
-    const std::string str = this->readString  ( stream ) ;
-    std::strcpy( mesh.m_name, str.c_str() ) ;
-    mesh.m_name[ NggFile::MAX_NAME_SIZE - 1 ] = '\0' ;
+    const std::string str = this->readString( stream ) ;
     mesh.num_vertices          = this->readUnsigned( stream ) ;
     mesh.num_indices           = this->readUnsigned( stream ) ;
     mesh.material.num_diffuse  = this->readUnsigned( stream ) ;
@@ -79,8 +77,31 @@ namespace nyx
     mesh.material.num_normal   = this->readUnsigned( stream ) ;
     mesh.material.num_height   = this->readUnsigned( stream ) ;
     
-    mesh.m_vertices   = reinterpret_cast<Vertex*>  ( this->readBytes( stream, mesh.num_vertices * sizeof( Vertex ) ) ) ;
-    mesh.m_indices    = reinterpret_cast<unsigned*>( this->readBytes( stream, mesh.num_indices * sizeof( unsigned ) ) ) ;
+    std::strcpy( mesh.m_name, str.c_str() ) ;
+    mesh.m_vertices = new Vertex[ mesh.num_vertices ] ;
+    for( unsigned index = 0; index < mesh.num_vertices; index++ )
+    {
+      auto* position = reinterpret_cast<float*   >( this->readBytes( stream, sizeof( float    ) * 4 ) ) ;
+      auto* normals  = reinterpret_cast<float*   >( this->readBytes( stream, sizeof( float    ) * 4 ) ) ;
+      auto* weights  = reinterpret_cast<float*   >( this->readBytes( stream, sizeof( float    ) * 4 ) ) ;
+      auto* ids      = reinterpret_cast<unsigned*>( this->readBytes( stream, sizeof( unsigned ) * 4 ) ) ;
+      auto* uvs      = reinterpret_cast<float*   >( this->readBytes( stream, sizeof( float    ) * 2 ) ) ;
+      
+      
+      std::copy( position, position + 4, mesh.m_vertices[ index ].position ) ;  
+      std::copy( normals , normals  + 4, mesh.m_vertices[ index ].normals  ) ;  
+      std::copy( weights , weights  + 4, mesh.m_vertices[ index ].weights  ) ;  
+      std::copy( ids     , ids      + 4, mesh.m_vertices[ index ].ids      ) ;  
+      std::copy( uvs     , uvs      + 2, mesh.m_vertices[ index ].uvs      ) ;  
+      
+      delete[] reinterpret_cast<unsigned char*>( position ) ;
+      delete[] reinterpret_cast<unsigned char*>( normals  ) ;
+      delete[] reinterpret_cast<unsigned char*>( weights  ) ;
+      delete[] reinterpret_cast<unsigned char*>( ids      ) ;
+      delete[] reinterpret_cast<unsigned char*>( uvs      ) ;
+    }
+
+    mesh.m_indices = reinterpret_cast<unsigned*>( this->readBytes( stream, mesh.num_indices  * sizeof( unsigned ) ) ) ;
     
     mesh.material.m_diffuse  = new char*[ mesh.material.num_diffuse  ] ;
     mesh.material.m_specular = new char*[ mesh.material.num_specular ] ;
