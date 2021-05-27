@@ -26,6 +26,7 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 
 #include "Swapchain.h"
 #include "Synchronization.h"
@@ -37,6 +38,7 @@
 #include <vector>
 #include <queue>
 #include <limits.h>
+#include <iostream>
 
 namespace nyx
 {
@@ -61,7 +63,7 @@ namespace nyx
       vk::SurfaceCapabilitiesKHR capabilities   ; ///< TODO
       vk::SurfaceFormatKHR       surface_format ; ///< TODO
       vk::SurfaceKHR             surface        ; ///< TODO
-      unsigned long long         raw_surface    ; ///< TODO
+      vkg::Surface               raw_surface    ; ///< TODO
       vk::Extent2D               extent         ; ///< TODO
       std::queue<unsigned>       acquired       ; ///< The images acquired from this swapchain.
       unsigned                   current_frame  ; ///< The frame counter used to monitor swapchain presenting.
@@ -234,10 +236,10 @@ namespace nyx
       this->initialize( present_queue, Vulkan::context( window_id ) ) ;
     }
 
-    void Swapchain::initialize( const nyx::vkg::Queue& present_queue, unsigned long long surface )
+    void Swapchain::initialize( const nyx::vkg::Queue& present_queue, const vkg::Surface& surface )
     {
       Vulkan::initialize() ;
-      data().surface = static_cast<vk::SurfaceKHR>( reinterpret_cast<VkSurfaceKHR>( surface ) );
+      data().surface = surface.surface() ;
       
       data().queue       = present_queue                           ;
       data().device      = Vulkan::device( data().queue.device() ) ;
@@ -368,13 +370,10 @@ namespace nyx
     {
       if( data().swapchain )
       {
-        for( auto& image : data().images )
-        {
-          image.reset() ;
-        }
+        data().device.device().destroy( data().swapchain ) ;
+        data().swapchain = nullptr ;
         
         data().images.clear() ;
-//        data().device.device().destroy( data().swapchain ) ;
       }
     }
 

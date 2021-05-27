@@ -26,6 +26,7 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 
 #include "Descriptor.h"
 #include "Device.h"
@@ -180,77 +181,86 @@ namespace nyx
 
     void Descriptor::set( const char* name, const nyx::vkg::Buffer& buffer )
     {
-      const auto iter = data().parent_map->find( name ) ;
-      vk::DescriptorBufferInfo info  ;
-      vk::WriteDescriptorSet   write ;
-      
-      if( iter != data().parent_map->end() )
+      if( data().parent_map )
       {
-        info.setBuffer( buffer.buffer() ) ;
-        info.setRange ( VK_WHOLE_SIZE   ) ;
-        info.setOffset( 0               ) ;
+        const auto iter = data().parent_map->find( name ) ;
+        vk::DescriptorBufferInfo info  ;
+        vk::WriteDescriptorSet   write ;
         
-        write.setDstSet         ( data().set                        ) ;
-        write.setDstBinding     ( iter->second.binding              ) ;
-        write.setDescriptorType ( vkg::convert( iter->second.type ) ) ;
-        write.setDstArrayElement( 0                                 ) ;
-        write.setDescriptorCount( 1                                 ) ;
-        write.setPBufferInfo    ( &info                             ) ;
-        
-        data().device.updateDescriptorSets( 1, &write, 0, nullptr ) ;
+        if( iter != data().parent_map->end() )
+        {
+          info.setBuffer( buffer.buffer() ) ;
+          info.setRange ( VK_WHOLE_SIZE   ) ;
+          info.setOffset( 0               ) ;
+          
+          write.setDstSet         ( data().set                        ) ;
+          write.setDstBinding     ( iter->second.binding              ) ;
+          write.setDescriptorType ( vkg::convert( iter->second.type ) ) ;
+          write.setDstArrayElement( 0                                 ) ;
+          write.setDescriptorCount( 1                                 ) ;
+          write.setPBufferInfo    ( &info                             ) ;
+          
+          data().device.updateDescriptorSets( 1, &write, 0, nullptr ) ;
+        }
       }
     }
 
     void Descriptor::set( const char* name, const nyx::vkg::Image& image )
     {
-      const auto iter = data().parent_map->find( name ) ;
-      vk::DescriptorImageInfo info  ;
-      vk::WriteDescriptorSet  write ;
-
-      if( iter != data().parent_map->end() )
+      if( data().parent_map )
       {
-        info.setImageLayout( vkg::Vulkan::convert( image.layout() ) ) ;
-        info.setSampler    ( image.sampler()                        ) ;
-        info.setImageView  ( image.view()                           ) ;
-        
-        write.setDstSet         ( data().set                        ) ;
-        write.setDstBinding     ( iter->second.binding              ) ;
-        write.setDescriptorType ( vkg::convert( iter->second.type ) ) ;
-        write.setDstArrayElement( 0                                 ) ;
-        write.setDescriptorCount( 1                                 ) ;
-        write.setPImageInfo     ( &info                             ) ;
-        
-        data().device.updateDescriptorSets( 1, &write, 0, nullptr ) ;
+        const auto iter = data().parent_map->find( name ) ;
+        vk::DescriptorImageInfo info  ;
+        vk::WriteDescriptorSet  write ;
+  
+        if( iter != data().parent_map->end() )
+        {
+          info.setImageLayout( vkg::Vulkan::convert( image.layout() ) ) ;
+          info.setSampler    ( image.sampler()                        ) ;
+          info.setImageView  ( image.view()                           ) ;
+          
+          write.setDstSet         ( data().set                        ) ;
+          write.setDstBinding     ( iter->second.binding              ) ;
+          write.setDescriptorType ( vkg::convert( iter->second.type ) ) ;
+          write.setDstArrayElement( 0                                 ) ;
+          write.setDescriptorCount( 1                                 ) ;
+          write.setPImageInfo     ( &info                             ) ;
+          
+          data().device.updateDescriptorSets( 1, &write, 0, nullptr ) ;
+        }
       }
     }
     
     void Descriptor::set( const char* name, const nyx::vkg::Image* const* images, unsigned count )
     {
-      const auto iter = data().parent_map->find( name ) ;
-      unsigned                             amt   ;
-      std::vector<vk::DescriptorImageInfo> infos ;
-      vk::WriteDescriptorSet               write ;
-
-      if( iter != data().parent_map->end() )
+      if( data().parent_map )
       {
-        amt = count < iter->second.size ? count : iter->second.size ;
-        
-        infos.resize( count ) ;
-        for( unsigned index = 0; index < count; index++ )
+        const auto iter = data().parent_map->find( name ) ;
+        unsigned                             amt   ;
+        std::vector<vk::DescriptorImageInfo> infos ;
+        vk::WriteDescriptorSet               write ;
+  
+        if( iter != data().parent_map->end() )
         {
-          infos[ index ].setImageLayout( vkg::Vulkan::convert( images[ index ]->layout() ) ) ;
-          infos[ index ].setSampler    ( images[ index ]->sampler()                        ) ;
-          infos[ index ].setImageView  ( images[ index ]->view()                           ) ;
+          amt = count < iter->second.size ? count : iter->second.size ;
+          
+          infos.resize( count ) ;
+          for( unsigned index = 0; index < count; index++ )
+          {
+            infos[ index ].setImageLayout( vkg::Vulkan::convert( images[ index ]->layout() ) ) ;
+            infos[ index ].setSampler    ( images[ index ]->sampler()                        ) ;
+            infos[ index ].setImageView  ( images[ index ]->view()                           ) ;
+          }
+          
+          write.setDstSet         ( data().set                        ) ;
+          write.setDstBinding     ( iter->second.binding              ) ;
+          write.setDescriptorType ( vkg::convert( iter->second.type ) ) ;
+          write.setDstArrayElement( 0                                 ) ;
+          write.setDescriptorCount( amt                               ) ;
+          write.setPImageInfo     ( infos.data()                      ) ;
+          
+          data().device.updateDescriptorSets( 1, &write, 0, nullptr ) ;
         }
-        
-        write.setDstSet         ( data().set                        ) ;
-        write.setDstBinding     ( iter->second.binding              ) ;
-        write.setDescriptorType ( vkg::convert( iter->second.type ) ) ;
-        write.setDstArrayElement( 0                                 ) ;
-        write.setDescriptorCount( amt                               ) ;
-        write.setPImageInfo     ( infos.data()                      ) ;
-        
-        data().device.updateDescriptorSets( 1, &write, 0, nullptr ) ;
       }
     }
     

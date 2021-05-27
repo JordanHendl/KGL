@@ -138,7 +138,6 @@ namespace mars
     }
     else
     {
-      std::cout << "FUCK" << std::endl ;
     }
   }
   
@@ -175,7 +174,6 @@ namespace mars
     }
     else
     {
-      std::cout << "FUCK" << std::endl ;
     }
   }
   

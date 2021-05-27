@@ -26,6 +26,7 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 
 #include "Pipeline.h"
 #include "Device.h"
@@ -294,6 +295,7 @@ namespace nyx
       data().shader = new nyx::vkg::NyxShader() ;
       
       data().shader->initialize( pass.device(), nyx_bytes, size ) ;
+      this->data().config.color_blend_attachments.resize( pass.numBindedSubpasses() ) ;
       data().config.color_blend_info.setAttachments( data().config.color_blend_attachments ) ;
       data().createLayout() ;
       data().createPipeline() ;

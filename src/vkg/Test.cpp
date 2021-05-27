@@ -40,7 +40,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <iostream>
-#include <athena/Manager.h>
+#include <Athena/Manager.h>
 
 constexpr unsigned device = 0 ;
 
@@ -61,10 +61,8 @@ athena::Result instance_initialization_test()
   // Initialize Instance.
   Impl::setApplicationName  ( "NYX-VKG Test App"                        ) ;
   Impl::addInstanceExtension( Impl::platformSurfaceInstanceExtensions() ) ;
-  Impl::addInstanceExtension( "VK_KHR_surface"                          ) ;
   Impl::addValidationLayer  ( "VK_LAYER_KHRONOS_validation"             ) ;
   Impl::addValidationLayer  ( "VK_LAYER_LUNARG_standard_validation"     ) ;
-  Impl::addDeviceExtension  ( "VK_KHR_swapchain"                        ) ;
   
   Impl::initialize() ;
   
@@ -513,23 +511,23 @@ int main()
 {
   manager.initialize( "Nyx VULKAN Library" ) ;
 
-  manager.add( "01) Instance Creation"                 , &instance_initialization_test   ) ;
-  manager.add( "02) Window Creation"                   , &window_creation_test           ) ;
-  manager.add( "03) Graphics Queue Grab"               , &graphics_queue_get_test        ) ;
-  manager.add( "04) Swapchain Creation"                , &swapchain_creation_test        ) ;
-  manager.add( "05) Memory::initialize"                , &test_memory_initialize         ) ;
-  manager.add( "06) Memory::size"                      , &test_memory_size               ) ;
-  manager.add( "07) Memory::offset"                    , &test_memory_offset             ) ;
-  manager.add( "08) Memory::device"                    , &test_memory_device             ) ;
-  manager.add( "09) Memory::syncToHost"                , &test_memory_sync_to_host_copy  ) ;
-  manager.add( "10) Array::initialize"                 , &test_array_initialize          ) ;
-  manager.add( "11) Array::initialize Preallocated"    , &test_array_prealloc_init       ) ;
-  manager.add( "12) Array::size"                       , &test_array_size                ) ;
-  manager.add( "13) Array::copy"                       , &test_array_host_copy           ) ;
-  manager.add( "14) Image::initialize"                 , &test_image_initialization      ) ;
-  manager.add( "15) Image::size"                       , &test_image_size                ) ;
-  manager.add( "17) Image::resize"                     , &test_image_resize              ) ;
-  manager.add( "18) Image::copy"                       , &test_image_copy                ) ;
+  manager.add( "01) Instance Creation"             , &instance_initialization_test   ) ;
+  manager.add( "02) Window Creation"               , &window_creation_test           ) ;
+  manager.add( "03) Graphics Queue Grab"           , &graphics_queue_get_test        ) ;
+//  manager.add( "04) Swapchain Creation"            , &swapchain_creation_test        ) ;
+  manager.add( "05) Memory::initialize"            , &test_memory_initialize         ) ;
+  manager.add( "06) Memory::size"                  , &test_memory_size               ) ;
+  manager.add( "07) Memory::offset"                , &test_memory_offset             ) ;
+  manager.add( "08) Memory::device"                , &test_memory_device             ) ;
+  manager.add( "09) Memory::syncToHost"            , &test_memory_sync_to_host_copy  ) ;
+  manager.add( "10) Array::initialize"             , &test_array_initialize          ) ;
+  manager.add( "11) Array::initialize Preallocated", &test_array_prealloc_init       ) ;
+  manager.add( "12) Array::size"                   , &test_array_size                ) ;
+  manager.add( "13) Array::copy"                   , &test_array_host_copy           ) ;
+  manager.add( "14) Image::initialize"             , &test_image_initialization      ) ;
+  manager.add( "15) Image::size"                   , &test_image_size                ) ;
+  manager.add( "17) Image::resize"                 , &test_image_resize              ) ;
+  manager.add( "18) Image::copy"                   , &test_image_copy                ) ;
   manager.add( "19) RenderPass::initialize"            , &test_render_pass_creation      ) ;
   manager.add( "20) Renderer::initialize"              , &test_renderer_init             ) ;
   manager.add( "21) Renderer::draw"                    , &test_renderer_draw             ) ;

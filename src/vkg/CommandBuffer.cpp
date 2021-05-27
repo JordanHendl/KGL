@@ -26,6 +26,7 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 
 #include "CommandBuffer.h"
 #include "Queue.h"
@@ -48,13 +49,17 @@ namespace nyx
   {
     typedef unsigned Family ;
     using PoolMap   = std::unordered_map<Family, vk::CommandPool>  ;
+    using MutexMap  = std::unordered_map<Family, std::mutex     >  ;
     using ThreadMap = std::unordered_map<std::thread::id, PoolMap> ;
     static ThreadMap thread_map ;
+    static MutexMap mutex_map ;
+
     struct CommandBufferData
     {
       using CmdBuffers = std::vector<vk::CommandBuffer> ;
       using Fences     = std::vector<vk::Fence>         ;
-
+      
+      std::mutex*                      pool_mutex          ;
       vk::CommandBufferInheritanceInfo inheritance         ;
       mutable vk::SubpassContents      subpass_flags       ;
       vk::PipelineBindPoint            bind_point          ;
@@ -83,17 +88,30 @@ namespace nyx
        * @return A Reference to the created Command Pool.
        */
       vk::CommandPool& pool( Family queue_family ) ;
+      
+      /** Method to retrieve the map of command pools from a queue family.
+       * @note creates pool if it is not found.
+       * @param queue_family
+       * @return A Reference to the mutex of the family.
+       */
+      std::mutex* mutex( Family queue_family ) ;
     };
     
     
     CommandBufferData::CommandBufferData()
     {
+      this->pool_mutex          = nullptr                       ;
       this->subpass_flags       = vk::SubpassContents::eInline  ;
       this->pipeline            = nullptr                       ;
       this->pipeline_layout     = nullptr                       ;
       this->level               = CommandBuffer::Level::Primary ;
       this->recording           = false                         ;
       this->current             = 0                             ;
+    }
+    
+    std::mutex* CommandBufferData::mutex( Family queue_family )
+    {
+      return &mutex_map[ queue_family ] ;
     }
     
     vk::CommandPool& CommandBufferData::pool( Family queue_family )
@@ -212,10 +230,11 @@ namespace nyx
       data().device = Vulkan::device( parent.data().queue.device() ).device() ;
       data().id     = data().queue.device() ;
 
-      device         = data().device                        ;
-      pool           = data().pool( data().queue.family() ) ;
-      data().vk_pool = data().pool( data().queue.family() ) ;
-      cmd_level      = vk::CommandBufferLevel::eSecondary   ;
+      device            = data().device                         ;
+      pool              = data().pool( data().queue.family() )  ;
+      data().vk_pool    = data().pool( data().queue.family() )  ;
+      data().pool_mutex = data().mutex( data().queue.family() ) ;
+      cmd_level         = vk::CommandBufferLevel::eSecondary    ;
       
       info.setCommandBufferCount( parent.data().cmd_buffers.size() ) ;
       info.setLevel             ( cmd_level                        ) ;
@@ -258,9 +277,11 @@ namespace nyx
       data().device = Vulkan::device( queue.device() ).device() ;
       data().id     = queue.device()                            ;
 
-      device         = data().device                                                                                   ;
-      pool           = data().pool( data().queue.family() )                                                            ;
-      data().vk_pool = data().pool( data().queue.family() )                                                            ;
+      device            = data().device                         ;
+      pool              = data().pool( data().queue.family() )  ;
+      data().vk_pool    = data().pool( data().queue.family() )  ;
+      data().pool_mutex = data().mutex( data().queue.family() ) ;
+
       cmd_level      = level == Level::Primary ? vk::CommandBufferLevel::ePrimary : vk::CommandBufferLevel::eSecondary ;
       
       info.setCommandBufferCount( count     ) ;
@@ -410,6 +431,7 @@ namespace nyx
       
       fence = data().fences[ data().current ] ;
       
+      data().pool_mutex->lock() ;
       if( data().level == Level::Primary )
       {
         if( data().is_signaled[ data().current ] )
@@ -437,6 +459,7 @@ namespace nyx
         
         data().recording = true ;
       }
+      data().pool_mutex->unlock() ;
     }
 
     void CommandBuffer::record( const nyx::vkg::RenderPass& render_pass )
@@ -452,6 +475,7 @@ namespace nyx
       
       fence = data().fences[ data().current ] ;
       
+      data().pool_mutex->lock() ;
       if( data().level == Level::Primary )
       {
         if( data().is_signaled[ data().current ] )
@@ -467,12 +491,14 @@ namespace nyx
         data().recording                             = true ;
         data().started_render_pass[ data().current ] = true ;
       }
+      data().pool_mutex->unlock() ;
     }
 
     void CommandBuffer::record()
     {
       vk::Fence fence = data().fences[ data().current ] ;
       
+      data().pool_mutex->lock() ;
       if( data().is_signaled[ data().current ] )
       {
         vkg::Vulkan::add( data().device.waitForFences( 1, &fence, true, UINT64_MAX ) ) ;
@@ -482,6 +508,7 @@ namespace nyx
 
       vkg::Vulkan::add( data().cmd_buffers[ data().current ].begin( &data().begin_info ) ) ;
       data().recording = true ;
+      data().pool_mutex->unlock() ;
     }
     
     void CommandBuffer::setActive( unsigned index )
@@ -494,6 +521,7 @@ namespace nyx
       data().recording = false ;
       vk::CommandBuffer cmd_buff = data().cmd_buffers[ data().current ] ;
       
+      data().pool_mutex->lock() ;
       if( data().started_render_pass[ data().current ] )
       {
         cmd_buff.endRenderPass() ;
@@ -501,6 +529,7 @@ namespace nyx
       
       vkg::Vulkan::add( cmd_buff.end() ) ;
       data().started_render_pass[ data().current ] = false ;
+      data().pool_mutex->unlock() ;
     }
 
     void CommandBuffer::reset()

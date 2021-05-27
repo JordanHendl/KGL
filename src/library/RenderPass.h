@@ -189,8 +189,7 @@ namespace nyx
        * @param index The index of framebuffer to retrieve. See @count for the amount.
        * @return Const reference to this object's internal framebuffer.
        */
-      template<unsigned index = 0>
-      const typename Framework::Image& framebuffer() const ;
+      const typename Framework::Image& framebuffer( unsigned index ) const ;
       
       void reset() ;
       
@@ -256,8 +255,7 @@ namespace nyx
   }
 
   template<typename Framework>
-  template<unsigned index>
-  const typename Framework::Image& RenderPass<Framework>::framebuffer() const
+  const typename Framework::Image& RenderPass<Framework>::framebuffer( unsigned index ) const
   {
     return this->impl.framebuffer( index ) ;
   }

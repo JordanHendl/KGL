@@ -19,6 +19,8 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+
 #include "Vulkan.h"
 #include "Device.h"
 #include "library/Image.h"
@@ -105,6 +107,13 @@ extern bool SDL2_INITIALIZED ;
       VulkanData() ;
     };
      
+    /** The container for a vulkan surface's data.
+     */
+    struct SurfaceData
+    {
+      vk::SurfaceKHR surface ;
+    };
+
     /** Static container for all of the vulkan library's global data.
      */
     static VulkanData data ;
@@ -119,7 +128,7 @@ extern bool SDL2_INITIALIZED ;
         default : return vkg::COLOR_RED ;
       }
     }
-
+    
     uint32_t memType( uint32_t filter, ::vk::MemoryPropertyFlags flag, ::vk::PhysicalDevice device )
     {
       ::vk::PhysicalDeviceMemoryProperties mem_prop ;
@@ -195,6 +204,43 @@ extern bool SDL2_INITIALIZED ;
       return static_cast<vk::DeviceMemory>( reinterpret_cast<VkDeviceMemory>( this->val ) ) ;
     }
 
+    Surface::Surface()
+    {
+      this->surface_data = new SurfaceData() ;
+    }
+    
+    Surface::Surface( const Surface& surface )
+    {
+      this->surface_data = new SurfaceData() ;
+      *this = surface ;
+    }
+    
+    Surface::~Surface()
+    {
+      delete this->surface_data ;
+    }
+    
+    Surface& Surface::operator=( const Surface& surface )
+    {
+      *this->surface_data = *surface.surface_data ;
+      return *this ;
+    }
+    
+    const vk::SurfaceKHR& Surface::surface() const
+    {
+      return data().surface ;
+    }
+    
+    SurfaceData& Surface::data()
+    {
+      return *this->surface_data ;
+    }
+    
+    const SurfaceData& Surface::data() const
+    {
+      return *this->surface_data ;
+    }
+    
     vkg::Vulkan::Severity::Severity()
     {
       this->sev = Severity::None ;
@@ -270,6 +316,7 @@ extern bool SDL2_INITIALIZED ;
         case Error::OutOfDeviceMemory    : return "Out of device memory: Device memory available has been depleted."                       ;
         case Error::MemoryMapFailed      : return "Memory Map Failure: A Host-GPU memory mapping has failed."                              ;
         case Error::ValidationFailed     : return "Validation Layer Failed."                                                               ;
+        case Error::NativeWindowInUse    : return "A Native window is already in use."                                                     ;
         default : return "Unknown Error" ;
       }
     }
@@ -281,6 +328,7 @@ extern bool SDL2_INITIALIZED ;
         case Error::DeviceNotFound       : return Severity::Warning ;
         case Error::FeatureNotPresent    : return Severity::Warning ;
         case Error::SuboptimalKHR        : return Severity::Warning ;
+        case Error::NativeWindowInUse    : return Severity::Fatal   ;
         case Error::ValidationFailed     : return Severity::Fatal   ;
         case Error::DeviceLost           : return Severity::Fatal   ;
         case Error::OutOfDataKHR         : return Severity::Fatal   ;
@@ -372,6 +420,7 @@ extern bool SDL2_INITIALIZED ;
         case vk::Result::eErrorOutOfDeviceMemory    : return Vulkan::Error::OutOfDeviceMemory    ;
         case vk::Result::eErrorMemoryMapFailed      : return Vulkan::Error::MemoryMapFailed      ;
         case vk::Result::eErrorValidationFailedEXT  : return Vulkan::Error::ValidationFailed     ;
+        case vk::Result::eErrorNativeWindowInUseKHR : return Vulkan::Error::NativeWindowInUse    ;
         default : return Vulkan::Error::Unknown ;
       }
     }
@@ -687,10 +736,13 @@ extern bool SDL2_INITIALIZED ;
     void Vulkan::free( Vulkan::Memory& mem, unsigned gpu )
     {
       Vulkan::initialize() ;
-      const auto device = Vulkan::device( gpu ).device() ;
-      if( mem && device )
+      if( mem )
       {
-        device.free ( mem ) ;
+        const auto device = Vulkan::device( gpu ).device() ;
+        if( device )
+        {
+          device.free ( mem ) ;
+        }
       }
     }
     
@@ -769,6 +821,16 @@ extern bool SDL2_INITIALIZED ;
       }
     }
     
+    void Vulkan::setWindowResizable( unsigned id, bool value )
+    {
+      auto iter = vkg::data.windows.find( id ) ;
+      
+      if( iter != vkg::data.windows.end() )
+      {
+        iter->second->setResizable( value ) ;
+      }
+    }
+    
     void Vulkan::setWindowMouseCapture( unsigned id, bool value )
     {
       auto iter = vkg::data.windows.find( id ) ;
@@ -810,24 +872,27 @@ extern bool SDL2_INITIALIZED ;
       }
     }
     
-    unsigned long long Vulkan::context( unsigned id )
+    vkg::Surface Vulkan::context( unsigned id )
     {
+      static vkg::Surface dummy ;
       auto iter = vkg::data.windows.find( id ) ;
       
       if( iter != vkg::data.windows.end() )
       {
         return iter->second->context() ;
       }
-      
-      return 0ull ;
+
+      return dummy ;
     }
+
+    
     const char* Vulkan::platformSurfaceInstanceExtensions()
     {
       unsigned                 amt ;
       std::vector<const char*> ext ;
       if( !SDL2_INITIALIZED )
       {
-        SDL_Init( SDL_INIT_EVERYTHING ) ;
+        SDL_Init( SDL_INIT_VIDEO ) ;
         SDL2_INITIALIZED = true ;
       }
       
@@ -850,6 +915,7 @@ extern bool SDL2_INITIALIZED ;
 
     Vulkan::Context Vulkan::contextFromBaseWindow( const nyx::sdl::Window& window )
     {
+      vkg::Surface   out          ;
       VkSurfaceKHR   surface      ;
       VkInstance     instance     ;
       vk::SurfaceKHR vk_surface   ;
@@ -868,7 +934,8 @@ extern bool SDL2_INITIALIZED ;
         vk_surface = surface ;
       }
       
-      return reinterpret_cast<intptr_t>( surface ) ;
+      out.data().surface = vk_surface ;
+      return out ;
      }
    }
  }

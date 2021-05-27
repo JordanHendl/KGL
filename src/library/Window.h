@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include <sdl/Window.h>
+#include <window/Window.h>
 
 namespace nyx
 {

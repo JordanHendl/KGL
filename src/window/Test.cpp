@@ -24,7 +24,7 @@
 
 #include "Window.h"
 #include <event/Event.h>
-#include <athena/Manager.h>
+#include <Athena/Manager.h>
 #include <iostream> 
 static const unsigned object_input_expected = 250 ;
 static const unsigned only_type_expected    = 480 ;
@@ -108,11 +108,11 @@ int main()
   event.enroll( &onlyKeyUp, nyx::Key::A, "OnlyA" ) ;
   event.enroll( &setExit, nyx::Event::Type::WindowExit, "Exit" ) ;
   
-  manager.initialize( "Nyx Linux Library" ) ;
-  manager.add( "1) Linux Event Handler: Method Only Specific Key Events Test."   , &checkMethodInput   ) ;
-  manager.add( "2) Linux Event Handler: Function Only Specific Type Events Test.", &checkMethodInput   ) ;
-  manager.add( "2) Linux Event Handler: Exit Test"                               , &getExit            ) ;
-  manager.add( "3) Linux Window Creation Test."                                  , &testWindowCreation ) ;
+  manager.initialize( "Nyx Window Library" ) ;
+  manager.add( "1) Window Event Handler: Method Only Specific Key Events Test."   , &checkMethodInput   ) ;
+  manager.add( "2) Window Event Handler: Function Only Specific Type Events Test.", &checkMethodInput   ) ;
+  manager.add( "2) Window Event Handler: Exit Test"                               , &getExit            ) ;
+  manager.add( "3) Window Creation Test."                                         , &testWindowCreation ) ;
 
   return manager.test( athena::Output::Verbose ) ;
 }

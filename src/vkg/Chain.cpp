@@ -26,6 +26,7 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 
 #include "Chain.h"
 #include "CommandBuffer.h"
@@ -322,7 +323,7 @@ namespace nyx
 
     void Chain::synchronize()
     {
-      data().queue.wait() ;
+      if( this->initialized() ) data().queue.wait() ;
     }
 
     void Chain::submit()
@@ -712,6 +713,7 @@ namespace nyx
 
       const auto dep_flags = vk::DependencyFlags() ;
       data().mutex.lock() ;
+      data().record() ;
       for( unsigned index = 0; index < data().num_cmd; index++ )
       {
         data().cmd.buffer().pipelineBarrier( m_src, m_dst, dep_flags, 0, nullptr, 0, nullptr, 0, nullptr ) ;

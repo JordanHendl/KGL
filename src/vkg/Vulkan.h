@@ -177,7 +177,22 @@ namespace nyx
          */
         void* val ;
     };
-
+    
+    class Surface
+    {
+      public:
+        Surface() ;
+        Surface( const Surface& surface ) ;
+        ~Surface() ;
+        Surface& operator=( const Surface& surface ) ;
+        const vk::SurfaceKHR& surface() const ;
+      private: 
+        friend class vkg::Vulkan ;
+        struct SurfaceData* surface_data ;
+        SurfaceData& data() ;
+        const SurfaceData& data() const ;
+    };
+    
     /** Class that implements Vulkan functionality.
      */
     class Vulkan
@@ -185,7 +200,7 @@ namespace nyx
       public:
         using Buffer          = nyx::vkg::Buffer             ; ///< The object to handle vulkan buffer creation.
         using CommandRecord   = nyx::vkg::CommandBuffer      ; ///< The object to handle recording of vulkan commands.
-        using Context         = unsigned long long           ; ///< The object to handle a window's context.
+        using Context         = nyx::vkg::Surface            ; ///< The object to handle a window's context.
         using Descriptor      = nyx::vkg::Descriptor         ; ///< The object to manage data access in shaders.
         using DescriptorPool  = nyx::vkg::DescriptorPool     ; ///< The object to manage creating Descriptors.
         using Device          = nyx::vkg::Device             ; ///< The object to manage a hardware-accelerated device.
@@ -463,6 +478,12 @@ namespace nyx
          */
         static void setWindowTitle( unsigned id, const char* title ) ;
         
+        /** Method to set whether a window is resizable or not.
+         * @param id The id of the window to set.
+         * @param value Whether it is resizable or not.
+         */
+        static void setWindowResizable( unsigned id, bool value ) ;
+
         /** Method to set whether to capture the mouse on the window.
          * @param id The window id.
          * @param value Whether or not to capture the mouse.
@@ -493,7 +514,7 @@ namespace nyx
          * @param id The id of window to retrieve the context of.
          * @return The vulkan surface handle for the given window.
          */
-        static unsigned long long context( unsigned id ) ;
+        static vkg::Surface context( unsigned id ) ;
 
         /** Typedef to avoid using void* directly.
          */
@@ -511,6 +532,7 @@ namespace nyx
         friend class nyx::vkg::Descriptor        ;
         friend class nyx::vkg::DescriptorPool    ;
         friend class nyx::vkg::Device            ;
+        friend class nyx::vkg::DeviceData        ;
         friend class nyx::vkg::RenderPass        ;
         friend class nyx::vkg::RenderPassData    ;
         friend class nyx::vkg::Instance          ;

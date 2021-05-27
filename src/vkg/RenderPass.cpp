@@ -26,6 +26,7 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 
 #include "RenderPass.h"
 #include "Device.h"
@@ -189,7 +190,6 @@ namespace nyx
 
       data().attachments[ data().attachments.size() - 1 ].setFormat     ( data().swapchain.format()       ) ;
       data().attachments[ data().attachments.size() - 1 ].setFinalLayout( vk::ImageLayout::ePresentSrcKHR ) ;
-//      data().references [ data().references.size () - 1 ].setLayout     ( vk::ImageLayout::ePresentSrcKHR ) ;
       data().makeRenderPass  () ;
       data().makeFramebuffers() ;
       data().swapchain.acquire() ;
@@ -271,16 +271,32 @@ namespace nyx
     
     void RenderPass::reset()
     {
-      for( auto& framebuffer : data().framebuffers ) data().device.device().destroy( framebuffer ) ;
-      if( data().pass ) data().device.device().destroy( data().pass ) ;
-      data().swapchain.reset() ;
+      for( auto& framebuffer : data().framebuffers )
+      {
+        data().device.device().destroy( framebuffer ) ;
+      }
       
-      data().images      .clear() ;
-      data().framebuffers.clear() ;
-      data().attachments .clear() ;
-      data().subpasses   .clear() ;
-      data().references  .clear() ;
-      data().dependencies.clear() ;
+      for( auto& image : data().images )
+      {
+        image.reset() ;
+      }
+
+      if( data().pass )
+      {
+        data().device.device().destroy( data().pass ) ;
+        data().pass = nullptr ;
+      }
+      
+      data().swapchain       .reset() ;
+      data().clear_colors    .clear() ;
+      data().framebuffers    .clear() ;
+      data().dependencies    .clear() ;
+      data().references      .clear() ;
+      data().color_references.clear() ;
+      data().depth_references.clear() ;
+      data().subpasses       .clear() ;
+      data().images          .clear() ;
+      data().attachments     .clear() ;
     }
     
     unsigned RenderPass::numBindedSubpasses() const
@@ -295,7 +311,10 @@ namespace nyx
     
     const vkg::Image& RenderPass::framebuffer( unsigned index ) const
     {
-      if( index < data().images.size() ) return data().images[ index ] ;
+      static constexpr unsigned NUM_BUFFERS = 3 ;
+      
+      const unsigned actual_index = ( data().current_framebuffer * NUM_BUFFERS ) + index ;
+      if( actual_index < data().images.size() ) return data().images[ actual_index ] ;
       return data().images[ 0 ] ;
     }
     

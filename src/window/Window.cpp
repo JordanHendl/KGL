@@ -188,15 +188,16 @@ namespace nyx
     
     WindowData::WindowData()
     {
-      this->borderless = false   ;
-      this->resizable = false ;
+      this->borderless = false ;
+      this->resizable  = false ;
       this->fullscreen = false ;
-      this->width = 1280 ;
-      this->height = 1024 ;
-      this->xpos = 0 ;
-      this->ypos = 0 ;
-      this->title = "" ;
-      this->minimized = false ;
+      this->width      = 1280  ;
+      this->height     = 1024  ;
+      this->xpos       = 0     ;
+      this->ypos       = 0     ;
+      this->title      = ""    ;
+      this->maximized  = false ;
+      this->minimized  = false ;
     }
     
     void WindowData::setWindowBorderless( bool value )
@@ -222,11 +223,21 @@ namespace nyx
     void WindowData::setWindowWidth( unsigned value )
     {
       this->width = value ;
+
+      if( this->window != nullptr ) 
+      {
+        SDL_SetWindowSize( this->window, this->width, this->height ) ;
+      }
     }
 
     void WindowData::setWindowHeight( unsigned value )
     {
       this->height = value ;
+      
+      if( this->window != nullptr ) 
+      {
+        SDL_SetWindowSize( this->window, this->width, this->height ) ;
+      }
     }
 
     void WindowData::create()
@@ -239,11 +250,13 @@ namespace nyx
 
       int flags = SDL_WINDOW_VULKAN ;
       
+      flags |= SDL_WINDOW_SHOWN ;
+      
       if     ( this->resizable                      ) flags |= SDL_WINDOW_RESIZABLE          ;
       if     ( this->maximized                      ) flags |= SDL_WINDOW_MAXIMIZED          ;
       if     ( this->borderless && this->fullscreen ) flags |= SDL_WINDOW_FULLSCREEN_DESKTOP ;
-      else if( this->fullscreen                     ) flags |= SDL_WINDOW_FULLSCREEN         ;
       else if( this->borderless                     ) flags |= SDL_WINDOW_BORDERLESS         ;
+      else if( this->fullscreen                     ) flags |= SDL_WINDOW_FULLSCREEN         ;
       
       this->window = SDL_CreateWindow( this->title.c_str(), this->xpos, this->ypos, this->width, this->height, flags ) ;
     }
@@ -310,6 +323,11 @@ namespace nyx
     void Window::setResizable( bool value )
     {
       data().resizable = value ;
+      
+      if( data().window != nullptr ) 
+      {
+        SDL_SetWindowResizable( data().window, static_cast<SDL_bool>( value ) ) ;
+      }
     }
 
     void Window::setBorderless( bool value )

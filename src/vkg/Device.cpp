@@ -26,6 +26,7 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 
 #include "Device.h"
 #include "Queue.h"
@@ -44,7 +45,7 @@ namespace nyx
 {
   namespace vkg
   {
-    static vk::PhysicalDeviceBufferDeviceAddressFeatures ext_buffer_address  ;
+    static vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR ext_buffer_address  ;
     
     /** Structure to manage vulkan queue families.
      */
@@ -159,10 +160,11 @@ namespace nyx
     
     bool QueueFamily::present( vk::SurfaceKHR surface )
     {
-      vk::Bool32 support = false ;
+      auto result = this->p_dev.getSurfaceSupportKHR( this->family, surface ) ;
       
-      Vulkan::add( this->p_dev.getSurfaceSupportKHR( this->family, surface, &support ) ) ;
-      return support ;
+      vkg::Vulkan::add( result.result ) ;
+      
+      return result.value ;
     }
     
     vkg::Queue& QueueFamily::makeQueue( const vkg::Device& device )
@@ -180,7 +182,7 @@ namespace nyx
     DeviceData::DeviceData()
     {
       this->id = UINT32_MAX ;
-      this->extension_list = { "VK_KHR_buffer_device_address" } ;
+      this->extension_list = { "VK_KHR_buffer_device_address", "VK_KHR_swapchain" } ;
     }
 
     DeviceData& DeviceData::operator=( const DeviceData& data )
@@ -243,13 +245,13 @@ namespace nyx
     {
       typedef std::vector<::vk::DeviceQueueCreateInfo> CreateInfos ;
       
-      ::vk::DeviceCreateInfo      info            ;
-      vk::PhysicalDeviceFeatures2 feat            ;
-      DeviceData::CharVector      ext_list_char   ;
-      DeviceData::CharVector      layer_list_char ;
-      CreateInfos                 queue_infos     ;
-      std::vector<float>          priorities      ;
-
+      vk::DeviceCreateInfo            info            ;
+      vk::PhysicalDeviceFeatures2     feat            ;
+      DeviceData::CharVector          ext_list_char   ;
+      DeviceData::CharVector          layer_list_char ;
+      CreateInfos                     queue_infos     ;
+      std::vector<float>              priorities      ;
+      
       this->extension_list = this->filterExtensions()                     ;
       this->layer_list     = this->filterLayers()                         ;
       ext_list_char        = this->listToCharVector( this->extension_list ) ;
@@ -277,13 +279,15 @@ namespace nyx
       info.setPpEnabledExtensionNames( ext_list_char.data()   ) ;
       info.setEnabledLayerCount      ( layer_list_char.size() ) ;
       info.setPEnabledLayerNames     ( layer_list_char        ) ;
-      feat.setFeatures( this->features ) ;
+      info.setPEnabledFeatures       ( &this->features        ) ;
       
       nyx::vkg::ext_buffer_address.setBufferDeviceAddress( true ) ;
-      feat.setPNext( static_cast<void*>( &nyx::vkg::ext_buffer_address ) ) ;
-      info.setPNext( static_cast<void*>( &feat                         ) ) ;
+      nyx::vkg::ext_buffer_address.setBufferDeviceAddressCaptureReplay( false ) ;
+      nyx::vkg::ext_buffer_address.setBufferDeviceAddressMultiDevice( false ) ;
+      info.setPNext( static_cast<void*>( &nyx::vkg::ext_buffer_address ) ) ;
       
       vkg::Vulkan::add( this->physical_device.createDevice( &info, nullptr, &this->gpu ) ) ;
+      VULKAN_HPP_DEFAULT_DISPATCHER.init( this->gpu ) ;
     }
     
     void DeviceData::findQueueFamilies()
@@ -457,10 +461,10 @@ namespace nyx
       return dummy ;
     }
     
-    const nyx::vkg::Queue& Device::presentQueue( unsigned long long surface ) const
+    const nyx::vkg::Queue& Device::presentQueue( const vkg::Surface& surface ) const
     {
       static const nyx::vkg::Queue dummy ;
-      const auto vk_surface = static_cast< vk::SurfaceKHR>( reinterpret_cast<VkSurfaceKHR>( surface ) ) ;
+      const auto vk_surface = surface.surface() ;
       if( data().queues )
       for( auto& family : *data().queues )
       {
