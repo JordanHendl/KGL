@@ -26,7 +26,7 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+
 
 #include "Device.h"
 #include "Queue.h"
@@ -182,7 +182,7 @@ namespace nyx
     DeviceData::DeviceData()
     {
       this->id = UINT32_MAX ;
-      this->extension_list = { "VK_KHR_buffer_device_address", "VK_KHR_swapchain" } ;
+      this->extension_list = { "VK_KHR_swapchain" } ;
     }
 
     DeviceData& DeviceData::operator=( const DeviceData& data )
@@ -281,13 +281,12 @@ namespace nyx
       info.setPEnabledLayerNames     ( layer_list_char        ) ;
       info.setPEnabledFeatures       ( &this->features        ) ;
       
-      nyx::vkg::ext_buffer_address.setBufferDeviceAddress( true ) ;
-      nyx::vkg::ext_buffer_address.setBufferDeviceAddressCaptureReplay( false ) ;
-      nyx::vkg::ext_buffer_address.setBufferDeviceAddressMultiDevice( false ) ;
-      info.setPNext( static_cast<void*>( &nyx::vkg::ext_buffer_address ) ) ;
+//      nyx::vkg::ext_buffer_address.setBufferDeviceAddress( true ) ;
+//      nyx::vkg::ext_buffer_address.setBufferDeviceAddressCaptureReplay( false ) ;
+//      nyx::vkg::ext_buffer_address.setBufferDeviceAddressMultiDevice( false ) ;
+//      info.setPNext( static_cast<void*>( &nyx::vkg::ext_buffer_address ) ) ;
       
       vkg::Vulkan::add( this->physical_device.createDevice( &info, nullptr, &this->gpu ) ) ;
-      VULKAN_HPP_DEFAULT_DISPATCHER.init( this->gpu ) ;
     }
     
     void DeviceData::findQueueFamilies()
@@ -324,7 +323,7 @@ namespace nyx
         {
           if( std::string( ext.extensionName.data() ) == std::string( requested ) )
           {
-            list.push_back( std::string( ext.extensionName ) ) ;
+            list.push_back( std::string( ext.extensionName.data() ) ) ;
           }
         }
       }

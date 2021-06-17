@@ -26,7 +26,7 @@
 #include "loaders/NggFile.h"
 #include "library/Array.h"
 #include "library/Chain.h"
-#include "library/Renderer.h"
+#include "library/Pipeline.h"
 #include <vector>
 #include <string>
 #include <iostream>
@@ -88,7 +88,7 @@ namespace mars
        * @param pipeline The pipeline to use for rendering.
        * @param chain The chain to record the draw command to.
        */
-      inline void draw( const nyx::Renderer<Framework>& pipeline, nyx::Chain<Framework>& chain ) ;
+      inline void draw( const nyx::Pipeline<Framework>& pipeline, nyx::Chain<Framework>& chain ) ;
       
       /** Method to reset and deallocate all data.
        */
@@ -212,7 +212,7 @@ namespace mars
   }
 
   template<typename Framework>
-  void Model<Framework>::draw( const nyx::Renderer<Framework>& pipeline, nyx::Chain<Framework>& draw )
+  void Model<Framework>::draw( const nyx::Pipeline<Framework>& pipeline, nyx::Chain<Framework>& draw )
   {
     for( const auto& mesh : this->meshes )
     {

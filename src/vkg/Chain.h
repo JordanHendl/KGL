@@ -25,6 +25,12 @@
 #pragma once
 
 #include "Buffer.h"
+#include "Pipeline.h"
+
+namespace vk
+{
+  class Semaphore ;
+}
 
 namespace nyx
 {
@@ -35,7 +41,7 @@ namespace nyx
   class Image ;
   
   template<typename Framework>
-  class Renderer ;
+  class Pipeline ;
   
   enum class ChainMode     : unsigned ;
   enum class ChainType     : unsigned ;
@@ -48,9 +54,10 @@ namespace nyx
     class Buffer     ;
     class Image      ;
     class Vulkan     ;
-    class Renderer   ;
+    class Pipeline   ;
     class RenderPass ;
-    
+    class Swapchain  ;
+
     /** Class to handle recording operations to perform on the GPU.
      */
     class Chain
@@ -195,28 +202,36 @@ namespace nyx
          * @param offset The offset into the vertex array to start drawing at.
          */
         template<typename Type>
-        void draw( const vkg::Renderer& renderer, const Array<Vulkan, Type>& array, unsigned offset = 0 ) ;
+        void draw( const vkg::Pipeline& Pipeline, const Array<Vulkan, Type>& array, unsigned offset = 0 ) ;
 
         /** Method to append a draw command to this object using indices.
          * @param indices The index array describing the render order of the vertex array.
          * @param vertices The array of vertices used for drawing.
          */
         template<typename Type, typename Type2>
-        void drawIndexed( const vkg::Renderer& renderer, const Array<Vulkan, Type2>& indices, const Array<Vulkan, Type>& vertices ) ;
+        void drawIndexed( const vkg::Pipeline& Pipeline, const Array<Vulkan, Type2>& indices, const Array<Vulkan, Type>& vertices ) ;
         
         /** Method to append a draw command to this object using indices.
          * @param indices The index array describing the render order of the vertex array.
          * @param vertices The array of vertices used for drawing.
          */
         template<typename Type, typename Type2>
-        void drawInstanced( unsigned instance_count, const vkg::Renderer& renderer, const Array<Vulkan, Type2>& indices, const Array<Vulkan, Type>& vertices ) ;
+        void drawInstanced( unsigned instance_count, const vkg::Pipeline& Pipeline, const Array<Vulkan, Type2>& indices, const Array<Vulkan, Type>& vertices ) ;
         
         /** Method to append a draw command to this object using indices.
          * @param indices The index array describing the render order of the vertex array.
          * @param vertices The array of vertices used for drawing.
          */
         template<typename Type>
-        void drawInstanced( unsigned instance_count, const vkg::Renderer& renderer, const Array<Vulkan, Type>& vertices ) ;
+        void drawInstanced( unsigned instance_count, const vkg::Pipeline& Pipeline, const Array<Vulkan, Type>& vertices ) ;
+        
+        /** Method to append a dispatch command to this chain.
+         * @param pipeline The compute pipeline to use.
+         * @param x The X workgroup size.
+         * @param y The Y workgroup size.
+         * @param z The Z workgroup size.
+         */
+        void dispatch( const vkg::Pipeline& pipeline, unsigned x, unsigned y, unsigned z ) ;
         
         /** Method to explicitly end recording of this object.
           * @note The submit method implicitly ends this chain's record as well.
@@ -229,7 +244,7 @@ namespace nyx
          * @param offset The offset, in bytes, to update the data in the pipeline. Defaults to 0.
          */
         template<typename Type>
-        void push( const Renderer& pipeline, const Type& data, unsigned offset ) ;
+        void push( const Pipeline& pipeline, const Type& data, unsigned offset ) ;
         
         /** Method to record an image transition operation.
          * @param image The image to transition.
@@ -261,13 +276,15 @@ namespace nyx
         
       private:
         
-        void drawBase( const vkg::Renderer& renderer, const vkg::Buffer& vertices, unsigned count, unsigned offset ) ;
+        friend class Swapchain  ;
+        friend class RenderPass ;
+        void drawBase( const vkg::Pipeline& Pipeline, const vkg::Buffer& vertices, unsigned count, unsigned offset ) ;
 
-        void drawIndexedBase( const vkg::Renderer& renderer, const vkg::Buffer& indices, unsigned index_count, const vkg::Buffer& vertices, unsigned vertex_count ) ;
+        void drawIndexedBase( const vkg::Pipeline& Pipeline, const vkg::Buffer& indices, unsigned index_count, const vkg::Buffer& vertices, unsigned vertex_count ) ;
         
-        void drawInstancedBase( unsigned instance_count, const vkg::Renderer& renderer, const vkg::Buffer& indices, unsigned index_count, const vkg::Buffer& vertices, unsigned vertex_count ) ;
+        void drawInstancedBase( unsigned instance_count, const vkg::Pipeline& Pipeline, const vkg::Buffer& indices, unsigned index_count, const vkg::Buffer& vertices, unsigned vertex_count ) ;
         
-        void drawInstancedBase( unsigned instanced_count, const vkg::Renderer& renderer, const vkg::Buffer& vertices, unsigned vertex_count ) ;
+        void drawInstancedBase( unsigned instanced_count, const vkg::Pipeline& Pipeline, const vkg::Buffer& vertices, unsigned vertex_count ) ;
         
         void copy( const vkg::Buffer& src, vkg::Buffer& dst, unsigned copy_amt, unsigned element_size, unsigned src_offset, unsigned dst_offset ) ;
 
@@ -283,7 +300,11 @@ namespace nyx
         
         void copy( const vkg::Buffer& src, vkg::Image& dst, unsigned copy_amt, unsigned element_size, unsigned src_offset, unsigned dst_offset ) ;
         
-        void pushBase( const Renderer& pipeline, const void* value, unsigned byte_size, unsigned offset ) ;
+        void pushBase( const Pipeline& pipeline, const void* value, unsigned byte_size, unsigned offset ) ;
+        
+        const vk::Semaphore& signal() const ;
+        
+        void setWait( const vk::Semaphore& semaphore ) ;
         
         struct ChainData* chain_data ;
         
@@ -292,6 +313,7 @@ namespace nyx
         const ChainData& data() const ;
 
         ChainData& data() ;
+        
     };
     
     template<typename Type>
@@ -325,31 +347,31 @@ namespace nyx
     }
     
     template<typename Type>
-    void Chain::draw( const vkg::Renderer& renderer, const Array<Vulkan, Type>& array, unsigned offset )
+    void Chain::draw( const vkg::Pipeline& Pipeline, const Array<Vulkan, Type>& array, unsigned offset )
     {
-      this->drawBase( renderer, array, array.size(), offset ) ;
+      this->drawBase( Pipeline, array, array.size(), offset ) ;
     }
     
     template<typename Type, typename Type2>
-    void Chain::drawIndexed( const vkg::Renderer& renderer, const Array<Vulkan, Type2>& indices, const Array<Vulkan, Type>& vertices )
+    void Chain::drawIndexed( const vkg::Pipeline& Pipeline, const Array<Vulkan, Type2>& indices, const Array<Vulkan, Type>& vertices )
     {
-      this->drawIndexedBase( renderer, indices, indices.size(), vertices, vertices.size() ) ;
+      this->drawIndexedBase( Pipeline, indices, indices.size(), vertices, vertices.size() ) ;
     }
     
     template<typename Type, typename Type2>
-    void Chain::drawInstanced( unsigned amt, const vkg::Renderer& renderer, const Array<Vulkan, Type2>& indices, const Array<Vulkan, Type>& vertices )
+    void Chain::drawInstanced( unsigned amt, const vkg::Pipeline& Pipeline, const Array<Vulkan, Type2>& indices, const Array<Vulkan, Type>& vertices )
     {
-      this->drawInstancedBase( amt, renderer, indices, indices.size(), vertices, vertices.size() ) ;
+      this->drawInstancedBase( amt, Pipeline, indices, indices.size(), vertices, vertices.size() ) ;
     }
     
     template<typename Type>
-    void Chain::drawInstanced( unsigned amt, const vkg::Renderer& renderer, const Array<Vulkan, Type>& vertices )
+    void Chain::drawInstanced( unsigned amt, const vkg::Pipeline& Pipeline, const Array<Vulkan, Type>& vertices )
     {
-      this->drawInstancedBase( amt, renderer, vertices, vertices.size() ) ;
+      this->drawInstancedBase( amt, Pipeline, vertices, vertices.size() ) ;
     }
     
     template<typename Type>
-    void Chain::push( const Renderer& pipeline, const Type& data, unsigned offset )
+    void Chain::push( const Pipeline& pipeline, const Type& data, unsigned offset )
     {
       this->pushBase( pipeline, static_cast<const void*>( &data ), sizeof( Type ), offset ) ;
     }

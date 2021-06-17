@@ -82,6 +82,7 @@ namespace nyx
         void barrier( const vkg::Buffer& read, const vkg::Buffer& write ) ;
         void barrier( const vkg::Buffer& read, const vkg::Image& write ) ;
         
+        void dispatch( unsigned x, unsigned y, unsigned z ) ;
         /** Method to push a value onto the command buffer as a push constant.
          * @param value The value to push.
          * @param stage The stage of the pipeline that the constant is used in.
@@ -220,7 +221,7 @@ namespace nyx
         
       private:
         
-         friend class RendererImpl ;
+         friend class PipelineImpl ;
          friend class Chain        ;
          friend class ChainData    ;
          friend class Queue        ;

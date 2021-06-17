@@ -28,6 +28,7 @@ namespace vk
 {
   class SurfaceKHR   ;
   class SwapchainKHR ;
+  class Semaphore    ;
   enum class Format  ;
 }
 
@@ -41,6 +42,8 @@ namespace nyx
     class Image           ;
     class RenderPass      ;
     class Surface         ;
+    class Chain           ;
+
     /** Class for managing a Vulkan Swapchain.
      */
     class Swapchain
@@ -147,7 +150,7 @@ namespace nyx
         /** Method to submit this swapchain's presentation to the queue used for it's initialization.
          * @param sync The synchronization object used to sync this operation so that it occurs after other GPU events.
          */
-        unsigned submit() ;
+        unsigned submit( vkg::Chain& render_chain ) ;
         
         /** Method to reset this object and deallocate all data.
          */
@@ -156,6 +159,10 @@ namespace nyx
       private:
         
         friend class RenderPassData ;
+        friend class RenderPass     ;
+        friend class Chain ;
+
+        const vk::Semaphore& imageReady() const ;
 
         /** Method to retrieve a const pointer to the start of this object's image list.
          * @see Swapchain::count() for the amount of images in the list.

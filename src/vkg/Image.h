@@ -89,12 +89,6 @@ namespace nyx
          */
         Image& operator=( const Image& src ) ;
         
-        /** Method to perform a deep copy on the input image.
-         * @param src The image to copy from.
-         * @param buffer Reference to a valid vulkan command buffer to record the copy operation to.
-         */
-        void copy( const Image& src, nyx::vkg::Queue& buffer ) ;
-
       private:
         
         /** Friend decleration for templated image.
@@ -109,11 +103,6 @@ namespace nyx
         friend class Descriptor     ;
         friend class CommandBuffer  ;
         friend class Chain          ;
-        /** Method to perform a deep copy on the input image.
-         * @param src The image to copy from.
-         * @param buffer Reference to a valid vulkan command buffer to record the copy operation to.
-         */
-        void copy( const nyx::vkg::Buffer& src, nyx::vkg::Queue& buffer ) ;
 
         /** Method to determine if this object was initialized or not.
          * @return Whether or not this object was initialized.
@@ -201,17 +190,6 @@ namespace nyx
          */
         nyx::ImageFormat format() const ;
 
-        /** Method to transition this object's layout to the specified one on the GPU.
-         * @param layout The layout to transition this image to.
-         * @param cmd_buff The Vulkan command buffer to record the transition operation to.
-         */
-        void transition( const nyx::ImageLayout& layout, nyx::vkg::Queue& queue ) const ;
-        
-        /** Method to transition the image back to it's last known layout.
-         * @param cmd_buff The Vulkan command buffer to record the transition operation to.
-         */
-        void revertLayout( nyx::vkg::Queue& queue ) const ;
-        
         /** Method to retrieve the vulkan image view associated with this image.
          * @return The vulkan image view associated with this image.
          */ 

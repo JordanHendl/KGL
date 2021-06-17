@@ -26,7 +26,7 @@
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NO_EXCEPTIONS
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+
 
 #include "NyxShader.h"
 #include "Device.h"
@@ -206,10 +206,11 @@ namespace nyx
     {
       switch( type )
       {
-        case nyx::UniformType::Ubo     : desc_type = ::vk::DescriptorType::eUniformBuffer        ; break ;
-        case nyx::UniformType::Sampler : desc_type = ::vk::DescriptorType::eCombinedImageSampler ; break ;
-        case nyx::UniformType::Ssbo    : desc_type = ::vk::DescriptorType::eStorageBuffer        ; break ;
-        case nyx::UniformType::None    : desc_type = ::vk::DescriptorType::eUniformBuffer        ; break ;
+        case nyx::UniformType::Ubo        : desc_type = ::vk::DescriptorType::eUniformBuffer        ; break ;
+        case nyx::UniformType::Sampler    : desc_type = ::vk::DescriptorType::eCombinedImageSampler ; break ;
+        case nyx::UniformType::InputImage : desc_type = ::vk::DescriptorType::eStorageImage         ; break ;
+        case nyx::UniformType::Ssbo       : desc_type = ::vk::DescriptorType::eStorageBuffer        ; break ;
+        case nyx::UniformType::None       : desc_type = ::vk::DescriptorType::eUniformBuffer        ; break ;
         default : break ;
       }
     }
@@ -241,6 +242,7 @@ namespace nyx
       switch( flags )
       {
         case nyx::ImageUsage::Sampled : return vk::DescriptorType::eCombinedImageSampler ;
+        case nyx::ImageUsage::Storage : return vk::DescriptorType::eStorageImage ;
         case nyx::ImageUsage::Input   : return vk::DescriptorType::eStorageImage ;
         default : return vk::DescriptorType::eSampler ;
       }

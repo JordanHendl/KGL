@@ -22,7 +22,7 @@
 # Created on December 31, 2020, 11:30 PM
 # 
 
-CMAKE_MINIMUM_REQUIRED( VERSION 3.18.0 )
+CMAKE_MINIMUM_REQUIRED( VERSION 3.13.0 )
 
 LIST( APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" )
 
@@ -188,5 +188,6 @@ SET( CPACK_COMPONENT_RELEASE_DESCRIPTION  "Runtime Libraries for the ${CMAKE_PRO
 SET( CPACK_COMPONENT_DEVEL_DEPENDS        release                                                                         )
 INCLUDE( KPackage ) 
 
+ADD_SUBDIRECTORY( ext )
 ADD_SUBDIRECTORY( src )
 INSTALL( EXPORT Nyx FILE NyxGPUConfig.cmake DESTINATION ${CMAKE_PROJECT_NAME} COMPONENT devel )

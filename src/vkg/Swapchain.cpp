@@ -26,10 +26,9 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+
 
 #include "Swapchain.h"
-#include "Synchronization.h"
 #include "Image.h"
 #include "Device.h"
 #include "Queue.h"
@@ -46,28 +45,30 @@ namespace nyx
   {
     struct SwapchainData
     {
-      using Formats = std::vector<vk::SurfaceFormatKHR>      ; ///< TODO
-      using Modes   = std::vector<vk::PresentModeKHR>        ; ///< TODO
-      using Images  = std::vector<nyx::vkg::Image>           ; ///< TODO
-      using Fences  = std::vector<vk::Fence>                 ; ///< TODO
-      using Syncs   = std::vector<nyx::vkg::Synchronization> ; ///< TODO
-      
-      Syncs                      syncs          ; ///< The synchronizations of this object.
-      Fences                     fences         ; ///< The fences used for managing frames.
-      Formats                    formats        ; ///< TODO
-      Modes                      modes          ; ///< TODO
-      Images                     images         ; ///< TODO
-      vkg::Queue                 queue  ; ///< TODO
-      vkg::Device                device         ;
-      vk::SwapchainKHR           swapchain      ; ///< TODO
-      vk::SurfaceCapabilitiesKHR capabilities   ; ///< TODO
-      vk::SurfaceFormatKHR       surface_format ; ///< TODO
-      vk::SurfaceKHR             surface        ; ///< TODO
-      vkg::Surface               raw_surface    ; ///< TODO
-      vk::Extent2D               extent         ; ///< TODO
-      std::queue<unsigned>       acquired       ; ///< The images acquired from this swapchain.
-      unsigned                   current_frame  ; ///< The frame counter used to monitor swapchain presenting.
-      bool                       skip_frame     ;
+      using Formats    = std::vector<vk::SurfaceFormatKHR> ; ///< TODO
+      using Modes      = std::vector<vk::PresentModeKHR>   ; ///< TODO
+      using Images     = std::vector<nyx::vkg::Image>      ; ///< TODO
+      using Fences     = std::vector<vk::Fence>            ; ///< TODO
+      using Semaphores = std::vector<vk::Semaphore>        ;
+
+      Fences                     fences          ; ///< The fences used for managing frames.
+      Fences                     fences_in_flight; ///< The fences used for managing frames.
+      Formats                    formats         ; ///< TODO
+      Modes                      modes           ; ///< TODO
+      Images                     images          ; ///< TODO
+      Semaphores                 image_available ;
+      Semaphores                 present_done    ;
+      vkg::Queue                 queue           ; ///< TODO
+      vkg::Device                device          ;
+      vk::SwapchainKHR           swapchain       ; ///< TODO
+      vk::SurfaceCapabilitiesKHR capabilities    ; ///< TODO
+      vk::SurfaceFormatKHR       surface_format  ; ///< TODO
+      vk::SurfaceKHR             surface         ; ///< TODO
+      vkg::Surface               raw_surface     ; ///< TODO
+      vk::Extent2D               extent          ; ///< TODO
+      std::queue<unsigned>       acquired        ; ///< The images acquired from this swapchain.
+      unsigned                   current_frame   ; ///< The frame counter used to monitor swapchain presenting.
+      bool                       skip_frame      ;
 
       /** Default constructor.
        */
@@ -239,8 +240,9 @@ namespace nyx
     void Swapchain::initialize( const nyx::vkg::Queue& present_queue, const vkg::Surface& surface )
     {
       Vulkan::initialize() ;
-      data().surface = surface.surface() ;
-      
+      vk::FenceCreateInfo fence_info ;
+      fence_info.setFlags( vk::FenceCreateFlagBits::eSignaled ) ;
+      data().surface     = surface.surface()                       ;
       data().queue       = present_queue                           ;
       data().device      = Vulkan::device( data().queue.device() ) ;
       data().raw_surface = surface                                 ;
@@ -251,24 +253,25 @@ namespace nyx
       data().makeSwapchain () ;
       data().generateImages() ;
       
-      data().syncs .resize( this->count() ) ;
-      data().fences.resize( this->count() ) ;
-
-      for( auto& sync : data().syncs ) sync.initialize( data().device, 1 ) ;
+      data().fences         .resize( this->count() ) ;
+      data().image_available.resize( this->count() ) ;
+      data().present_done   .resize( this->count() ) ;
+      
+      for( auto& sem : data().image_available )
+      {
+        sem = data().device.device().createSemaphore( {}, nullptr ).value ;
+      }
+      
+      for( auto& fence : data().fences           ) fence = data().device.device().createFence( fence_info, nullptr ).value ;
+      for( auto& fence : data().fences_in_flight ) fence = nullptr ;
     }
 
     unsigned Swapchain::acquire()
     {
-      const auto device    = data().device.device() ;
-      const unsigned index = data().current_frame   ;
-      if( data().fences[ index ] ) 
-      {
-        vkg::Vulkan::add( device.waitForFences( 1, &data().fences[ index ], VK_TRUE, UINT64_MAX ) ) ;
-        vkg::Vulkan::add( device.resetFences( 1, &data().fences[ index ]                        ) ) ;
-      }
-      
-      data().syncs[ index ].resetFence() ;
-      auto result = device.acquireNextImageKHR( data().swapchain, UINT64_MAX, data().syncs[ index ].signal(), data().syncs[ index ].signalFence() ) ;
+      const auto device = data().device.device() ;
+
+//      Vulkan::deviceSynchronize( data().device ) ;
+      auto result = device.acquireNextImageKHR( data().swapchain, UINT64_MAX, data().image_available[ data().current_frame ], nullptr ) ;
       
       if( result.result == vk::Result::eErrorOutOfDateKHR || result.result == vk::Result::eSuboptimalKHR )
       {
@@ -278,28 +281,25 @@ namespace nyx
         data().skip_frame = true ;
         return Vulkan::Error::RecreateSwapchain ;
       }
-
-      data().fences[ index ] = data().syncs[ index ].signalFence() ;
+      
       data().acquired.push( static_cast<unsigned>( result.value ) ) ;
-      data().current_frame = ( index + 1 ) % data().syncs.size() ;
-      data().syncs[ index ].waitOn( data().syncs[ index ] ) ;
+      
       return Vulkan::Error::Success ;
     }
 
-    unsigned Swapchain::submit()
+    unsigned Swapchain::submit( vkg::Chain& chain )
     {
       const unsigned index = data().acquired.front() ;
       
       if( !data().skip_frame )
       {
-        if( data().queue.submit( *this, index, data().syncs[ index ] ) == nyx::vkg::Vulkan::Error::RecreateSwapchain )
+        if( data().queue.submit( *this, index, chain.signal() ) == nyx::vkg::Vulkan::Error::RecreateSwapchain )
         {
           Vulkan::deviceSynchronize( data().queue.device() ) ;
+          this->reset() ;
           this->initialize( data().queue, data().raw_surface ) ;
-          
-          data().acquired.pop() ;
-          data().syncs[ index ].clear() ;
-          
+            data().acquired.pop() ;
+          data().current_frame = ( data().current_frame + 1 ) % this->count() ;
           return Vulkan::Error::RecreateSwapchain ;
         }
       }
@@ -309,10 +309,13 @@ namespace nyx
       }
 
       data().acquired.pop() ;
-
-      data().syncs[ index ].clear() ;
-      
+      data().current_frame = ( data().current_frame + 1 ) % this->count() ;
       return Vulkan::Error::Success ;
+    }
+    
+    const vk::Semaphore& Swapchain::imageReady() const 
+    {
+      return data().image_available[ data().current_frame ] ;
     }
 
     const nyx::vkg::Image* Swapchain::images() const
@@ -370,8 +373,12 @@ namespace nyx
     {
       if( data().swapchain )
       {
+        Vulkan::deviceSynchronize( data().device ) ;
         data().device.device().destroy( data().swapchain ) ;
         data().swapchain = nullptr ;
+        
+        for( auto &sem : data().image_available ) data().device.device().destroy( sem ) ;
+//        for( auto &sem : data().present_done    ) data().device.device().destroy( sem ) ;
         
         data().images.clear() ;
       }

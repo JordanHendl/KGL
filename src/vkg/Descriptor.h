@@ -92,6 +92,11 @@ namespace nyx
          */
         void initialize( const vkg::DescriptorPool& pool ) ;
         
+        /** Method to check whether or not this object is initialized or not.
+         * @return Whether or not this object is initialized.
+         */
+        bool initialized() const ;
+
         /** Method to retrieve the vulkan descriptor for this object.
          * @return Const reference to the vulkan descriptor of this object.
          */
@@ -132,7 +137,7 @@ namespace nyx
         /** Friend declaration.
          */
         friend class DescriptorPool ;
-        friend class RendererImpl   ;
+        friend class Pipeline       ;
         
         /** Forward declared structure containing this object's data.
          */

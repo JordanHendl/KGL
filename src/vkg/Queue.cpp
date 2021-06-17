@@ -26,11 +26,10 @@
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NO_EXCEPTIONS
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+
 
 #include "Queue.h"
 #include "Device.h"
-#include "Synchronization.h"
 #include "Vulkan.h"
 #include <vulkan/vulkan.hpp>
 #include <limits>
@@ -132,9 +131,9 @@ namespace nyx
     
     void Queue::wait() const
     {
-      data().mutex->lock() ;
+      Vulkan::deviceLock( data().dev_id ) ;
       vkg::Vulkan::add( data().queue.waitIdle() ) ; 
-      data().mutex->unlock() ;
+      Vulkan::deviceUnlock( data().dev_id ) ;
     }
 
     const vk::Queue& Queue::queue() const
@@ -165,34 +164,60 @@ namespace nyx
 
       if( cmd_buff.level() == nyx::vkg::CommandBuffer::Level::Primary )
       {
-        data().mutex->lock() ;
+        Vulkan::deviceLock( data().dev_id ) ;
         vkg::Vulkan::add( data().queue.submit( 1, &data().submit, fence ) ) ;
-        data().mutex->unlock() ;
+        Vulkan::deviceUnlock( data().dev_id ) ;
       }
       
       cmd_buff.advance() ;
     }
     
-    void Queue::submit( const nyx::vkg::CommandBuffer& cmd_buff, const nyx::vkg::Synchronization& sync )
+    void Queue::submit( const nyx::vkg::CommandBuffer& cmd_buff, const vk::Semaphore& wait_sem, const vk::Semaphore& signal_sem )
     {
-      static const std::vector<::vk::PipelineStageFlags> flags( 100, ::vk::PipelineStageFlagBits::eAllCommands ) ;
-
-      data().submit = vk::SubmitInfo() ;
+      static const vk::PipelineStageFlags flag = vk::PipelineStageFlagBits::eAllCommands ;
+      const auto cmd = cmd_buff.buffer() ;
       
-      data().submit.setCommandBufferCount  ( cmd_buff.size()    ) ;
-      data().submit.setPCommandBuffers     ( cmd_buff.pointer() ) ;
-      data().submit.setPSignalSemaphores   ( sync.signals()     ) ;
-      data().submit.setSignalSemaphoreCount( sync.numSignals()  ) ;
-      data().submit.setWaitSemaphoreCount  ( sync.numWaitSems() ) ;
-      data().submit.setPWaitSemaphores     ( sync.waits()       ) ;
-      data().submit.setPWaitDstStageMask   ( flags.data()       ) ;
+      data().submit = vk::SubmitInfo() ;
+      data().submit.setCommandBufferCount  ( 1                  ) ;
+      data().submit.setPCommandBuffers     ( &cmd               ) ;
+      data().submit.setWaitSemaphoreCount  ( wait_sem   ? 1 : 0 ) ;
+      data().submit.setSignalSemaphoreCount( signal_sem ? 1 : 0 ) ;
+      data().submit.setPWaitSemaphores     ( &wait_sem          ) ;
+      data().submit.setPSignalSemaphores   ( &signal_sem        ) ;
+      data().submit.setPWaitDstStageMask   ( &flag              ) ;
+      vk::Fence fence = cmd_buff.fence() ;
 
       if( cmd_buff.level() == nyx::vkg::CommandBuffer::Level::Primary )
       {
-        data().mutex->lock() ;
-        vkg::Vulkan::add( data().queue.submit( 1, &data().submit, sync.signalFence() ) ) ;
-        data().mutex->unlock() ;
+        Vulkan::deviceLock( data().dev_id ) ;
+        vkg::Vulkan::add( data().queue.submit( 1, &data().submit, fence ) ) ;
+        Vulkan::deviceUnlock( data().dev_id ) ;
       }
+      
+      cmd_buff.advance() ;
+    }
+    
+    void Queue::submit( const nyx::vkg::CommandBuffer& cmd_buff, const vk::Semaphore& signal_sem )
+    {
+      const auto cmd = cmd_buff.buffer() ;
+      
+      data().submit = vk::SubmitInfo() ;
+      data().submit.setCommandBufferCount  ( 1                  ) ;
+      data().submit.setPCommandBuffers     ( &cmd               ) ;
+      data().submit.setWaitSemaphoreCount  ( 0                  ) ;
+      data().submit.setSignalSemaphoreCount( 1                  ) ;
+      data().submit.setPWaitSemaphores     ( nullptr            ) ;
+      data().submit.setPSignalSemaphores   ( &signal_sem        ) ;
+      vk::Fence fence = cmd_buff.fence() ;
+
+      if( cmd_buff.level() == nyx::vkg::CommandBuffer::Level::Primary )
+      {
+        Vulkan::deviceLock( data().dev_id ) ;
+        vkg::Vulkan::add( data().queue.submit( 1, &data().submit, fence ) ) ;
+        Vulkan::deviceUnlock( data().dev_id ) ;
+      }
+      
+      cmd_buff.advance() ;
     }
     
     unsigned Queue::submit( const nyx::vkg::Swapchain& swapchain, unsigned img_index )
@@ -205,26 +230,26 @@ namespace nyx
       info.setWaitSemaphoreCount( 0                      ) ;
       info.setPWaitSemaphores   ( 0                      ) ;
       
-      data().mutex->lock() ;
+      Vulkan::deviceLock( data().dev_id ) ;
       auto result = data().queue.presentKHR( &info ) ;
-      data().mutex->unlock() ;
+      Vulkan::deviceUnlock( data().dev_id ) ;
       
       return static_cast<unsigned>( Vulkan::convert( result ) ) ;
     }
 
-    unsigned Queue::submit( const nyx::vkg::Swapchain& swapchain, unsigned img_index, const nyx::vkg::Synchronization& sync )
+    unsigned Queue::submit( const nyx::vkg::Swapchain& swapchain, unsigned img_index, const vk::Semaphore& sync )
     {
       vk::PresentInfoKHR info ;
       
       info.setPImageIndices     ( &img_index             ) ;
       info.setSwapchainCount    ( 1                      ) ;
       info.setPSwapchains       ( &swapchain.swapchain() ) ;
-      info.setWaitSemaphoreCount( sync.numWaitSems()     ) ;
-      info.setPWaitSemaphores   ( sync.waits()           ) ;
+      info.setWaitSemaphoreCount( 1                      ) ;
+      info.setPWaitSemaphores   ( &sync                  ) ;
       
-      data().mutex->lock() ;
+      Vulkan::deviceLock( data().dev_id ) ;
       auto result = data().queue.presentKHR( &info ) ;
-      data().mutex->unlock() ;
+      Vulkan::deviceUnlock( data().dev_id ) ;
       
       return static_cast<unsigned>( Vulkan::convert( result ) ) ;
     }
@@ -239,32 +264,15 @@ namespace nyx
       data().submit.setPCommandBuffers     ( &cmd_buff ) ;
 
 
-      data().mutex->lock() ;
+      Vulkan::deviceLock( data().dev_id ) ;
+      Vulkan::deviceLock( data().dev_id ) ;
       vkg::Vulkan::add( data().queue.submit( 1, &data().submit, dummy ) ) ;
+      Vulkan::deviceUnlock( data().dev_id ) ;
 
       vkg::Vulkan::add( data().queue.waitIdle() ) ;
       // No synchronization given, must wait.
-      data().mutex->unlock() ;
     }
     
-    void Queue::submit( const vk::CommandBuffer& cmd_buff, const nyx::vkg::Synchronization& sync )
-    {
-      static constexpr vk::PipelineStageFlags flags = vk::PipelineStageFlagBits::eAllCommands ;
-      
-      data().submit = vk::SubmitInfo() ;
-      data().submit.setCommandBufferCount  ( 1                  ) ;
-      data().submit.setPCommandBuffers     ( &cmd_buff          ) ;
-      data().submit.setPSignalSemaphores   ( sync.signals()     ) ;
-      data().submit.setSignalSemaphoreCount( sync.numSignals()  ) ;
-      data().submit.setWaitSemaphoreCount  ( sync.numWaitSems() ) ;
-      data().submit.setPWaitSemaphores     ( sync.waits()       ) ;
-      data().submit.setPWaitDstStageMask   ( &flags             ) ;
-
-      data().mutex->lock() ;
-      vkg::Vulkan::add( data().queue.submit( 1, &data().submit, sync.signalFence() ) ) ;
-      data().mutex->unlock() ;
-    }
-
     void Queue::initialize( const nyx::vkg::Device& device, const vk::Queue& queue, unsigned queue_family, unsigned mask )
     {
       vk::FenceCreateInfo fence_info  ;

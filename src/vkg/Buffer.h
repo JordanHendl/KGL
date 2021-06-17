@@ -44,7 +44,7 @@ namespace nyx
     class Image         ;
     class Descriptor    ;
     class Queue         ;
-    class RendererImpl  ;
+    class PipelineImpl  ;
     class Chain         ;
     
     /** Class for managing a Vulkan buffer.
@@ -87,7 +87,7 @@ namespace nyx
         
         /**
          */
-        friend class vkg::RendererImpl ;
+        friend class vkg::PipelineImpl ;
 
         /** Equals operator. Performs a surface copy of the input source
          * @return A reference to this object after the surface copy.

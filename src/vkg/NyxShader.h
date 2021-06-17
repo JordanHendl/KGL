@@ -44,7 +44,7 @@ namespace vk
   enum class DescriptorType                           ;
   enum class ShaderStageFlagBits : VkShaderStageFlags ;
   
-  using ShaderStageFlags = ::vk::Flags<::vk::ShaderStageFlagBits> ; ///< Forward declared vulkan.hpp flags.
+  using ShaderStageFlags = ::vk::Flags<::vk::ShaderStageFlagBits> ; ///< Forward declared vulkan/vulkan.hpp flags.
 }
 
 namespace nyx

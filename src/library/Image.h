@@ -34,15 +34,18 @@ namespace nyx
   enum class ImageFormat : unsigned 
   {
     R8,     ///< Single channel Char.
+    R32U,   ///< Single channel Integer.
     R32I,   ///< Single channel Integer.
     R32F,   ///< Single channel Float.
     RGB8,   ///< Three channel Char.
     BGR8,   ///< Three channel Char.
+    RGB32U, ///< Three channel Integer.
     RGB32I, ///< Three channel Integer.
     RGB32F, ///< Three channel Float.
     RGBA8,  ///< Four channel Char.
     BGRA8,  ///< Three channel Char.
     RGBA32I,///< Four channel Integer.
+    RGBA32U,///< Four channel Unsigned Integer.
     RGBA32F,///< Four channel Float.
     D32F,   ///< Since channel depth float .
   };
@@ -192,6 +195,12 @@ namespace nyx
        */
       inline void setMipLevels( unsigned num_levels ) ;
       
+      /** Method to set the usage for this image.
+       * Defaults to a shader read-only color image.
+       * @param usage The usage for this image.
+       */
+      inline void setUsage( nyx::ImageUsage usage ) ;
+
       /** Method to retrieve the size of this image.
        * @return The size of this image in pixels.
        */
@@ -323,6 +332,12 @@ namespace nyx
   void Image<Impl>::setMipLevels( unsigned num_levels )
   {
     this->impl_image.setMipLevels( num_levels ) ;
+  }
+  
+  template<typename Impl>
+  void Image<Impl>::setUsage( nyx::ImageUsage usage )
+  {
+    this->impl_image.setUsage( usage ) ;
   }
 
   template<typename Impl>

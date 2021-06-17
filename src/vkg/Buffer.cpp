@@ -19,7 +19,7 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+
 
 #include "Buffer.h"
 #include "Vulkan.h"

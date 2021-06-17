@@ -24,6 +24,9 @@
 
 #pragma once
 
+#include "Descriptor.h"
+
+
 namespace vk
 {
   class PipelineLayout ;
@@ -34,12 +37,24 @@ namespace nyx
 { 
   class Viewport ;
   
+  template<typename Framework>
+  class Image ;
+  
+  /** Forward decleration so the template interface can access this object's functionality.
+   */
+  template<typename Impl, typename Type>
+  class Array ;
+  
   namespace vkg
   {
     class Device        ;
     class RenderPass    ;
     class CommandBuffer ;
     class NyxShader     ;
+    class Buffer        ;
+    class Vulkan        ;
+    class Image         ;
+    class Descriptor    ;
     
     class Pipeline
     {
@@ -135,10 +150,35 @@ namespace nyx
          */
         bool isGraphics() const ;
         
-        /** Method to add a viewport to this pipeline.
-         * @param viewport The library viewport to add.
+        /** Method to add a viewport to this Pipeline.
+         * @param viewport The viewport to add in the output of this Pipeline.
          */
         void addViewport( const nyx::Viewport& viewport ) ;
+        
+        /** Method to bind an array to one of this object's values on the GPU.
+         * @param name The name associated with the value in the inputted pipeline.
+         * @param array The GPU array to bind to the pipeline variable.
+         */
+        template<typename Type>
+        void bind( const char* name, const nyx::Array<vkg::Vulkan, Type>& array ) ;
+        
+        /** Method to bind an array to one of this object's values on the GPU.
+         * @param name The name associated with the value in the inputted pipeline.
+         * @param buffer The GPU array as a buffer to bind to the pipeline variable.
+         */
+        void bind( const char* name, const nyx::vkg::Buffer& buffer ) ;
+        
+        /** Method to bind an image to one of this object's values on the GPU.
+         * @param name The name associated with the value in the inputted pipeline.
+         * @param image The GPU image to bind to the pipeline variable.
+         */
+        void bind( const char* name, const vkg::Image& image ) ;
+        
+        /** Method to bind an image to one of this object's values on the GPU.
+         * @param name The name associated with the value in the inputted pipeline.
+         * @param image The GPU image to bind to the pipeline variable.
+         */
+        void bind( const char* name, const vkg::Image* const* images, unsigned count ) ;
         
         /** Method to retrieve a const-reference to this object's internal vulkan pipeline.
          * @return The internal vulkan pipeline of this object.
@@ -160,6 +200,7 @@ namespace nyx
          */
         const nyx::vkg::NyxShader& shader() const ;
         
+        const vkg::Descriptor& descriptor() const ;
       private:
       
         /** Forward Declared structure to contain this object's internal data.
@@ -176,5 +217,11 @@ namespace nyx
          */
         const PipelineData& data() const ;
     };
+    
+    template<typename Type>
+    void Pipeline::bind( const char* name, const nyx::Array<vkg::Vulkan, Type>& array )
+    {
+      this->bind( name, static_cast<const vkg::Buffer&>( array ) ) ;
+    }
   }
 }

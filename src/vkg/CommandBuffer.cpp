@@ -26,7 +26,7 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+
 
 #include "CommandBuffer.h"
 #include "Queue.h"
@@ -87,7 +87,7 @@ namespace nyx
        * @param queue_family
        * @return A Reference to the created Command Pool.
        */
-      vk::CommandPool& pool( Family queue_family ) ;
+      vk::CommandPool pool( Family queue_family ) ;
       
       /** Method to retrieve the map of command pools from a queue family.
        * @note creates pool if it is not found.
@@ -109,30 +109,28 @@ namespace nyx
       this->current             = 0                             ;
     }
     
-    std::mutex* CommandBufferData::mutex( Family queue_family )
+    std::mutex* CommandBufferData::mutex( Family )
     {
-      return &mutex_map[ queue_family ] ;
+      return new std::mutex() ;
     }
     
-    vk::CommandPool& CommandBufferData::pool( Family queue_family )
+    vk::CommandPool CommandBufferData::pool( Family queue_family )
     {
-      const auto id = std::this_thread::get_id() ;
-      const PoolMap::iterator          iter   = thread_map[ id ].find( queue_family ) ;
+//      const auto id = std::this_thread::get_id() ;
+//      const PoolMap::iterator          iter   = thread_map[ id ].find( queue_family ) ;
       const vk::CommandPoolCreateFlags flags  = vk::CommandPoolCreateFlagBits::eResetCommandBuffer ; // TODO make this configurable.
       const vk::Device                 device = this->device                                       ;
 
       vk::CommandPoolCreateInfo info ;
       vk::CommandPool           pool ;
       
-      if( iter == thread_map[ id ].end() )
-      {
-        info.setFlags           ( flags        ) ;
-        info.setQueueFamilyIndex( queue_family ) ;
+      info.setFlags           ( flags        ) ;
+      info.setQueueFamilyIndex( queue_family ) ;
         
-        return thread_map[ id ].insert( iter, { queue_family, device.createCommandPool( info, nullptr ) } )->second ;
-      }
+      auto result = device.createCommandPool( info, nullptr ) ;
       
-      return iter->second ;
+      Vulkan::add( result.result ) ;
+      return result.value ;
     }
 
     CommandBuffer::CommandBuffer()
@@ -171,6 +169,11 @@ namespace nyx
                                                             vk::DependencyFlags(), nullptr, barrier, nullptr ) ;
     }
     
+    void CommandBuffer::dispatch( unsigned x, unsigned y, unsigned z )
+    {
+      data().cmd_buffers[ data().current ].dispatch( x, y, z ) ;
+    }
+    
     void CommandBuffer::barrier( const vkg::Buffer& read, const vkg::Image& write )
     {
       vk::BufferMemoryBarrier barrier ;
@@ -186,12 +189,12 @@ namespace nyx
     
     void CommandBuffer::bind( const nyx::vkg::Descriptor& descriptor )
     {
-      if( descriptor.set() ) 
+      if( descriptor.set() && data().pipeline_layout ) 
       {
         data().cmd_buffers[ data().current ].bindDescriptorSets( data().bind_point, data().pipeline_layout, 0, 1, &descriptor.set(), 0, nullptr ) ;
       }
     }
-
+  
     void CommandBuffer::bind( const nyx::vkg::Pipeline& pipeline )
     {
       data().bind_point      = pipeline.isGraphics() ? vk::PipelineBindPoint::eGraphics : vk::PipelineBindPoint::eCompute ;
@@ -217,7 +220,6 @@ namespace nyx
     {
       vk::CommandBufferAllocateInfo info       ;
       vk::CommandBufferLevel        cmd_level  ;
-      vk::CommandPool               pool       ;
       vk::Device                    device     ;
       vk::FenceCreateInfo           fence_info ;
       
@@ -231,14 +233,13 @@ namespace nyx
       data().id     = data().queue.device() ;
 
       device            = data().device                         ;
-      pool              = data().pool( data().queue.family() )  ;
       data().vk_pool    = data().pool( data().queue.family() )  ;
       data().pool_mutex = data().mutex( data().queue.family() ) ;
       cmd_level         = vk::CommandBufferLevel::eSecondary    ;
       
       info.setCommandBufferCount( parent.data().cmd_buffers.size() ) ;
       info.setLevel             ( cmd_level                        ) ;
-      info.setCommandPool       ( pool                             ) ;
+      info.setCommandPool       ( data().vk_pool                   ) ;
       
       data().cmd_buffers        .resize( parent.data().cmd_buffers.size() ) ;
       data().fences             .resize( parent.data().cmd_buffers.size() ) ;
@@ -251,7 +252,7 @@ namespace nyx
       vkg::Vulkan::add( device.allocateCommandBuffers( &info, data().cmd_buffers.data() ) ) ;
       
       data().subpass_flags = vk::SubpassContents::eSecondaryCommandBuffers ;
-      
+      data().begin_info.setFlags( vk::CommandBufferUsageFlagBits::eRenderPassContinue | vk::CommandBufferUsageFlagBits::eSimultaneousUse ) ;
       for( auto& fence : data().fences )
       {
         auto result = device.createFence( fence_info ) ;
@@ -264,7 +265,6 @@ namespace nyx
     {
       vk::CommandBufferAllocateInfo info       ;
       vk::CommandBufferLevel        cmd_level  ;
-      vk::CommandPool               pool       ;
       vk::Device                    device     ;
       vk::FenceCreateInfo           fence_info ;
       
@@ -278,15 +278,14 @@ namespace nyx
       data().id     = queue.device()                            ;
 
       device            = data().device                         ;
-      pool              = data().pool( data().queue.family() )  ;
-      data().vk_pool    = data().pool( data().queue.family() )  ;
-      data().pool_mutex = data().mutex( data().queue.family() ) ;
+      data().vk_pool    = data().pool ( data().queue.family() ) ;
+      data().pool_mutex = new std::mutex()                      ;
 
       cmd_level      = level == Level::Primary ? vk::CommandBufferLevel::ePrimary : vk::CommandBufferLevel::eSecondary ;
       
-      info.setCommandBufferCount( count     ) ;
-      info.setLevel             ( cmd_level ) ;
-      info.setCommandPool       ( pool      ) ;
+      info.setCommandBufferCount( count          ) ;
+      info.setLevel             ( cmd_level      ) ;
+      info.setCommandPool       ( data().vk_pool ) ;
       
       data().cmd_buffers        .resize( count ) ;
       data().fences             .resize( count ) ;
@@ -299,6 +298,8 @@ namespace nyx
       std::fill( data().is_signaled        .begin(), data().is_signaled        .end(), true  ) ;
       vkg::Vulkan::add( device.allocateCommandBuffers( &info, data().cmd_buffers.data() ) ) ;
       
+      data().begin_info.setFlags( vk::CommandBufferUsageFlagBits::eRenderPassContinue | vk::CommandBufferUsageFlagBits::eSimultaneousUse ) ;
+              
       for( auto& fence : data().fences )
       {
         auto result = device.createFence( fence_info ) ;
@@ -324,7 +325,19 @@ namespace nyx
     {
       if( data().level == Level::Primary && cmd.data().level == Level::Secondary && data().subpass_flags == vk::SubpassContents::eSecondaryCommandBuffers )
       {
+        auto& fence = data().fences[ data().current ] ;
+        if( data().is_signaled[ data().current ] )
+        {
+          vkg::Vulkan::add( data().device.waitForFences( 1, &fence, true, UINT64_MAX ) ) ;
+          vkg::Vulkan::add( data().device.resetFences( 1, &fence )                     ) ;
+          data().is_signaled[ data().current ] = false ;
+        }
+        
+        data().pool_mutex    ->lock() ;
+        cmd.data().pool_mutex->lock() ;
         data().cmd_buffers[ data().current ].executeCommands( 1, &cmd.data().cmd_buffers[ cmd.data().current ] ) ;
+        cmd.data().pool_mutex->unlock() ;
+        data().pool_mutex    ->unlock() ;
       }
     }
     
@@ -429,31 +442,13 @@ namespace nyx
       info.setRenderPass     ( render_pass.pass()        ) ;
       info.setFramebuffer    ( render_pass.current()     ) ;
       
-      fence = data().fences[ data().current ] ;
-      
       data().pool_mutex->lock() ;
-      if( data().level == Level::Primary )
+      if( data().level == Level::Secondary )
       {
-        if( data().is_signaled[ data().current ] )
-        {
-          vkg::Vulkan::add( data().device.waitForFences( 1, &fence, true, UINT64_MAX ) ) ;
-          vkg::Vulkan::add( data().device.resetFences( 1, &fence )                     ) ;
-          data().is_signaled[ data().current ] = false ;
-        }
-        
-        vkg::Vulkan::add( data().cmd_buffers[ data().current ].begin          ( &data().begin_info )        ) ;
-                          data().cmd_buffers[ data().current ].beginRenderPass( &info, data().subpass_flags ) ;
-  
-        data().recording                             = true ;
-        data().started_render_pass[ data().current ] = true ;
-      }
-      else
-      {
-//        data().inheritance.setFramebuffer    ( render_pass.current()                               ) ;
-        data().inheritance.setSubpass        ( index                                               ) ;
-        data().inheritance.setRenderPass     ( render_pass.pass()                                  ) ;
-        data().begin_info.setPInheritanceInfo( &data().inheritance                                 ) ;
-        data().begin_info.setFlags           ( vk::CommandBufferUsageFlagBits::eRenderPassContinue ) ;
+        data().inheritance.setSubpass        ( index                                                                                                  ) ;
+        data().inheritance.setRenderPass     ( render_pass.pass()                                                                                     ) ;
+        data().begin_info.setPInheritanceInfo( &data().inheritance                                                                                    ) ;
+        data().begin_info.setFlags           ( vk::CommandBufferUsageFlagBits::eRenderPassContinue | vk::CommandBufferUsageFlagBits::eSimultaneousUse ) ;
 
         vkg::Vulkan::add( data().cmd_buffers[ data().current ].begin( &data().begin_info ) ) ;
         

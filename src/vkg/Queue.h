@@ -31,17 +31,16 @@ namespace vk
   class SubmitInfo    ;
   class Queue         ;
   class CommandBuffer ;
+  class Semaphore     ;
 }
 namespace nyx
 {
   namespace vkg
   {
-    class Synchronization ;
     class CommandBuffer   ;
     class Device          ;
     class QueueFamily     ;
     class Swapchain       ;
-    class Synchronization ;
     
     /** Class for managing a vulkan queue. 
      * This object should only be created via a library device object.
@@ -127,29 +126,27 @@ namespace nyx
         /** Method to submit a command to a queue.
          * @note This object handles concurrent CPU-side access to vulkan queues.
          * @param cmd_buff The command buffer to submit.
-         * @param sync The library synchronization object to synchronize this submition.
          */
-        void submit( const nyx::vkg::CommandBuffer& cmd_buff, const nyx::vkg::Synchronization& sync ) ;
-
+        void submit( const nyx::vkg::CommandBuffer& cmd_buff, const vk::Semaphore& wait_sem, const vk::Semaphore& signal_sem ) ;
+        
+        /** Method to submit a command to a queue.
+         * @note This object handles concurrent CPU-side access to vulkan queues.
+         * @param cmd_buff The command buffer to submit.
+         */
+        void submit( const nyx::vkg::CommandBuffer& cmd_buff, const vk::Semaphore& signal_sem ) ;
+        
         /** Method to submit a command to a queue.
          * @note This object handles concurrent CPU-side access to vulkan queues.
          * @param cmd_buff The command buffer to submit.
          */
         void submit( const vk::CommandBuffer& cmd_buff ) ;
 
-        /** Method to submit a command to a queue.
-         * @note This object handles concurrent CPU-side access to vulkan queues.
-         * @param cmd_buff The command buffer to submit.
-         * @param sync The library synchronization object to synchronize this submition.
-         */
-        void submit( const vk::CommandBuffer& cmd_buff, const nyx::vkg::Synchronization& sync ) ;
-        
         /** Method to submit a swapchain present operation to this queue.
          * @param swapchain The swapchain to submit the present operation for.
          * @param img_index The image index acquired by the swapchain.
          * @param sync The synchronization object to use for syncing the GPU operation.
          */
-        unsigned submit( const nyx::vkg::Swapchain& swapchain, unsigned img_index, const nyx::vkg::Synchronization& sync ) ;
+        unsigned submit( const nyx::vkg::Swapchain& swapchain, unsigned img_index, const vk::Semaphore& sync ) ;
         
         /** Method to submit a swapchain present operation to this queue.
          * @param swapchain The swapchain to submit the present operation for.

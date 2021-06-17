@@ -23,13 +23,12 @@
 #include "Image.h"
 #include "Queue.h"
 #include "CommandBuffer.h"
-#include "Synchronization.h"
 #include "NyxShader.h"
 #include "RenderPass.h"
 #include "Pipeline.h"
 #include "Swapchain.h"
 #include "Descriptor.h"
-#include "Renderer.h"
+#include "Pipeline.h"
 #include "Chain.h"
 
 typedef unsigned VkFlags              ;
@@ -213,8 +212,6 @@ namespace nyx
         using Queue           = nyx::vkg::Queue              ; ///< The object to manage vulkan queues.
         using Shader          = nyx::vkg::NyxShader          ; ///< The object to manage an individual vulkan shader.
         using Swapchain       = nyx::vkg::Swapchain          ; ///< The object to manage a window's framebuffers.
-        using Synchronization = nyx::vkg::Synchronization    ; ///< The object used to manage synchronization in this library.
-        using Renderer        = nyx::vkg::Renderer           ;
         using Image           = nyx::Image<nyx::vkg::Vulkan> ;
         using Chain           = nyx::vkg::Chain              ;
 
@@ -308,6 +305,7 @@ namespace nyx
               MemoryMapFailed,       ///< TODO
               ValidationFailed,      ///< TODO
               InvalidDevice,         ///< TODO
+              UninitializedDescriptor
             };
 
             /** Default constructor.
@@ -409,7 +407,17 @@ namespace nyx
          * @param gpu The device to wait for all operations to complete on.
          */
         static void deviceSynchronize( unsigned gpu = 0 ) ;
-
+        
+        /** Method to synchronize with all gpu operation on the input device.
+         * @param gpu The device to wait for all operations to complete on.
+         */
+        static void deviceLock( unsigned gpu = 0 ) ;
+        
+        /** Method to synchronize with all gpu operation on the input device.
+         * @param gpu The device to wait for all operations to complete on.
+         */
+        static void deviceUnlock( unsigned gpu = 0 ) ;
+        
         /** Static method to retrieve a graphics queue from this library.
          * @param gpu The gpu to generate the queue on.
          * @return A Queue capable of doing graphics.
@@ -532,7 +540,7 @@ namespace nyx
         friend class nyx::vkg::Descriptor        ;
         friend class nyx::vkg::DescriptorPool    ;
         friend class nyx::vkg::Device            ;
-        friend class nyx::vkg::DeviceData        ;
+        friend struct nyx::vkg::DeviceData       ;
         friend class nyx::vkg::RenderPass        ;
         friend class nyx::vkg::RenderPassData    ;
         friend class nyx::vkg::Instance          ;
@@ -543,7 +551,7 @@ namespace nyx
         friend class nyx::vkg::Swapchain         ;
         friend class nyx::vkg::SwapchainData     ;
         friend class nyx::vkg::Synchronization   ;
-        friend class nyx::vkg::RendererImpl      ;
+        friend class nyx::vkg::PipelineImpl      ;
         friend class nyx::vkg::Chain             ;
         
         /** Default constructor.

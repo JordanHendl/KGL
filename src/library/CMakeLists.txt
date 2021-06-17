@@ -4,7 +4,7 @@ SET( NYX_LIBRARY_SOURCES
      Array.cpp
      Image.cpp
      Window.cpp
-     Renderer.cpp
+     Pipeline.cpp
      RenderPass.cpp
      Nyx.cpp
    )
@@ -15,7 +15,7 @@ SET( NYX_LIBRARY_HEADERS
      Array.h
      Image.h
      Window.h
-     Renderer.h
+     Pipeline.h
      RenderPass.h
      Nyx.h
    )
