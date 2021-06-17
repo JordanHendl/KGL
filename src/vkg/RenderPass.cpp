@@ -26,7 +26,7 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+
 
 #include "RenderPass.h"
 #include "Device.h"
@@ -181,8 +181,10 @@ namespace nyx
     {
       const vkg::Queue queue = Vulkan::presentQueue( window_id, device ) ;
       data().device = Vulkan::device( device ) ;
-      
-      data().swapchain.initialize( queue, window_id ) ;
+      if( !data().swapchain.initialized() )
+      {
+        data().swapchain.initialize( queue, window_id ) ;
+      }
       
       data().window_id          = window_id                 ;
       data().area.extent.width  = data().swapchain.width () ;
@@ -224,14 +226,13 @@ namespace nyx
       return ret ;
     }
     
-    bool RenderPass::present()
+    bool RenderPass::present( vkg::Chain& chain )
     {
       bool recreate = false ;
       
-      if( data().swapchain.initialized() )
+      auto remake = [=]()
       {
-        if( data().swapchain.submit () == Vulkan::Error::RecreateSwapchain )
-        {
+          Vulkan::deviceSynchronize( data().device ) ;
           unsigned device = data().device    ;
           unsigned id     = data().window_id ;
           for( auto& framebuffer : data().framebuffers ) data().device.device().destroy( framebuffer ) ;
@@ -240,20 +241,29 @@ namespace nyx
           data().framebuffers.clear() ;
           data().current_framebuffer = 0 ;
           this->initialize( device, id ) ;
+          Vulkan::deviceSynchronize( data().device ) ;
+      };
+      
+      if( data().swapchain.initialized() )
+      {
+         chain.setWait( data().swapchain.imageReady() ) ;
+        chain.submit() ;
+        
+        // TODO: 
+        if( data().swapchain.submit( chain ) == Vulkan::Error::RecreateSwapchain )
+        {
+          remake() ;
           recreate = true ;
         }
         else if( data().swapchain.acquire() == Vulkan::Error::RecreateSwapchain )
         {
-          unsigned device = data().device    ;
-          unsigned id     = data().window_id ;
-          for( auto& framebuffer : data().framebuffers ) data().device.device().destroy( framebuffer ) ;
-          if( data().pass ) data().device.device().destroy( data().pass ) ;
-          data().images      .clear() ;
-          data().framebuffers.clear() ;
-          data().current_framebuffer = 0 ;
-          this->initialize( device, id ) ;
+          remake() ;
           recreate = true ;
         }
+      }
+      else
+      {
+        chain.submit() ;
       }
       
       return recreate ;

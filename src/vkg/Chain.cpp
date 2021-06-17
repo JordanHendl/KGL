@@ -26,13 +26,13 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+
 
 #include "Chain.h"
 #include "CommandBuffer.h"
 #include "Queue.h"
 #include "Vulkan.h"
-#include "Renderer.h"
+#include "Pipeline.h"
 #include "library/Image.h"
 #include "library/Memory.h"
 #include <library/Array.h>
@@ -47,9 +47,10 @@ namespace nyx
 {
   namespace vkg
   {
-    static constexpr unsigned COMMAND_BUFFER_COUNT = 4        ;
-    static constexpr unsigned MAX_STAGING_BUFFERS  = 4        ;
-    static constexpr unsigned STAGING_BUFFER_SIZE  = 10000000 ;
+    static constexpr unsigned COMMAND_BUFFER_COUNT = 4          ;
+    static constexpr unsigned MAX_STAGING_BUFFERS  = 4          ;
+//    static constexpr unsigned STAGING_BUFFER_SIZE  = 10000000 ;
+    static constexpr unsigned STAGING_BUFFER_SIZE  = 536870912 ;
 
     struct StagingBuffer
     {
@@ -75,6 +76,9 @@ namespace nyx
       unsigned                   num_cmd    ;
       mutable unsigned           current    ;
       bool                       dirty      ;
+      vk::Semaphore              signal     ;
+      vk::Semaphore              wait       ;
+      bool                       first      ;
       
       ChainData() ;
       
@@ -168,6 +172,8 @@ namespace nyx
 
     ChainData::ChainData()
     {
+      this->wait       = nullptr    ;
+      this->first      = true       ;
       this->has_record = false      ;
       this->subpass_id = UINT32_MAX ;
       this->parent     = nullptr    ;
@@ -201,6 +207,7 @@ namespace nyx
       data().subpass_id = subpass_id                    ;
 
       data().cmd.initialize( parent.data().cmd ) ;
+      data().signal = Vulkan::device( parent.device() ).device().createSemaphore( {}, nullptr ).value ;
     }
     
     void Chain::initialize( unsigned gpu, unsigned window_id )
@@ -209,6 +216,7 @@ namespace nyx
       {
         data().queue = Vulkan::presentQueue( window_id, gpu ) ;
         data().cmd.initialize( data().queue, COMMAND_BUFFER_COUNT ) ;
+        data().signal = Vulkan::device( gpu ).device().createSemaphore( {}, nullptr ).value ;
       }
     }
 
@@ -224,6 +232,7 @@ namespace nyx
       }
 
       data().cmd.initialize( data().queue, COMMAND_BUFFER_COUNT ) ;
+      data().signal = Vulkan::device( gpu ).device().createSemaphore( {}, nullptr ).value ;
     }
     
     void Chain::initialize( const RenderPass& pass, ChainType type, bool multi_pass )
@@ -240,6 +249,7 @@ namespace nyx
       }
 
       data().cmd.initialize( data().queue, COMMAND_BUFFER_COUNT, vkg::CommandBuffer::Level::Primary, multi_pass ) ;
+      data().signal = Vulkan::device( gpu ).device().createSemaphore( {}, nullptr ).value ;
     }
     
     void Chain::initialize( const RenderPass& pass, unsigned window_id, bool multi_pass )
@@ -250,6 +260,7 @@ namespace nyx
       {
         data().queue = Vulkan::presentQueue( window_id, pass.device()                                             ) ;
         data().cmd.initialize( data().queue, COMMAND_BUFFER_COUNT, vkg::CommandBuffer::Level::Primary, multi_pass ) ;
+        data().signal = Vulkan::device( pass.device() ).device().createSemaphore( {}, nullptr ).value ;
       }
     }
     
@@ -333,7 +344,18 @@ namespace nyx
       if( data().parent == nullptr && data().has_record && data().dirty )
       {
         data().mutex.lock() ;
-        data().queue.submit( data().cmd ) ;
+        if( data().first )
+        {
+          data().queue.submit( data().cmd, data().signal ) ;
+          data().first = false ;
+          data().wait = data().signal ;
+        }
+        else
+        {
+          data().queue.submit( data().cmd, data().wait, data().signal ) ;
+          data().wait = data().signal ;
+        }
+
         data().current = data().cmd.current() ;
         data().mutex.unlock() ;
         data().dirty = false ;
@@ -357,6 +379,7 @@ namespace nyx
         data().cmd.advance() ;
         data().current = data().cmd.current() ;
       }
+
       data().record( data().pass != nullptr ) ;
     }
     
@@ -582,7 +605,7 @@ namespace nyx
       }
     }
 
-    void Chain::drawBase( const vkg::Renderer& renderer, const vkg::Buffer& vertices, unsigned count, unsigned offset )
+    void Chain::drawBase( const vkg::Pipeline& Pipeline, const vkg::Buffer& vertices, unsigned count, unsigned offset )
     {
       data().record( true ) ;
       data().has_record = true ;
@@ -590,8 +613,8 @@ namespace nyx
       
       for( unsigned index = 0; index < data().num_cmd; index++ )
       {
-        data().cmd.bind    ( renderer.pipeline()     ) ;
-        data().cmd.bind    ( renderer.descriptor()   ) ;
+        data().cmd.bind    ( Pipeline                ) ;
+        data().cmd.bind    ( Pipeline.descriptor()   ) ;
         data().cmd.drawBase( vertices, count, offset ) ;
         data().cmd.advance () ;
       }
@@ -601,7 +624,7 @@ namespace nyx
       data().mutex.unlock() ;
     }
     
-    void Chain::drawIndexedBase( const vkg::Renderer& renderer, const vkg::Buffer& indices, unsigned index_count, const vkg::Buffer& vertices, unsigned vertex_count )
+    void Chain::drawIndexedBase( const vkg::Pipeline& Pipeline, const vkg::Buffer& indices, unsigned index_count, const vkg::Buffer& vertices, unsigned vertex_count )
     {
       data().record( true ) ;
       data().has_record = true ;
@@ -609,8 +632,8 @@ namespace nyx
       
       for( unsigned index = 0; index < data().num_cmd; index++ )
       {
-        data().cmd.bind    ( renderer.pipeline()     ) ;
-        data().cmd.bind    ( renderer.descriptor()   ) ;
+        data().cmd.bind    ( Pipeline                ) ;
+        data().cmd.bind    ( Pipeline.descriptor()   ) ;
         data().cmd.drawIndexedBase( indices, vertices, index_count, vertex_count ) ;
         data().cmd.advance () ;
       }
@@ -620,7 +643,7 @@ namespace nyx
     }
     
             
-    void Chain::drawInstancedBase( unsigned instance_count, const vkg::Renderer& renderer, const vkg::Buffer& indices, unsigned index_count, const vkg::Buffer& vertices, unsigned vertex_count )
+    void Chain::drawInstancedBase( unsigned instance_count, const vkg::Pipeline& Pipeline, const vkg::Buffer& indices, unsigned index_count, const vkg::Buffer& vertices, unsigned vertex_count )
     {
       data().record( true ) ;
       data().has_record = true ;
@@ -628,8 +651,8 @@ namespace nyx
       
       for( unsigned index = 0; index < data().num_cmd; index++ )
       {
-        data().cmd.bind    ( renderer.pipeline()     ) ;
-        data().cmd.bind    ( renderer.descriptor()   ) ;
+        data().cmd.bind    ( Pipeline                ) ;
+        data().cmd.bind    ( Pipeline.descriptor()   ) ;
         data().cmd.drawInstanced( indices, index_count, vertices, vertex_count, instance_count ) ;
         data().cmd.advance () ;
       }
@@ -638,7 +661,7 @@ namespace nyx
       data().mutex.unlock() ;
     }
     
-    void Chain::drawInstancedBase( unsigned instanced_count, const vkg::Renderer& renderer, const vkg::Buffer& vertices, unsigned vertex_count )
+    void Chain::drawInstancedBase( unsigned instanced_count, const vkg::Pipeline& Pipeline, const vkg::Buffer& vertices, unsigned vertex_count )
     {
       data().record( true ) ;
       data().has_record = true ;
@@ -646,8 +669,8 @@ namespace nyx
       
       for( unsigned index = 0; index < data().num_cmd; index++ )
       {
-        data().cmd.bind    ( renderer.pipeline()     ) ;
-        data().cmd.bind    ( renderer.descriptor()   ) ;
+        data().cmd.bind    ( Pipeline              ) ;
+        data().cmd.bind    ( Pipeline.descriptor() ) ;
         data().cmd.drawInstanced( vertices, vertex_count, instanced_count ) ;
         data().cmd.advance () ;
       }
@@ -656,6 +679,25 @@ namespace nyx
       data().mutex.unlock() ;
     }
 
+    void Chain::dispatch( const vkg::Pipeline& pipeline, unsigned x, unsigned y, unsigned z )
+    {
+      data().record( false ) ;
+      data().has_record = true ;
+      data().mutex.lock() ;
+      
+      for( unsigned index = 0; index < data().num_cmd; index++ )
+      {
+        data().cmd.bind    ( pipeline              ) ;
+        data().cmd.bind    ( pipeline.descriptor() ) ;
+        data().cmd.dispatch( x, y, z               ) ;
+        data().cmd.advance () ;
+      }
+
+      data().cmd.setActive( data().current ) ;
+      data().dirty = true ;
+      data().mutex.unlock() ;
+    }
+    
     void Chain::end()
     {
       if( data().cmd.recording() )
@@ -741,14 +783,24 @@ namespace nyx
       data().mutex.unlock() ;
     }
     
-    void Chain::pushBase( const Renderer& pipeline, const void* value, unsigned byte_size, unsigned offset )
+    const vk::Semaphore& Chain::signal() const
+    {
+      return data().signal ;
+    }
+    
+    void Chain::setWait( const vk::Semaphore& wait )
+    {
+      data().wait = wait ;
+    }
+
+    void Chain::pushBase( const Pipeline& pipeline, const void* value, unsigned byte_size, unsigned offset )
     {
       data().mutex.lock() ;
       data().record( data().pass != nullptr ) ;
       
       for( unsigned index = 0; index < data().num_cmd; index++ )
       {
-        data().cmd.bind( pipeline.pipeline()                  ) ;
+        data().cmd.bind( pipeline                             ) ;
         data().cmd.pushConstantBase( value, byte_size, offset ) ;
         data().cmd.advance() ;
       }

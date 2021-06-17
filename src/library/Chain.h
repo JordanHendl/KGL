@@ -26,7 +26,7 @@
 #include "Array.h"
 #include "Image.h"
 #include "RenderPass.h"
-#include "Renderer.h"
+#include "Pipeline.h"
 
 namespace nyx
 {
@@ -82,7 +82,7 @@ namespace nyx
   class RenderPass ;
 
   template<typename Framework>
-  class Renderer ;
+  class Pipeline ;
 
   /** Template class for performing and managing GPU operations.
    */
@@ -188,34 +188,42 @@ namespace nyx
        */
       inline void combine( const nyx::Chain<Framework>& child ) ;
       
-      /** Method to append a draw command to this renderer.
+      /** Method to append a draw command to this Pipeline.
        * @param array The array of vertices to draw.
        * @param offset The offset into the vertex array to start drawing at.
        */
       template<typename Type>
-      inline void draw( const nyx::Renderer<Framework>& renderer, const Array<Framework, Type>& array, unsigned offset = 0 ) ;
+      inline void draw( const nyx::Pipeline<Framework>& Pipeline, const Array<Framework, Type>& array, unsigned offset = 0 ) ;
 
       /** Method to append a draw command to this object using indices.
        * @param indices The index array describing the render order of the vertex array.
        * @param vertices The array of vertices used for drawing.
        */
       template<typename Type, typename Type2>
-      inline void drawIndexed( const nyx::Renderer<Framework>& renderer, const Array<Framework, Type2>& indices, const Array<Framework, Type>& vertices ) ;
+      inline void drawIndexed( const nyx::Pipeline<Framework>& Pipeline, const Array<Framework, Type2>& indices, const Array<Framework, Type>& vertices ) ;
       
       /** Method to append a draw command to this object using indices.
        * @param indices The index array describing the render order of the vertex array.
        * @param vertices The array of vertices used for drawing.
        */
       template<typename Type, typename Type2>
-      inline void drawInstanced( unsigned instance_count, const nyx::Renderer<Framework>& renderer, const Array<Framework, Type2>& indices, const Array<Framework, Type>& vertices ) ;
+      inline void drawInstanced( unsigned instance_count, const nyx::Pipeline<Framework>& Pipeline, const Array<Framework, Type2>& indices, const Array<Framework, Type>& vertices ) ;
 
       /** Method to append a draw command to this object using indices.
        * @param indices The index array describing the render order of the vertex array.
        * @param vertices The array of vertices used for drawing.
        */
       template<typename Type>
-      inline void drawInstanced( unsigned instance_count, const nyx::Renderer<Framework>& renderer, const Array<Framework, Type>& vertices ) ;
-
+      inline void drawInstanced( unsigned instance_count, const nyx::Pipeline<Framework>& Pipeline, const Array<Framework, Type>& vertices ) ;
+      
+      /** Method to dispatch a compute shader.
+       * @param pipeline The pipeline to use for the dispatch.
+       * @param x The X workgroup size.
+       * @param y The Y workgroup size.
+       * @param z The Z workgroup size.
+       */
+      inline void dispatch( const nyx::Pipeline<Framework>& pipeline, unsigned x, unsigned y, unsigned z = 1 ) ;
+      
       /** Method to explicitly end recording of this object.
        * @note The submit method implicitly ends this chain's record as well.
        */
@@ -268,7 +276,7 @@ namespace nyx
        * @param offset The offset, in bytes, to update the data in the pipeline. Defaults to 0.
        */
       template<typename Type>
-      inline void push( const nyx::Renderer<Framework>& pipeline, const Type& data, unsigned offset = 0 ) ;
+      inline void push( const nyx::Pipeline<Framework>& pipeline, const Type& data, unsigned offset = 0 ) ;
       
       /** Method to set the mode of this chain.
        * @param mode The mode of this chain to operate on.
@@ -391,30 +399,36 @@ namespace nyx
   
   template<typename Framework>
   template<typename Type, typename Type2>
-  void Chain<Framework>::drawIndexed( const nyx::Renderer<Framework>& renderer, const Array<Framework, Type2>& indices, const Array<Framework, Type>& vertices )
+  void Chain<Framework>::drawIndexed( const nyx::Pipeline<Framework>& Pipeline, const Array<Framework, Type2>& indices, const Array<Framework, Type>& vertices )
   {
-    this->impl.drawIndexed( renderer, indices, vertices ) ;
+    this->impl.drawIndexed( Pipeline, indices, vertices ) ;
   }
   
   template<typename Framework>
   template<typename Type, typename Type2>
-  void Chain<Framework>::drawInstanced( unsigned instance_count, const nyx::Renderer<Framework>& renderer, const Array<Framework, Type2>& indices, const Array<Framework, Type>& vertices )
+  void Chain<Framework>::drawInstanced( unsigned instance_count, const nyx::Pipeline<Framework>& Pipeline, const Array<Framework, Type2>& indices, const Array<Framework, Type>& vertices )
   {
-    this->impl.drawInstanced( instance_count, renderer, indices, vertices ) ;
+    this->impl.drawInstanced( instance_count, Pipeline, indices, vertices ) ;
   }
 
   template<typename Framework>
   template<typename Type>
-  void Chain<Framework>::drawInstanced( unsigned instance_count, const nyx::Renderer<Framework>& renderer, const Array<Framework, Type>& vertices )
+  void Chain<Framework>::drawInstanced( unsigned instance_count, const nyx::Pipeline<Framework>& Pipeline, const Array<Framework, Type>& vertices )
   {
-    this->impl.drawInstanced( instance_count, renderer, vertices ) ;
+    this->impl.drawInstanced( instance_count, Pipeline, vertices ) ;
   }
       
   template<typename Framework>
   template<typename Type>
-  void Chain<Framework>::draw( const nyx::Renderer<Framework>& renderer, const Array<Framework,Type>& array, unsigned offset )
+  void Chain<Framework>::draw( const nyx::Pipeline<Framework>& Pipeline, const Array<Framework,Type>& array, unsigned offset )
   {
-    this->impl.draw( renderer, array, offset ) ;
+    this->impl.draw( Pipeline, array, offset ) ;
+  }
+  
+  template<typename Framework>
+  void Chain<Framework>::dispatch( const nyx::Pipeline<Framework>& pipeline, unsigned x, unsigned y, unsigned z )
+  {
+    this->impl.dispatch( pipeline, x, y, z ) ;
   }
   
   template<typename Framework>
@@ -505,7 +519,7 @@ namespace nyx
   
   template<typename Framework>
   template<typename Type>
-  void Chain<Framework>::push( const nyx::Renderer<Framework>& pipeline, const Type& data, unsigned offset )
+  void Chain<Framework>::push( const nyx::Pipeline<Framework>& pipeline, const Type& data, unsigned offset )
   {
     this->impl.push( pipeline, data, offset ) ;
   }

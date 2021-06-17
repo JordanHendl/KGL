@@ -26,7 +26,7 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+
 
 #include "Descriptor.h"
 #include "Device.h"
@@ -107,6 +107,8 @@ namespace nyx
     {
       switch( flags )
       {
+        case nyx::ImageUsage::Sampled : return nyx::UniformType::Sampler    ;
+        case nyx::ImageUsage::Storage : return nyx::UniformType::InputImage ;
         default : return nyx::UniformType::Sampler ;
       }
     }
@@ -116,7 +118,9 @@ namespace nyx
       switch( flags )
       {
         case nyx::UniformType::Sampler    : return vk::DescriptorType::eCombinedImageSampler ;
-        case nyx::UniformType::InputImage : return vk::DescriptorType::eStorageBuffer        ;
+        case nyx::UniformType::InputImage : return vk::DescriptorType::eStorageImage         ;
+        case nyx::UniformType::Ubo        : return vk::DescriptorType::eUniformBuffer        ;
+        case nyx::UniformType::Ssbo       : return vk::DescriptorType::eStorageBuffer        ;
         default : return vk::DescriptorType::eUniformBuffer ;
       }
     }
@@ -167,6 +171,11 @@ namespace nyx
         data().parent_map = std::make_shared<DescriptorPoolData::UniformMap>( pool.data().map ) ; 
         data().set        = result.value[ 0 ]                                                   ;
       }
+    }
+
+    bool Descriptor::initialized() const 
+    {
+      return data().set ;
     }
 
     const vk::DescriptorSet& Descriptor::set() const

@@ -26,14 +26,14 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+
 
 #include "Pipeline.h"
 #include "Device.h"
 #include "NyxShader.h"
 #include "RenderPass.h"
 #include "Vulkan.h"
-#include "library/Renderer.h"
+#include "library/Pipeline.h"
 #include "loaders/NyxFile.h"
 #include <vulkan/vulkan.hpp>
 #include <stdio.h>
@@ -52,7 +52,9 @@ namespace nyx
       vk::PipelineInputAssemblyStateCreateInfo assembly_info          ; ///< TODO
       vk::PipelineMultisampleStateCreateInfo   multisample_info       ; ///< TODO
       vk::PipelineDepthStencilStateCreateInfo  depth_stencil_info     ;
-
+      
+      vk::SampleMask sample_mask ;
+      
       std::vector<vk::PipelineColorBlendAttachmentState> color_blend_attachments ; ///< TODO
       
       /** Default constructor.
@@ -70,6 +72,8 @@ namespace nyx
       const nyx::vkg::RenderPass* render_pass         ; ///< TODO
       Scissors                    scissors            ;
       Viewports                   viewports           ;
+      vkg::DescriptorPool         pool                ;
+      vkg::Descriptor             descriptor          ;
       PipelineConfig              config              ; ///< TODO
       nyx::vkg::Device            device              ; ///< TODO
       nyx::vkg::NyxShader*        shader              ; ///< TODO
@@ -91,13 +95,33 @@ namespace nyx
       /** Helper method to create a vulkan pipeline.
        */
       void createPipeline() ;
+      
+      void operator=( const PipelineData& data )
+      {
+        this->render_pass         = data.render_pass         ;
+        this->scissors            = data.scissors            ;
+        this->viewports           = data.viewports           ;
+        this->descriptor          = data.descriptor          ;
+        this->config              = data.config              ;
+        this->device              = data.device              ;
+        this->shader              = data.shader              ;
+        this->pipeline            = data.pipeline            ;
+        this->layout              = data.layout              ;
+        this->cache               = data.cache               ;
+        this->push_constant_flags = data.push_constant_flags ;
+        this->push_constant_size  = data.push_constant_size  ;
+        this->depth_test          = data.depth_test          ;
+      }
     };
     
     PipelineConfig::PipelineConfig()
     {
-      const ::vk::ColorComponentFlags color_blend_mask = ::vk::ColorComponentFlagBits::eR | ::vk::ColorComponentFlagBits::eG | ::vk::ColorComponentFlagBits::eB | ::vk::ColorComponentFlagBits::eA ;
+      vk::ColorComponentFlags color_blend_mask ;
+      
       this->color_blend_attachments.resize( 1 ) ;
       
+      color_blend_mask  = ( vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB |vk::ColorComponentFlagBits::eA ) ;
+      this->sample_mask = 0xFFFFFFFF ;
       this->rasterization_info.setDepthClampEnable       ( false                         ) ;
       this->rasterization_info.setRasterizerDiscardEnable( false                         ) ;
       this->rasterization_info.setPolygonMode            ( ::vk::PolygonMode::eFill      ) ;
@@ -113,7 +137,7 @@ namespace nyx
       this->multisample_info.setMinSampleShading     ( 1.0f                          ) ;
       this->multisample_info.setAlphaToOneEnable     ( false                         ) ;
       this->multisample_info.setAlphaToCoverageEnable( false                         ) ;
-      this->multisample_info.setPSampleMask          ( nullptr                       ) ;
+      this->multisample_info.setPSampleMask          ( &this->sample_mask            ) ;
       this->multisample_info.setRasterizationSamples ( ::vk::SampleCountFlagBits::e1 ) ;
       
       this->color_blend_attachments[ 0 ].setColorWriteMask     ( color_blend_mask             ) ;
@@ -137,6 +161,8 @@ namespace nyx
 
     PipelineData::PipelineData()
     {
+      this->render_pass         = nullptr ;
+      this->shader              = nullptr ;
       this->push_constant_size  = 256                                                                                                       ;
       this->push_constant_flags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment | vk::ShaderStageFlagBits::eCompute ;
     }
@@ -148,8 +174,15 @@ namespace nyx
       vk::DescriptorSetLayout      desc_layout ;
       
       desc_layout = this->shader->layout() ;
-
+      
+      auto tmp = this->config.color_blend_attachments[ 0 ] ;
       this->config.color_blend_attachments.resize( this->shader->file().numOutputs() ) ;
+      
+      for( auto& attachment : this->config.color_blend_attachments )
+      {
+        attachment = tmp ;
+      }
+
       this->config.color_blend_info.setAttachments( this->config.color_blend_attachments ) ;
       
       range.setOffset    ( 0                         ) ;
@@ -242,6 +275,42 @@ namespace nyx
       return data().pipeline ;
     }
 
+    void Pipeline::bind( const char* name, const vkg::Buffer& buffer )
+    {
+      if( data().descriptor.initialized() )
+      {
+        data().descriptor.set( name, buffer ) ;
+      }
+      else
+      {
+        Vulkan::add( Vulkan::Error::UninitializedDescriptor ) ;
+      }
+    }
+    
+    void Pipeline::bind( const char* name, const vkg::Image& image )
+    {
+      if( data().descriptor.initialized() )
+      {
+        data().descriptor.set( name, image ) ;
+      }
+      else
+      {
+        Vulkan::add( Vulkan::Error::UninitializedDescriptor ) ;
+      }
+    }
+    
+    void Pipeline::bind( const char* name, const vkg::Image* const* images, unsigned count )
+    {
+      if( data().descriptor.initialized() )
+      {
+        data().descriptor.set( name, images, count ) ;
+      }
+      else
+      {
+        Vulkan::add( Vulkan::Error::UninitializedDescriptor ) ;
+      }
+    }
+    
     void Pipeline::initialize( unsigned device, const char* nyx_file )
     {
       Vulkan::initialize() ;
@@ -249,7 +318,9 @@ namespace nyx
       data().shader = new nyx::vkg::NyxShader() ;
       
       data().device = Vulkan::device( device ) ;
-      data().shader->initialize( device, nyx_file ) ;
+      data().shader->initialize( device, nyx_file  ) ;
+      data().pool   .initialize( *data().shader, 1 ) ;
+      data().descriptor = data().pool.make() ;
       
       data().config.color_blend_info.setAttachments( data().config.color_blend_attachments ) ;
       data().createLayout() ;
@@ -264,9 +335,11 @@ namespace nyx
       
       data().render_pass = &pass                           ;
       data().device      = Vulkan::device( pass.device() ) ;
-      
       data().config.color_blend_info.setAttachments( data().config.color_blend_attachments ) ;
       data().shader->initialize( pass.device(), nyx_file ) ;
+      data().pool   .initialize( *data().shader, 1 ) ;
+
+      data().descriptor = data().pool.make() ;
       
       data().createLayout() ;
       data().createPipeline() ;
@@ -280,6 +353,9 @@ namespace nyx
       
       data().device = Vulkan::device( device ) ;
       data().shader->initialize( device, nyx_bytes, size ) ;
+      data().pool   .initialize( *data().shader, 1 ) ;
+      data().descriptor = data().pool.make() ;
+      
       data().config.color_blend_info.setAttachments( data().config.color_blend_attachments ) ;
       data().createLayout() ;
       data().createPipeline() ;
@@ -295,6 +371,9 @@ namespace nyx
       data().shader = new nyx::vkg::NyxShader() ;
       
       data().shader->initialize( pass.device(), nyx_bytes, size ) ;
+      data().pool   .initialize( *data().shader, 1 ) ;
+      data().descriptor = data().pool.make() ;
+      
       this->data().config.color_blend_attachments.resize( pass.numBindedSubpasses() ) ;
       data().config.color_blend_info.setAttachments( data().config.color_blend_attachments ) ;
       data().createLayout() ;
@@ -398,6 +477,11 @@ namespace nyx
     const nyx::vkg::NyxShader& Pipeline::shader() const
     {
       return *data().shader ;
+    }
+
+    const vkg::Descriptor& Pipeline::descriptor() const
+    {
+      return data().descriptor ;
     }
 
     PipelineData& Pipeline::data()

@@ -2,7 +2,6 @@
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NO_EXCEPTIONS
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #define VULKAN_HPP_STORAGE_SHARED_EXPORT
 #define VULKAN_HPP_STORAGE_SHARED
 
@@ -13,7 +12,6 @@
 #include <vector>
 #include <iostream>
 
-VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 namespace nyx
 {
   namespace vkg
@@ -349,12 +347,6 @@ namespace nyx
       InstanceData::List                   layer_list            ;
       InstanceData::CharList               ext_list_char         ;
       InstanceData::CharList               layer_list_char       ;
-      PFN_vkGetInstanceProcAddr            vkGetInstanceProcAddr ;
-      
-      vkGetInstanceProcAddr = loader.getProcAddress<PFN_vkGetInstanceProcAddr>( "vkGetInstanceProcAddr" ) ;
-      VULKAN_HPP_DEFAULT_DISPATCHER.init( vkGetInstanceProcAddr ) ;
-      auto instance = vk::createInstance( {}, nullptr ) ;
-      VULKAN_HPP_DEFAULT_DISPATCHER.init( instance.value ) ;
       
       app_info   = data().makeAppInfo()            ;
       debug_info = data().makeDebugInfo()          ;
@@ -381,11 +373,9 @@ namespace nyx
       vkg::Vulkan::add( result.result ) ;
       data().instance = result.value ;
       
-      VULKAN_HPP_DEFAULT_DISPATCHER.init( result.value ) ;
       auto result2 = data().instance.enumeratePhysicalDevices() ;
       vkg::Vulkan::add( result2.result ) ;
       data().physical_dev = result2.value ;
-      
     }
 
     void Instance::setApplicationVersion( unsigned major, unsigned minor, unsigned revision )

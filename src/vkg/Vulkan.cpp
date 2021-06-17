@@ -19,14 +19,14 @@
 #define VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_NOEXCEPT
 #define VULKAN_HPP_NOEXCEPT_WHEN_NO_EXCEPTIONS
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+
 
 #include "Vulkan.h"
 #include "Device.h"
 #include "library/Image.h"
 #include "library/Window.h"
 #include "library/Chain.h"
-#include <library/Renderer.h>
+#include <library/Pipeline.h>
 #include <library/Memory.h>
 #include <library/RenderPass.h>
 #include <algorithm>
@@ -36,15 +36,16 @@
 #include <string>
 #include <map>
 #include <vulkan/vulkan.hpp>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_vulkan.h>
+#include <SDL.h>
+#include <SDL_vulkan.h>
+#include <mutex>
 
 unsigned operator|( unsigned first, vk::MemoryPropertyFlagBits second )
 {
   return first | static_cast<unsigned>( second ) ;
 }
 
-extern bool SDL2_INITIALIZED ;
+bool SDL2_INITIALIZED ;
 
  namespace nyx
  {
@@ -94,13 +95,14 @@ extern bool SDL2_INITIALIZED ;
       
       using WindowMap = std::map<unsigned, nyx::Window<Vulkan>*> ;
       
-      Callback                 error_cb          ;
-      WindowMap                windows           ;
-      Vulkan::ErrorHandler*    handler           ;
-      vkg::Instance            instance          ;
-      std::vector<vkg::Device> devices           ;
-      std::vector<std::string> validation_layers ;
-      std::vector<std::string> device_ext        ;
+      Callback                       error_cb          ;
+      WindowMap                      windows           ;
+      Vulkan::ErrorHandler*          handler           ;
+      vkg::Instance                  instance          ;
+      std::vector<vkg::Device>       devices           ;
+      std::map<unsigned, std::mutex> device_mutex      ;
+      std::vector<std::string>       validation_layers ;
+      std::vector<std::string>       device_ext        ;
       
       /** Default constructor.
        */
@@ -307,16 +309,17 @@ extern bool SDL2_INITIALIZED ;
     {
       switch( this->err )
       {
-        case Error::DeviceLost           : return "DeviceLost : The device has been lost."                                                 ;
-        case Error::DeviceNotFound       : return "DeviceNotFound: Device requested was not found on the system"                           ;
-        case Error::FeatureNotPresent    : return "FeatureNotPresent: A Requested Feature is not supported by this system"                 ;
-        case Error::SuboptimalKHR        : return "SuboptimalKHR: The VKG surface is not compatible with the window"                       ;
-        case Error::OutOfDataKHR         : return "OutOfDataKHR: The VKG swapchain is not capable of presenting to the specified surface." ;
-        case Error::InitializationFailed : return "InitializationFailed: Vulkan initialization failed!"                                    ;
-        case Error::OutOfDeviceMemory    : return "Out of device memory: Device memory available has been depleted."                       ;
-        case Error::MemoryMapFailed      : return "Memory Map Failure: A Host-GPU memory mapping has failed."                              ;
-        case Error::ValidationFailed     : return "Validation Layer Failed."                                                               ;
-        case Error::NativeWindowInUse    : return "A Native window is already in use."                                                     ;
+        case Error::DeviceLost              : return "DeviceLost : The device has been lost."                                                 ;
+        case Error::DeviceNotFound          : return "DeviceNotFound: Device requested was not found on the system"                           ;
+        case Error::FeatureNotPresent       : return "FeatureNotPresent: A Requested Feature is not supported by this system"                 ;
+        case Error::SuboptimalKHR           : return "SuboptimalKHR: The VKG surface is not compatible with the window"                       ;
+        case Error::OutOfDataKHR            : return "OutOfDataKHR: The VKG swapchain is not capable of presenting to the specified surface." ;
+        case Error::InitializationFailed    : return "InitializationFailed: Vulkan initialization failed!"                                    ;
+        case Error::OutOfDeviceMemory       : return "Out of device memory: Device memory available has been depleted."                       ;
+        case Error::MemoryMapFailed         : return "Memory Map Failure: A Host-GPU memory mapping has failed."                              ;
+        case Error::ValidationFailed        : return "Validation Layer Failed."                                                               ;
+        case Error::NativeWindowInUse       : return "A Native window is already in use."                                                     ;
+        case Error::UninitializedDescriptor : return "A Vulkan Descriptor is trying to be used without being initialized."                    ;
         default : return "Unknown Error" ;
       }
     }
@@ -325,15 +328,16 @@ extern bool SDL2_INITIALIZED ;
     {
       switch( this->err )
       {
-        case Error::DeviceNotFound       : return Severity::Warning ;
-        case Error::FeatureNotPresent    : return Severity::Warning ;
-        case Error::SuboptimalKHR        : return Severity::Warning ;
-        case Error::NativeWindowInUse    : return Severity::Fatal   ;
-        case Error::ValidationFailed     : return Severity::Fatal   ;
-        case Error::DeviceLost           : return Severity::Fatal   ;
-        case Error::OutOfDataKHR         : return Severity::Fatal   ;
-        case Error::InitializationFailed : return Severity::Fatal   ;
-        case Error::OutOfDeviceMemory    : return Severity::Fatal   ;
+        case Error::DeviceNotFound          : return Severity::Warning ;
+        case Error::FeatureNotPresent       : return Severity::Warning ;
+        case Error::SuboptimalKHR           : return Severity::Warning ;
+        case Error::UninitializedDescriptor : return Severity::Warning ;
+        case Error::NativeWindowInUse       : return Severity::Fatal   ;
+        case Error::ValidationFailed        : return Severity::Fatal   ;
+        case Error::DeviceLost              : return Severity::Fatal   ;
+        case Error::OutOfDataKHR            : return Severity::Fatal   ;
+        case Error::InitializationFailed    : return Severity::Fatal   ;
+        case Error::OutOfDeviceMemory       : return Severity::Fatal   ;
         default : return Severity::Fatal ;
       }
     }
@@ -399,7 +403,19 @@ extern bool SDL2_INITIALIZED ;
 
     void Vulkan::deviceSynchronize( unsigned gpu )
     {
+      Vulkan::deviceLock( gpu ) ;
       Vulkan::device( gpu ).wait() ;
+      Vulkan::deviceUnlock( gpu ) ;
+    }
+    
+    void Vulkan::deviceLock( unsigned gpu )
+    {
+      data.device_mutex[ gpu ].lock() ;
+    }
+    
+    void Vulkan::deviceUnlock( unsigned gpu )
+    {
+      data.device_mutex[ gpu ].unlock() ;
     }
     
     void Vulkan::setErrorHandler( nyx::vkg::Vulkan::ErrorHandler* handler )
@@ -502,8 +518,11 @@ extern bool SDL2_INITIALIZED ;
         case nyx::ImageFormat::BGR8    : return vk::Format::eB8G8R8Srgb         ;
         case nyx::ImageFormat::RGBA8   : return vk::Format::eR8G8B8A8Srgb       ;
         case nyx::ImageFormat::BGRA8   : return vk::Format::eB8G8R8A8Srgb       ;
+        case nyx::ImageFormat::R32U    : return vk::Format::eR32Uint            ;
         case nyx::ImageFormat::R32I    : return vk::Format::eR32Sint            ;
+        case nyx::ImageFormat::RGB32U  : return vk::Format::eR32G32B32Uint      ;
         case nyx::ImageFormat::RGB32I  : return vk::Format::eR32G32B32Sint      ;
+        case nyx::ImageFormat::RGBA32U : return vk::Format::eR32G32B32A32Uint   ;
         case nyx::ImageFormat::RGBA32I : return vk::Format::eR32G32B32A32Sint   ;
         case nyx::ImageFormat::R32F    : return vk::Format::eR32Sfloat          ;
         case nyx::ImageFormat::RGB32F  : return vk::Format::eR32G32B32Sfloat    ;
@@ -756,8 +775,6 @@ extern bool SDL2_INITIALIZED ;
       vk::MemoryAllocateFlagsInfo flag_info ;
 
       Vulkan::initialize() ;
-      
-      flag_info.setFlags( vk::MemoryAllocateFlagBits::eDeviceAddress ) ;
       
       info.setAllocationSize ( size                              ) ;
       info.setMemoryTypeIndex( memType( filter, flag, p_device ) ) ;

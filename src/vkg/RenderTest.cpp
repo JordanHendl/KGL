@@ -29,7 +29,7 @@
 #include "Model.h"
 #include "library/Window.h"
 #include "library/RenderPass.h"
-#include "library/Renderer.h"
+#include "library/Pipeline.h"
 #include "library/Chain.h"
 #include "event/Event.h"
 #include <loaders/NgtFile.h>
@@ -64,7 +64,7 @@ static float     ROTATION  = 0.f                           ;
 
 static nyx::EventManager                      manager       ;
 static nyx::RenderPass <Framework>            render_pass   ;
-static nyx::Renderer   <Framework>            pipeline      ;
+static nyx::Pipeline   <Framework>            pipeline      ;
 static nyx::Chain      <Framework>            chain         ;
 static nyx::Chain      <Framework>            transfer      ;
 static nyx::Image      <Framework>            image         ;
@@ -133,7 +133,7 @@ void setupPipeline()
   pipeline.addViewport( viewport ) ;
   pipeline.setTestDepth( true ) ;
   std::cout << "Initializing Pipeline" << std::endl ;
-  pipeline.initialize( DEVICE_ID, render_pass, nyx::bytes::draw_3d, sizeof( nyx::bytes::draw_3d ) ) ;
+  pipeline.initialize( render_pass, nyx::bytes::draw_3d, sizeof( nyx::bytes::draw_3d ) ) ;
   
   if( image.initialized() )
   {

@@ -27,7 +27,7 @@
 #include <library/Memory.h>
 #include <library/Image.h>
 #include <library/Window.h>
-#include <library/Renderer.h>
+#include <library/Pipeline.h>
 #include "library/RenderPass.h"
 #include "library/Chain.h"
 #include <loaders/NgtFile.h>
@@ -331,10 +331,12 @@ athena::Result test_image_resize()
   if( image.byteSize() < ( width * height * 4 )                           ) return false ;
   if( image.layout()   != nyx::ImageLayout::Undefined                     ) return false ;
   
+  if( !image.resize( 2048, 1720 ) ) return false ;
+  
   chain.transition( image, nyx::ImageLayout::General ) ;
   chain.submit() ;
   chain.synchronize() ;
-  if( !image.resize( 2048, 1720 )                 ) return false ;
+  
   if( image.width()    != 2048                    ) return false ;
   if( image.height()   != 1720                    ) return false ;
   if( image.size()     != 2048 * 1720             ) return false ;
@@ -376,24 +378,24 @@ athena::Result test_image_copy()
   return true ;
 }
 
-athena::Result test_renderer_init()
+athena::Result test_Pipeline_init()
 {
-  nyx::Renderer<Impl> renderer ;
+  nyx::Pipeline<Impl> Pipeline ;
   nyx::Viewport       viewport ;
   
   viewport.setWidth ( 1280 ) ;
   viewport.setHeight( 1024 ) ;
   if( !Impl::initialized() ) return athena::Result::Skip ;
-  renderer.addViewport( viewport ) ;
-  renderer.initialize( device, render_pass, nyx::bytes::draw, sizeof( nyx::bytes::draw ) ) ;
+  Pipeline.addViewport( viewport ) ;
+  Pipeline.initialize( render_pass, nyx::bytes::draw, sizeof( nyx::bytes::draw ) ) ;
   
-  if( !renderer.initialized() ) return false ;
+  if( !Pipeline.initialized() ) return false ;
   return true ;
 }
 
-athena::Result test_renderer_draw()
+athena::Result test_Pipeline_draw()
 {
-  nyx::Renderer<Impl> renderer ;
+  nyx::Pipeline<Impl> Pipeline ;
   Impl::Array<float>  vertices ;
   Impl::Image         image  ;
   nyx::Viewport       viewport ;
@@ -404,7 +406,7 @@ athena::Result test_renderer_draw()
   if( !Impl::initialized() ) return athena::Result::Skip ;
   chain   .initialize ( device, nyx::ChainType::Graphics               ) ;
   image   .initialize ( nyx::ImageFormat::RGBA8, device, 1280, 1024, 1 ) ;
-  renderer.addViewport( viewport                                       ) ;
+  Pipeline.addViewport( viewport                                       ) ;
   
   chain.transition( image, nyx::ImageLayout::ShaderRead      ) ;
   chain.submit() ;
@@ -413,17 +415,17 @@ athena::Result test_renderer_draw()
   chain.reset() ;
   chain.initialize( render_pass, WINDOW_ID ) ;
   vertices.initialize( device, 9, false, nyx::ArrayFlags::Vertex ) ;
-  renderer.initialize( device, render_pass, nyx::bytes::draw, sizeof( nyx::bytes::draw ) ) ;
-  renderer.bind( "framebuffer", image ) ;
+  Pipeline.initialize( render_pass, nyx::bytes::draw, sizeof( nyx::bytes::draw ) ) ;
+  Pipeline.bind( "framebuffer", image ) ;
   
   for( unsigned i = 0; i < 20 ; i++ )
   {
-    chain.draw( renderer, vertices ) ;
+    chain.draw( Pipeline, vertices ) ;
   }
   
   chain.submit     () ;
   chain.synchronize() ;
-  renderer.reset() ;
+  Pipeline.reset() ;
   return true ;
 }
 
@@ -434,7 +436,7 @@ athena::Result test_buffer_reference_iterator()
     float x, y, z, w;
   };
   
-  nyx::Renderer<Impl> pipeline ;
+  nyx::Pipeline<Impl> pipeline ;
   Impl::Array<vec4>   vertices ;
   Impl::Array<vec4>   array    ;
   Impl::Array<bool>   uniform  ;
@@ -453,7 +455,7 @@ athena::Result test_buffer_reference_iterator()
   array   .initialize( device, 1                                                                                 ) ;
   uniform .initialize( device, 1, false, nyx::ArrayFlags::UniformBuffer                                          ) ;
   vertices.initialize( device, 9, false, nyx::ArrayFlags::Vertex                                                 ) ;
-  pipeline.initialize( device, render_pass, nyx::bytes::buffer_reference, sizeof( nyx::bytes::buffer_reference ) ) ;
+  pipeline.initialize( render_pass, nyx::bytes::buffer_reference, sizeof( nyx::bytes::buffer_reference ) ) ;
   
   // Bind an array to a uniform location. This array is now what is being used for the uniform.
   pipeline.bind( "ColorInfo", uniform ) ;
@@ -478,7 +480,7 @@ athena::Result test_rendering_with_subpasses()
   };
 
   nyx::RenderPass<Impl> pass       ;
-  nyx::Renderer  <Impl> pipeline   ;
+  nyx::Pipeline  <Impl> pipeline   ;
   Impl::Array    <vec4> vertices   ;
   nyx::Subpass          subpass    ;
   nyx::Chain<Impl>      chain      ;
@@ -496,10 +498,10 @@ athena::Result test_rendering_with_subpasses()
   subpass.addAttachment( attachment ) ;
   
   pass.addSubpass( subpass ) ;
-  pass    .initialize( device                                                                   ) ;
-  pipeline.initialize( device, pass, nyx::bytes::color_depth, sizeof( nyx::bytes::color_depth ) ) ;
-  chain   .initialize( pass, nyx::ChainType::Graphics                                           ) ;
-  vertices.initialize( device, 9, false, nyx::ArrayFlags::Vertex                                ) ;
+  pass    .initialize( device                                                           ) ;
+  pipeline.initialize( pass, nyx::bytes::color_depth, sizeof( nyx::bytes::color_depth ) ) ;
+  chain   .initialize( pass, nyx::ChainType::Graphics                                   ) ;
+  vertices.initialize( device, 9, false, nyx::ArrayFlags::Vertex                        ) ;
   
   chain.draw( pipeline, vertices ) ;
   
@@ -511,28 +513,28 @@ int main()
 {
   manager.initialize( "Nyx VULKAN Library" ) ;
 
-  manager.add( "01) Instance Creation"             , &instance_initialization_test   ) ;
-  manager.add( "02) Window Creation"               , &window_creation_test           ) ;
-  manager.add( "03) Graphics Queue Grab"           , &graphics_queue_get_test        ) ;
-//  manager.add( "04) Swapchain Creation"            , &swapchain_creation_test        ) ;
-  manager.add( "05) Memory::initialize"            , &test_memory_initialize         ) ;
-  manager.add( "06) Memory::size"                  , &test_memory_size               ) ;
-  manager.add( "07) Memory::offset"                , &test_memory_offset             ) ;
-  manager.add( "08) Memory::device"                , &test_memory_device             ) ;
-  manager.add( "09) Memory::syncToHost"            , &test_memory_sync_to_host_copy  ) ;
-  manager.add( "10) Array::initialize"             , &test_array_initialize          ) ;
-  manager.add( "11) Array::initialize Preallocated", &test_array_prealloc_init       ) ;
-  manager.add( "12) Array::size"                   , &test_array_size                ) ;
-  manager.add( "13) Array::copy"                   , &test_array_host_copy           ) ;
-  manager.add( "14) Image::initialize"             , &test_image_initialization      ) ;
-  manager.add( "15) Image::size"                   , &test_image_size                ) ;
-  manager.add( "17) Image::resize"                 , &test_image_resize              ) ;
-  manager.add( "18) Image::copy"                   , &test_image_copy                ) ;
+  manager.add( "01) Instance Creation"                 , &instance_initialization_test   ) ;
+  manager.add( "02) Window Creation"                   , &window_creation_test           ) ;
+  manager.add( "03) Graphics Queue Grab"               , &graphics_queue_get_test        ) ;
+  manager.add( "04) Swapchain Creation"                , &swapchain_creation_test        ) ;
+  manager.add( "05) Memory::initialize"                , &test_memory_initialize         ) ;
+  manager.add( "06) Memory::size"                      , &test_memory_size               ) ;
+  manager.add( "07) Memory::offset"                    , &test_memory_offset             ) ;
+  manager.add( "08) Memory::device"                    , &test_memory_device             ) ;
+  manager.add( "09) Memory::syncToHost"                , &test_memory_sync_to_host_copy  ) ;
+  manager.add( "10) Array::initialize"                 , &test_array_initialize          ) ;
+  manager.add( "11) Array::initialize Preallocated"    , &test_array_prealloc_init       ) ;
+  manager.add( "12) Array::size"                       , &test_array_size                ) ;
+  manager.add( "13) Array::copy"                       , &test_array_host_copy           ) ;
+  manager.add( "14) Image::initialize"                 , &test_image_initialization      ) ;
+  manager.add( "15) Image::size"                       , &test_image_size                ) ;
+  manager.add( "17) Image::resize"                     , &test_image_resize              ) ;
+  manager.add( "18) Image::copy"                       , &test_image_copy                ) ;
   manager.add( "19) RenderPass::initialize"            , &test_render_pass_creation      ) ;
-  manager.add( "20) Renderer::initialize"              , &test_renderer_init             ) ;
-  manager.add( "21) Renderer::draw"                    , &test_renderer_draw             ) ;
-  manager.add( "22) Renderer::draw with array iterator", &test_buffer_reference_iterator ) ;
-  manager.add( "23) Renderer::draw with subpasses"     , &test_rendering_with_subpasses  ) ;
+  manager.add( "20) Pipeline::initialize"              , &test_Pipeline_init             ) ;
+  manager.add( "21) Pipeline::draw"                    , &test_Pipeline_draw             ) ;
+  manager.add( "22) Pipeline::draw with array iterator", &test_buffer_reference_iterator ) ;
+  manager.add( "23) Pipeline::draw with subpasses"     , &test_rendering_with_subpasses  ) ;
   
   return manager.test( athena::Output::Verbose ) ;
 }
